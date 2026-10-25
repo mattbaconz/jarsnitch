@@ -208,7 +208,7 @@ impl<'l> Scan<'l> {
             return mismatch(self, "named .class but isn't a class file");
         }
         if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") {
-            if !matches!(ext.as_str(), "jar" | "zip" | "war" | "jarinjar") {
+            if !matches!(ext.as_str(), "jar" | "zip" | "war" | "jarinjar" | "mcpack") {
                 mismatch(self, "contains a zip archive");
             }
             return self.nested(bytes, path, depth);

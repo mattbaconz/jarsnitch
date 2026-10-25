@@ -148,7 +148,8 @@ Value-carrying rules report one finding per value (one per host, IP, webhook, pa
 
 - **Why it matters:** A fixed address skips DNS, which makes it harder to tell who it belongs to.
 - **Legit uses:** Rare. Some network tools, server lists, DNS fallbacks.
-- **Triggers:** Standalone IPv4 literals, optionally with a port, and bracketed IPv6 in URLs. Not counted: parts of longer dotted runs (version numbers), values after `rv:`, addresses ending in `.0` outside URLs (network addresses, and four-part versions like `3.46.1.0` look the same), and private, loopback, link-local, carrier-grade NAT, multicast, reserved and unspecified ranges. Documentation ranges (RFC 5737) are reported like public addresses so test fixtures can use them.
+- **Triggers:** Standalone IPv4 literals, optionally with a port, and bracketed IPv6 in URLs. Not counted: parts of longer dotted runs (version numbers), values after `rv:`, and private, loopback, link-local, carrier-grade NAT, multicast, reserved and unspecified ranges. Documentation ranges (RFC 5737) are reported like public addresses so test fixtures can use them.
+- **Not addresses:** a bare IPv4 without a port is also skipped when it's more likely something else: a Maven version after `:` (`sqlite-jdbc:3.42.0.1`), an address ending in `.0`, an ASN.1 object id (first part 1 or 2 and second below 40, like `2.5.29.14`), or a number whose four parts are all below 16 (`4.2.1.10`, section and version numbers). These still count inside a URL or with a port. Well-known resolvers like `1.1.1.1` and `8.8.8.8` fall under these rules and only show up with a port or in a URL.
 
 ### `str.discord-webhook` · notable
 
@@ -181,7 +182,7 @@ Value-carrying rules report one finding per value (one per host, IP, webhook, pa
 
 - **Why it matters:** A file named like an image or a config that actually holds code or a program isn't there to be an image or a config.
 - **Legit uses:** Rare. Some build tools store data under odd extensions.
-- **Triggers:** An entry whose bytes are a class file, zip, ELF, PE (`MZ`) or Mach-O binary while its extension says otherwise (`.png`, `.yml`, `.dat`, no extension, ...), and a `.class` entry that isn't a class file. Archives named `.jar`, `.zip`, `.war` or `.jarinjar` (LuckPerms-style loaders) and native libraries named `.so`, `.dll`, `.dylib`, `.jnilib`, `.exe`, `.bin` or `.node` are fine. Disguised classes and archives are scanned as well. The value is the entry path.
+- **Triggers:** An entry whose bytes are a class file, zip, ELF, PE (`MZ`) or Mach-O binary while its extension says otherwise (`.png`, `.yml`, `.dat`, no extension, ...), and a `.class` entry that isn't a class file. Archives named `.jar`, `.zip`, `.war`, `.jarinjar` (LuckPerms-style loaders) or `.mcpack` (Bedrock resource packs) and native libraries named `.so`, `.dll`, `.dylib`, `.jnilib`, `.exe`, `.bin` or `.node` are fine. Disguised classes and archives are scanned as well. The value is the entry path.
 
 ### `jar.nested` · info
 

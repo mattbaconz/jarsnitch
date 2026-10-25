@@ -200,8 +200,10 @@ fn is_public_v6(a: &str) -> bool {
 }
 
 /// Public IPv4 literals that stand alone in `s` (not part of a version number like
-/// `1.2.3.4.5` or `v1.2.3.4`, not after `rv:`). Addresses ending in `.0` are skipped:
-/// they're network addresses, and four-part versions like `3.46.1.0` look the same.
+/// `1.2.3.4.5` or `v1.2.3.4`, not after `rv:`). Without a port, these look like
+/// addresses but usually aren't, so they're skipped: Maven versions after `:`, addresses
+/// ending in `.0`, ASN.1 object ids (`2.5.29.14`: first part 1 or 2, second below 40),
+/// and section or version numbers with every part below 16 (`4.2.1.10`).
 pub fn ipv4s(s: &str) -> Vec<String> {
     let mut out = Vec::new();
     let b = s.as_bytes();
@@ -224,14 +226,20 @@ pub fn ipv4s(s: &str) -> Vec<String> {
         let before_ok = start == 0 || !blocked(b[start - 1]);
         let after_ok = i == b.len() || !blocked(b[i]);
         let rv = start >= 3 && s[..start].to_ascii_lowercase().ends_with("rv:");
-        if before_ok && after_ok && !rv && !s[start..end].ends_with(".0")
+        let port = end == i && b.get(i) == Some(&b':') && b.get(i + 1).is_some_and(u8::is_ascii_digit);
+        if before_ok && after_ok && !rv
             && let Some(ip) = parse_v4(&s[start..end])
             && is_public_v4(ip)
+            && (port || !(start > 0 && b[start - 1] == b':' || not_an_address(ip)))
         {
             out.push(s[start..end].to_string());
         }
     }
     out
+}
+
+fn not_an_address([a, b, c, d]: [u8; 4]) -> bool {
+    d == 0 || (a <= 2 && b < 40) || [a, b, c, d].iter().all(|&x| x < 16)
 }
 
 pub enum Payload {
@@ -410,10 +418,12 @@ mod tests {
     fn ips() {
         assert_eq!(ipv4s("connect to 203.0.113.7:25565 now"), ["203.0.113.7"]);
         for no in ["10.0.0.1", "192.168.1.1", "127.0.0.1", "1.2.3.4.5", "v1.2.3.4", "rv:1.2.3.4", "255.255.255.0",
-                   "01.2.3.4", "1.2.3", "0.0.0.0", "1.2.3.4-SNAPSHOT", "org.xerial:sqlite-jdbc:3.46.1.0"] {
+                   "01.2.3.4", "1.2.3", "0.0.0.0", "1.2.3.4-SNAPSHOT", "org.xerial:sqlite-jdbc:3.46.1.0",
+                   "org.xerial:sqlite-jdbc:3.42.0.1", "2.5.29.14", "1.3.101.75", "see sec 8.9.5.2, bullet 4", "4.2.1.10"] {
             assert!(ipv4s(no).is_empty(), "{no}");
         }
-        assert_eq!(ipv4s("8.8.8.8,1.1.1.1"), ["8.8.8.8", "1.1.1.1"]);
+        assert_eq!(ipv4s("88.66.44.22,203.0.113.7"), ["88.66.44.22", "203.0.113.7"]);
+        assert_eq!(ipv4s("1.2.3.4:25565 and 8.8.8.8:53"), ["1.2.3.4", "8.8.8.8"], "a port makes it an address");
     }
 
     #[test]
