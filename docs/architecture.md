@@ -33,7 +33,7 @@ Rules for `crates/core`:
 
 ```rust
 pub fn scan(name: &str, bytes: &[u8], limits: &Limits) -> Report;
-pub fn diff(old: &Report, new: &Report) -> Diff;
+pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Limits) -> Diff;
 ```
 
 `Limits::default()` is what the CLI and the web page use. Tests pass small limits so zip-bomb and depth tests stay fast.
@@ -134,7 +134,7 @@ The zip reader (`crates/core/src/archive.rs`) reads the central directory the wa
 
 ## Diff
 
-`diff` compares two reports. Findings are matched by a key, not by evidence, so moved code isn't reported as a change.
+`diff` scans both jars and compares the results. It takes bytes, not reports, because it also needs every class name, which the report doesn't carry. Findings are matched by a key, not by evidence, so moved code isn't reported as a change.
 
 | What | Key |
 |---|---|
@@ -143,40 +143,42 @@ The zip reader (`crates/core/src/archive.rs`) reads the central directory the wa
 | `str.discord-webhook`, `str.telegram-bot` | rule id + webhook / bot id |
 | `blob.embedded-code` | rule id + SHA-256 of decoded bytes |
 | `res.type-mismatch`, `jar.unsafe-path`, `jar.nested` | rule id + path |
-| Bundled libraries | `group:artifact`; a version change is listed under changes |
-| Nested jars | path; a different SHA-256 is listed under changes |
-| Commands, permissions, Maven libraries | the value |
-| Classes | internal name |
+| Bundled libraries (`pom.properties`) and descriptor `libraries:` | `group:artifact`; a version change is listed under changes |
+| Nested jars | path; added and removed ones are `jar.nested` findings, a different SHA-256 is listed under changes |
+| Commands, permissions | the value |
+| Classes | location (`a/B`, `lib.jar!/a/B`) |
 
 Sections, in this order:
 
-1. **Adds:** new findings, new commands and permissions, new bundled libraries and nested jars, and new classes that carry notable or high evidence. Sorted by severity.
+1. **Adds:** new findings, new commands and permissions, new libraries, and new classes that carry notable or high evidence. Sorted by severity, then findings before classes before the rest.
 2. **Removes:** the same kinds, gone from the new version.
 3. **Changes:** library versions, nested jar hashes, plugin name, version or main class.
 4. **Unchanged:** findings present in both, by rule id (and value).
 
-The header shows both file names, versions, short hashes and the obfuscation score old -> new.
+The header shows both file names, versions, short hashes and the obfuscation score old -> new. If either file isn't a readable zip, the CLI prints an error and exits 1 instead of a diff.
 
-If fewer than half of the old class names exist in the new jar and either side scores 25+ for obfuscation, the diff adds the warning `diff.classes-renamed`: the jar was probably re-obfuscated and "new classes" is unreliable for this pair.
+If fewer than half of the old class names exist in the new jar and either side scores 25+ for obfuscation, the diff adds the warning `diff.classes-renamed`: the jar was probably re-obfuscated, so new and removed classes are left out for this pair. Findings are still compared. A partial scan on either side adds `diff.partial`.
 
 A capability that already existed but now appears in many more places counts as unchanged in v1.
 
 ```json
 {
   "schema_version": 1,
-  "old": { "file": { "name": "Example-1.0.jar", "sha256": "..." }, "plugins": [ ... ] },
-  "new": { "file": { "name": "Example-1.1.jar", "sha256": "..." }, "plugins": [ ... ] },
+  "old": { "file": { "name": "Example-1.0.jar", "size": 1304, "sha256": "..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
+  "new": { "file": { "name": "Example-1.1.jar", "size": 1610, "sha256": "..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
   "obfuscation": { "old": 4, "new": 5 },
   "added":   [ { "kind": "finding", "finding": { "rule": "code.load", "...": "..." } },
                { "kind": "class", "value": "com/example/Loader", "rules": ["code.load"] } ],
   "removed": [ { "kind": "finding", "finding": { "rule": "str.url", "value": "old-api.example.invalid", "...": "..." } } ],
-  "changed": [ { "kind": "library", "key": "com.google.code.gson:gson", "old": "2.10.1", "new": "2.11.0" } ],
+  "changed": [ { "kind": "library", "key": "com.google.code.gson:gson", "old": "2.10.1", "new": "2.11.0" },
+               { "kind": "plugin-field", "key": "plugin.yml version", "old": "1.0", "new": "1.1" } ],
   "unchanged": [ { "rule": "net.http", "value": null } ],
-  "warnings": []
+  "warnings": [],
+  "disclaimer": "..."
 }
 ```
 
-`kind` is one of `finding`, `command`, `permission`, `maven-library`, `library`, `nested`, `class`, `plugin-field`.
+In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry) and `library` (bundled, from `pom.properties`); every kind except `finding` and `class` carries its `value`. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version` or `main` of one descriptor), and `old` / `new` are `null` when a side doesn't have it.
 
 ## CLI
 

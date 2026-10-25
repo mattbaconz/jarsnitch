@@ -22,6 +22,8 @@ const EXPECT: &[(&str, &[&str], &[&str])] = &[
     ("corr-modify-plugins", &["corr.modify-plugins", "fs.write-archive"], &[]),
     ("corr-modify-plugins-negative", &["fs.write-archive"], &["corr.modify-plugins"]),
     ("deser-java", &["deser.java"], &[]),
+    ("diff-v1", &["net.http", "str.url"], &["code.load", "str.discord-webhook"]),
+    ("diff-v2", &["net.http", "str.url", "code.load", "str.discord-webhook"], &["corr.download-and-run"]),
     ("exec-process", &["exec.process"], &["corr.command-and-network"]),
     ("fs-write-archive", &["fs.write-archive"], &["corr.modify-plugins"]),
     ("lib-log4j-vulnerable", &["lib.log4j-vulnerable"], &[]),

@@ -1,0 +1,134 @@
+---
+source: crates/core/tests/diff.rs
+assertion_line: 141
+expression: "diff(\"diff-v1\", \"diff-v2\")"
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "old": {
+    "file": {
+      "name": "diff-v1.jar",
+      "size": 1304,
+      "sha256": "95853045dab4174cbe800410dda480a79b326414e53bf2fcd6157cf59e254b83"
+    },
+    "plugins": [
+      {
+        "platform": "bukkit",
+        "descriptor": "plugin.yml",
+        "name": "Fixture-diff",
+        "version": "1.0.0",
+        "main": "fixture.Main",
+        "bootstrapper": null,
+        "loader": null,
+        "commands": [
+          "addons"
+        ],
+        "permissions": [
+          "diff.addons"
+        ],
+        "folia_supported": false,
+        "maven_libraries": []
+      }
+    ],
+    "partial": false,
+    "warnings": []
+  },
+  "new": {
+    "file": {
+      "name": "diff-v2.jar",
+      "size": 1572,
+      "sha256": "b9701ed3162920d344637adb5b30286cdebfe9b994563d778c6a68bd3cd7b857"
+    },
+    "plugins": [
+      {
+        "platform": "bukkit",
+        "descriptor": "plugin.yml",
+        "name": "Fixture-diff",
+        "version": "1.1.0",
+        "main": "fixture.Main",
+        "bootstrapper": null,
+        "loader": null,
+        "commands": [
+          "addons"
+        ],
+        "permissions": [
+          "diff.addons"
+        ],
+        "folia_supported": false,
+        "maven_libraries": []
+      }
+    ],
+    "partial": false,
+    "warnings": []
+  },
+  "obfuscation": {
+    "old": 0,
+    "new": 0
+  },
+  "added": [
+    {
+      "kind": "finding",
+      "finding": {
+        "rule": "code.load",
+        "severity": "notable",
+        "title": "Can load new code while running",
+        "why": "Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.",
+        "legit_uses": "Dependency loaders that fetch libraries at startup, addon or module systems, scripting add-ons.",
+        "value": null,
+        "evidence": [
+          {
+            "location": "fixture/Addons",
+            "method": "load(Ljava/io/File;)Ljava/lang/ClassLoader;",
+            "detail": "java/net/URLClassLoader.<init>"
+          }
+        ],
+        "evidence_total": 1
+      }
+    },
+    {
+      "kind": "finding",
+      "finding": {
+        "rule": "str.discord-webhook",
+        "severity": "notable",
+        "title": "Can send data to a Discord webhook",
+        "why": "A webhook built into the code posts to a Discord channel the author controls, not you.",
+        "legit_uses": "Author error reporting. A plugin that lets you set a webhook in its config usually contains only the URL prefix, which is reported under str.url instead.",
+        "value": "000000000000000000",
+        "evidence": [
+          {
+            "location": "fixture/Main",
+            "method": "sendStats()V",
+            "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…"
+          }
+        ],
+        "evidence_total": 1
+      }
+    }
+  ],
+  "removed": [],
+  "changed": [
+    {
+      "kind": "plugin-field",
+      "key": "plugin.yml version",
+      "old": "1.0.0",
+      "new": "1.1.0"
+    }
+  ],
+  "unchanged": [
+    {
+      "rule": "net.http",
+      "value": null
+    },
+    {
+      "rule": "str.url",
+      "value": "api.example.invalid"
+    },
+    {
+      "rule": "str.url",
+      "value": "discord.com"
+    }
+  ],
+  "warnings": [],
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

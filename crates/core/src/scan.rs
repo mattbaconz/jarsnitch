@@ -13,15 +13,23 @@ use crate::strings::{self, Payload, UrlKind};
 use crate::Limits;
 
 const EVIDENCE_CAP: usize = 50;
-const OBF_THRESHOLD: u32 = 25;
+pub(crate) const OBF_THRESHOLD: u32 = 25;
 
 /// Text resources scanned for addresses and encoded payloads.
 const TEXT_EXTS: &[&str] = &["yml", "yaml", "json", "properties", "txt", "toml", "conf", "cfg"];
 
-pub fn run(name: &str, bytes: &[u8], limits: &Limits) -> Report {
+pub fn run(name: &str, bytes: &[u8], limits: &Limits) -> (Report, Classes) {
     let mut s = Scan::new(limits);
     s.archive(bytes, "", 0);
     s.finish(name, bytes)
+}
+
+/// Per-class facts that the report doesn't carry, for `diff`.
+pub struct Classes {
+    /// Every class location: `a/B`, `lib.jar!/a/B`, `a/B!embedded-1!/c/D`.
+    pub names: BTreeSet<String>,
+    /// Notable and High rules with evidence in each class, before the evidence cap.
+    pub rules: BTreeMap<String, BTreeSet<&'static str>>,
 }
 
 fn sha256(b: &[u8]) -> String {
@@ -93,6 +101,7 @@ struct Scan<'l> {
     supers: HashMap<String, String>,
     pending: Vec<Pending>,
     top_classes: HashSet<String>,
+    class_locs: BTreeSet<String>,
     obf: Obf,
     descriptors: Vec<(PluginInfo, String)>,
     libraries: BTreeSet<Library>,
@@ -115,6 +124,7 @@ impl<'l> Scan<'l> {
             supers: HashMap::new(),
             pending: Vec::new(),
             top_classes: HashSet::new(),
+            class_locs: BTreeSet::new(),
             obf: Obf::default(),
             descriptors: Vec::new(),
             libraries: BTreeSet::new(),
@@ -343,6 +353,7 @@ impl<'l> Scan<'l> {
         };
         self.classes += 1;
         let loc = format!("{prefix}{name}");
+        self.class_locs.insert(loc.clone());
         if let Some(sup) = cf.super_name() {
             self.supers.entry(name.to_string()).or_insert_with(|| sup.to_string());
         }
@@ -563,7 +574,7 @@ impl<'l> Scan<'l> {
         }
     }
 
-    fn finish(mut self, name: &str, bytes: &[u8]) -> Report {
+    fn finish(mut self, name: &str, bytes: &[u8]) -> (Report, Classes) {
         // Calls on in-jar subclasses of library classes (a custom ClassLoader, say).
         for p in std::mem::take(&mut self.pending) {
             let mut owner = p.owner.as_str();
@@ -660,6 +671,17 @@ impl<'l> Scan<'l> {
             self.hit("obf.score", None, ev("", None, format!("short or garbled names {:.0}%, default package {:.0}%, encoded strings {:.0}%", sn * 100.0, dp * 100.0, es * 100.0)));
         }
 
+        let mut class_rules: BTreeMap<String, BTreeSet<&'static str>> = BTreeMap::new();
+        for ((id, _), evidence) in &self.hits {
+            if rules::rule(id).severity == Severity::Info {
+                continue;
+            }
+            for e in evidence.iter().filter(|e| self.class_locs.contains(&e.location)) {
+                class_rules.entry(e.location.clone()).or_default().insert(id);
+            }
+        }
+        let classes = Classes { names: std::mem::take(&mut self.class_locs), rules: class_rules };
+
         let mut findings: Vec<Finding> = self
             .hits
             .into_iter()
@@ -680,7 +702,7 @@ impl<'l> Scan<'l> {
             .collect();
         findings.sort_by(|a, b| b.severity.cmp(&a.severity).then_with(|| a.rule.cmp(&b.rule)).then_with(|| a.value.cmp(&b.value)));
 
-        Report {
+        let report = Report {
             schema_version: SCHEMA_VERSION,
             tool_version: env!("CARGO_PKG_VERSION").to_string(),
             file: FileInfo { name: name.to_string(), size: bytes.len() as u64, sha256: sha256(bytes) },
@@ -693,7 +715,8 @@ impl<'l> Scan<'l> {
             warnings: self.warnings,
             stats: Stats { entries: self.entries, classes: self.classes, uncompressed_bytes: self.total_bytes },
             disclaimer: DISCLAIMER.to_string(),
-        }
+        };
+        (report, classes)
     }
 }
 

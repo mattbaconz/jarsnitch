@@ -7,12 +7,14 @@
 
 mod archive;
 mod class;
+mod diff;
 mod meta;
 mod report;
 mod rules;
 mod scan;
 mod strings;
 
+pub use diff::{Change, Diff, Item, Key, OldNew, Side};
 pub use report::*;
 pub use rules::{RULES, Rule, rule};
 
@@ -54,5 +56,11 @@ impl Default for Limits {
 
 /// Scans one jar. Never panics on bad input: problems become warnings in the report.
 pub fn scan(name: &str, bytes: &[u8], limits: &Limits) -> Report {
-    scan::run(name, bytes, limits)
+    scan::run(name, bytes, limits).0
+}
+
+/// Compares two versions of a jar, leading with what `new` adds. Each is scanned with
+/// `limits`; a partial scan on either side adds a `diff.partial` warning.
+pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Limits) -> Diff {
+    diff::diff(scan::run(old_name, old, limits), scan::run(new_name, new, limits))
 }

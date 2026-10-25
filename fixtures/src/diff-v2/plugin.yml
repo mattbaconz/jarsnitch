@@ -1,0 +1,10 @@
+name: Fixture-diff
+version: 1.1.0
+main: fixture.Main
+api-version: '1.20'
+commands:
+  addons:
+    description: Lists addons
+permissions:
+  diff.addons:
+    default: op

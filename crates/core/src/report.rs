@@ -46,8 +46,12 @@ impl Report {
 
     /// The file couldn't be opened as a zip at all.
     pub fn is_unreadable(&self) -> bool {
-        self.warnings.iter().any(|w| w.code == "zip.unreadable" && w.location.is_empty())
+        unreadable(&self.warnings)
     }
+}
+
+pub(crate) fn unreadable(warnings: &[Warning]) -> bool {
+    warnings.iter().any(|w| w.code == "zip.unreadable" && w.location.is_empty())
 }
 
 #[derive(Debug, Clone, Serialize)]

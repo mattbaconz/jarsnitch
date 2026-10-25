@@ -2,7 +2,7 @@
 
 See what a Minecraft plugin can do before you install it.
 
-> **Status: pre-release.** `jarsnitch scan` works. `diff` and the website are not built yet.
+> **Status: pre-release.** `jarsnitch scan` and `jarsnitch diff` work. The website is not built yet.
 
 jarsnitch reads a plugin `.jar` (Bukkit, Spigot, Paper, Folia, Velocity, BungeeCord) and tells you in plain English what its code is able to do: run commands on your machine, download and run new code, give players operator, send data to a Discord webhook. Each finding says where in the code it was found and why it matters.
 
@@ -31,25 +31,33 @@ jarsnitch diff MyPlugin-1.4.jar MyPlugin-1.5.jar
 A plugin you already trust can change in an update: a new owner, a compromised author account, a "fixed" re-upload from an unofficial site. `diff` compares two versions and leads with what the new one adds.
 
 ```text
-MyPlugin 1.4 -> 1.5 · obfuscation 4 -> 5
+== MyPlugin-1.0.jar -> MyPlugin-1.1.jar ==
+Fixture-diff 1.0.0 -> 1.1.0
+sha256 95853045dab4 -> b9701ed31629 · obfuscation 0 -> 0
 
 This update ADDS:
-  HIGH     Can download and run code from the internet     corr.download-and-run
-  NOTABLE  Can load new code while running                 code.load
-           com/example/myplugin/util/Loader.init
-  NOTABLE  Can send data to a Discord webhook              str.discord-webhook
-           webhook 000000000000000000, com/example/myplugin/Stats.flush
-  INFO     New host: cdn.example.invalid                   str.url
 
-This update REMOVES:
-  INFO     Host: old-api.example.invalid                   str.url
+NOTABLE  Can load new code while running   [code.load]
+         Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.
+         at fixture/Addons.load
 
-Unchanged: net.http, mc.console-command
+NOTABLE  Can send data to a Discord webhook: 000000000000000000   [str.discord-webhook]
+         A webhook built into the code posts to a Discord channel the author controls, not you.
+         at fixture/Main.sendStats
+
+This update REMOVES: nothing
+
+Changes:
+  plugin.yml version: 1.0.0 -> 1.1.0
+
+Unchanged: net.http, str.url (2)
 
 This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.
 ```
 
-*(Illustrative output. The exact layout may change before release.)*
+*(Real output for the test fixtures `fixtures/jars/diff-v1.jar` and `diff-v2.jar`, copied as `MyPlugin-1.0.jar` and `MyPlugin-1.1.jar`.)*
+
+Findings are matched by rule and value (host, webhook id, path), not by where they sit, so code that only moved doesn't show up. A capability the old version already had counts as unchanged even if it now appears in more places.
 
 ## What a finding tells you
 

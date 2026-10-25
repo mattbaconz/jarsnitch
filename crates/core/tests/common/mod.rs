@@ -89,12 +89,16 @@ pub fn zip(entries: &[(&str, &[u8])], deflate: bool) -> Vec<u8> {
 
 /// The smallest valid class file: `a/B extends java/lang/Object`, no members.
 pub fn tiny_class() -> Vec<u8> {
+    tiny_class_named("a/B")
+}
+
+/// The smallest valid class file with the given internal name.
+pub fn tiny_class_named(name: &str) -> Vec<u8> {
     let mut c = vec![0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, 61, 0, 5];
-    for s in ["a/B", "java/lang/Object"] {
+    for (s, utf8_index) in [(name, 1u16), ("java/lang/Object", 3)] {
         c.push(1);
         c.extend((s.len() as u16).to_be_bytes());
         c.extend(s.as_bytes());
-        let utf8_index = if s == "a/B" { 1u16 } else { 3 };
         c.push(7);
         c.extend(utf8_index.to_be_bytes());
     }

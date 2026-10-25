@@ -1,16 +1,18 @@
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use jarsnitch_core::{Finding, Limits, Report, Severity, DISCLAIMER};
+use jarsnitch_core::{Change, Diff, Finding, Item, Limits, Report, Severity, DISCLAIMER};
 
 const USAGE: &str = "\
 jarsnitch: see what a Minecraft plugin can do before you install it
 
 usage:
   jarsnitch scan <jar|folder>... [--json]
+  jarsnitch diff <old.jar> <new.jar> [--json]
 
 A folder scans every .jar directly inside it.
-Exit codes: 0 no High findings, 1 a file couldn't be read, 2 at least one High finding.";
+Exit codes: 0 no High findings (diff: none added), 1 a file couldn't be read,
+2 at least one High finding (diff: the update adds one).";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -18,6 +20,7 @@ fn main() -> ExitCode {
     let rest: Vec<&String> = args.iter().filter(|a| *a != "--json").collect();
     match rest.split_first() {
         Some((cmd, paths)) if cmd.as_str() == "scan" && !paths.is_empty() => scan(paths, json),
+        Some((cmd, [old, new])) if cmd.as_str() == "diff" => diff(old, new, json),
         Some((cmd, _)) if matches!(cmd.as_str(), "-h" | "--help" | "help") => {
             println!("{USAGE}");
             ExitCode::SUCCESS
@@ -100,6 +103,127 @@ fn scan(args: &[&String], json: bool) -> ExitCode {
     } else {
         ExitCode::SUCCESS
     }
+}
+
+fn read(path: &str) -> Option<(String, Vec<u8>)> {
+    let p = Path::new(path);
+    let name = p.file_name().map_or_else(|| path.to_string(), |n| n.to_string_lossy().into_owned());
+    match std::fs::read(p) {
+        Ok(bytes) => Some((name, bytes)),
+        Err(e) => {
+            eprintln!("error: {path}: {e}");
+            None
+        }
+    }
+}
+
+fn diff(old: &str, new: &str, json: bool) -> ExitCode {
+    let (Some((old_name, old_bytes)), Some((new_name, new_bytes))) = (read(old), read(new)) else {
+        return ExitCode::from(1);
+    };
+    let d = jarsnitch_core::diff(&old_name, &old_bytes, &new_name, &new_bytes, &Limits::default());
+    if d.is_unreadable() {
+        for (path, side) in [(old, &d.old), (new, &d.new)] {
+            if let Some(w) = side.warnings.iter().find(|w| w.code == "zip.unreadable" && w.location.is_empty()) {
+                eprintln!("error: {path}: not a readable jar ({})", w.message);
+            }
+        }
+        return ExitCode::from(1);
+    }
+    if json {
+        match serde_json::to_string_pretty(&d) {
+            Ok(s) => println!("{s}"),
+            Err(e) => {
+                eprintln!("error: {e}");
+                return ExitCode::from(1);
+            }
+        }
+    } else {
+        print_diff(&d);
+    }
+    if d.adds_high() { ExitCode::from(2) } else { ExitCode::SUCCESS }
+}
+
+fn print_diff(d: &Diff) {
+    println!("== {} -> {} ==", d.old.file.name, d.new.file.name);
+    let plugin = |s: &jarsnitch_core::Side| s.plugins.first().map(|p| (p.name.clone().unwrap_or_else(|| "(unnamed)".into()), p.version.clone().unwrap_or_else(|| "?".into())));
+    match (plugin(&d.old), plugin(&d.new)) {
+        (Some((a, av)), Some((b, bv))) if a == b => println!("{a} {av} -> {bv}"),
+        (Some((a, av)), Some((b, bv))) => println!("{a} {av} -> {b} {bv}"),
+        _ => {}
+    }
+    println!(
+        "sha256 {} -> {} · obfuscation {} -> {}",
+        &d.old.file.sha256[..12],
+        &d.new.file.sha256[..12],
+        d.obfuscation.old,
+        d.obfuscation.new
+    );
+    for w in &d.warnings {
+        println!("WARNING: {}", w.message);
+    }
+    println!();
+
+    for (heading, verb, items) in [("ADDS", "New", &d.added), ("REMOVES", "Removed", &d.removed)] {
+        if items.is_empty() {
+            println!("This update {heading}: nothing
+");
+            continue;
+        }
+        println!("This update {heading}:
+");
+        for item in items {
+            match item {
+                Item::Finding { finding } => print_finding(finding),
+                Item::Class { value, rules } => println!("{:<8} {verb} class: {value}   [{}]
+", item.severity().label(), rules.join(", ")),
+                Item::Command { value } => println!("{:<8} {verb} command: /{value}
+", item.severity().label()),
+                Item::Permission { value } => println!("{:<8} {verb} permission: {value}
+", item.severity().label()),
+                Item::MavenLibrary { value } => println!("{:<8} {verb} downloaded library: {value}
+", item.severity().label()),
+                Item::Library { value } => println!("{:<8} {verb} bundled library: {value}
+", item.severity().label()),
+            }
+        }
+    }
+
+    if !d.changed.is_empty() {
+        println!("Changes:");
+        for c in &d.changed {
+            print_change(c);
+        }
+        println!();
+    }
+    let mut unchanged: Vec<(&str, usize)> = Vec::new();
+    for k in &d.unchanged {
+        match unchanged.last_mut() {
+            Some((rule, n)) if *rule == k.rule => *n += 1,
+            _ => unchanged.push((&k.rule, 1)),
+        }
+    }
+    if !unchanged.is_empty() {
+        let list: Vec<String> = unchanged.iter().map(|(r, n)| if *n > 1 { format!("{r} ({n})") } else { r.to_string() }).collect();
+        println!("Unchanged: {}
+", list.join(", "));
+    }
+    println!("{DISCLAIMER}");
+}
+
+fn print_change(c: &Change) {
+    let show = |v: &Option<String>| match v {
+        None => "(none)".to_string(),
+        Some(h) if c.kind == "nested" => h.chars().take(12).collect(),
+        Some(v) => v.clone(),
+    };
+    let what = match c.kind {
+        "library" => format!("bundled library {}", c.key),
+        "maven-library" => format!("downloaded library {}", c.key),
+        "nested" => format!("nested jar {} sha256", c.key),
+        _ => c.key.clone(),
+    };
+    println!("  {what}: {} -> {}", show(&c.old), show(&c.new));
 }
 
 fn print_report(r: &Report) {
