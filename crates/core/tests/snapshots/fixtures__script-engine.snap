@@ -1,0 +1,67 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "script-engine.jar",
+    "size": 817,
+    "sha256": "e1ff4dbf8898f1de4406f8d4193e5cf7a27f29319a3f9ee55f52ef09daa80bd1"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-script-engine",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "script.engine",
+      "severity": "notable",
+      "title": "Can run scripts",
+      "why": "A script engine runs code given as text, and that text can come from a config file or the internet.",
+      "legit_uses": "Math in placeholders and configs, scripting add-ons.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()Ljava/lang/Object;",
+          "detail": "javax/script/ScriptEngine.eval"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()Ljava/lang/Object;",
+          "detail": "javax/script/ScriptEngineManager.<init>"
+        }
+      ],
+      "evidence_total": 2
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 706
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

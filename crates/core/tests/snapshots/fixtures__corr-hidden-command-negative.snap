@@ -1,0 +1,62 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "corr-hidden-command-negative.jar",
+    "size": 1359,
+    "sha256": "71c5232f92a733799ff34c1ec9e0a08315d2d317eeb7e3543d80a781273607d2"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-corr-hidden-command-negative",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "mc.set-op",
+      "severity": "notable",
+      "title": "Can give players operator",
+      "why": "An operator can run every command on the server.",
+      "legit_uses": "Admin and permission-management plugins, /op replacements, temporary-op tools.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/ChatListener",
+          "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
+          "detail": "org/bukkit/entity/Player.setOp"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 3,
+    "classes": 2,
+    "uncompressed_bytes": 1396
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

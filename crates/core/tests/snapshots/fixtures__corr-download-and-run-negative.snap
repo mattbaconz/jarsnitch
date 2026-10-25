@@ -1,0 +1,95 @@
+---
+source: crates/core/tests/fixtures.rs
+assertion_line: 131
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "corr-download-and-run-negative.jar",
+    "size": 1567,
+    "sha256": "f2947d9114da183601ae8872dcfcf3c2f7a9af2545104080b2cb541a05ed34f1"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-corr-download-and-run-negative",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "code.load",
+      "severity": "notable",
+      "title": "Can load new code while running",
+      "why": "Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.",
+      "legit_uses": "Dependency loaders that fetch libraries at startup, addon or module systems, scripting add-ons.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Loader",
+          "method": "unused(Ljava/io/File;)V",
+          "detail": "java/net/URLClassLoader.<init>"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "net.http",
+      "severity": "info",
+      "title": "Can connect to websites",
+      "why": "The plugin can send and receive data over the internet. The hosts found in the jar are listed under str.url.",
+      "legit_uses": "Update checks, license checks, usage statistics (bStats), web APIs, Discord integrations.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Updater",
+          "method": "unused()V",
+          "detail": "java/net/URL.openConnection"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "updates.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Updater",
+          "method": "unused()V",
+          "detail": "https://updates.example.invalid/latest"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 4,
+    "classes": 3,
+    "uncompressed_bytes": 1341
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

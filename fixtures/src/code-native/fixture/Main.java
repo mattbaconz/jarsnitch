@@ -1,0 +1,15 @@
+package fixture;
+
+import org.bukkit.plugin.java.JavaPlugin;
+
+
+public final class Main extends JavaPlugin {
+    @Override
+    public void onEnable() {}
+
+    // Fixture code: never called.
+    void unused() {
+        System.loadLibrary("fixture");
+        System.load("libfixture.so");
+    }
+}

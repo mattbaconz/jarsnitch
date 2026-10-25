@@ -1,0 +1,78 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "blob-embedded-code.jar",
+    "size": 1220,
+    "sha256": "8970017c9cb37a5b96d2a15c4f125eff6aba24c97ec0cc7cd54224e9eccbf960"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-blob-embedded-code",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 2,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 1.0
+  },
+  "findings": [
+    {
+      "rule": "blob.embedded-code",
+      "severity": "notable",
+      "title": "Contains hidden embedded code",
+      "why": "Code stored as encoded text doesn't show up as a normal class file. jarsnitch decoded it and scanned it; its findings carry the location <class>!embedded-<n>.",
+      "legit_uses": "Rare. Some license systems and obfuscators.",
+      "value": "e77fd5e7924b8620fd6269d8ff94c597387d88bfb725bbb3bb1f0166b92a5e4e",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "base64 string decodes to a class file; scanned as fixture/Main!embedded-1"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "exec.process",
+      "severity": "notable",
+      "title": "Can run commands on your server's operating system",
+      "why": "The code can start any program the server's OS account can run. That is access to the whole machine, not just Minecraft.",
+      "legit_uses": "Running bundled tools (ffmpeg, git), backup plugins calling tar or zip, hosting-panel helpers.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main!embedded-1!/payload/Payload",
+          "method": "unused()V",
+          "detail": "java/lang/Runtime.exec"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 2,
+    "uncompressed_bytes": 1746
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

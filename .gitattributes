@@ -1,0 +1,7 @@
+* text=auto
+*.jar binary
+*.class binary
+*.snap text eol=lf
+*.sh text eol=lf
+fixtures/src/** text eol=lf
+fixtures/payload/** text eol=lf

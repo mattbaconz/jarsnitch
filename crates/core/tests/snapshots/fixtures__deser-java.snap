@@ -1,0 +1,63 @@
+---
+source: crates/core/tests/fixtures.rs
+assertion_line: 131
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "deser-java.jar",
+    "size": 1250,
+    "sha256": "c68deaeed01f662f8f766b672f23528f8a5f1360cbc5b6b4cbd33ca30423c57b"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-deser-java",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "deser.java",
+      "severity": "notable",
+      "title": "Reads Java serialized objects",
+      "why": "If the data comes from outside (the network, a shared file, another server), crafted data can run code on your server.",
+      "legit_uses": "Older plugins that store data with Java serialization, caches, cross-server messaging.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()Ljava/lang/Object;",
+          "detail": "java/io/ObjectInputStream.readObject"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 3,
+    "classes": 2,
+    "uncompressed_bytes": 1154
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

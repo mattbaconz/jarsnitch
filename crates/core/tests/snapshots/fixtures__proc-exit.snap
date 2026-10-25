@@ -1,0 +1,67 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "proc-exit.jar",
+    "size": 736,
+    "sha256": "85f446be4297d7fc44b383f54d09860b7e81817e77770bade8ff65304329e982"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-proc-exit",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "proc.exit",
+      "severity": "notable",
+      "title": "Can shut the server down instantly",
+      "why": "It ends the Java process without a normal shutdown, so worlds and plugin data may not be saved.",
+      "legit_uses": "Crash handlers, license checks, launchers.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/lang/Runtime.halt"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/lang/System.exit"
+        }
+      ],
+      "evidence_total": 2
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 535
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

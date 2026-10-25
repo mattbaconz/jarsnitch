@@ -1,0 +1,62 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "obf-score.jar",
+    "size": 1024,
+    "sha256": "01123d7baca7d8e71a9c833ed49f5c146f67c73f9e24a6470575503035250971"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-obf-score",
+      "version": "1.0.0",
+      "main": "a",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 39,
+    "short_names": 0.917,
+    "default_package": 1.0,
+    "encoded_strings": 1.0
+  },
+  "findings": [
+    {
+      "rule": "obf.score",
+      "severity": "info",
+      "title": "Code is obfuscated (score 39/100)",
+      "why": "Obfuscation makes code hard to read, for people and for jarsnitch. Findings may be incomplete.",
+      "legit_uses": "Common in paid plugins to protect the author's work. Not a problem by itself.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "",
+          "method": null,
+          "detail": "short or garbled names 92%, default package 100%, encoded strings 100%"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 3,
+    "classes": 2,
+    "uncompressed_bytes": 960
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

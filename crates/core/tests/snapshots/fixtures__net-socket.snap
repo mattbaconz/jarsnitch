@@ -1,0 +1,77 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "net-socket.jar",
+    "size": 885,
+    "sha256": "1a08a38ba946eeb732f96ad949639554d74ba3f0a1ebe831c3ea8c988f7ac7b8"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-net-socket",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "net.socket",
+      "severity": "notable",
+      "title": "Can open raw network connections",
+      "why": "A raw socket can talk any protocol to any host, or listen for incoming connections on your server.",
+      "legit_uses": "Vote listeners, query and RCON tools, proxies, database drivers, bundled HTTP clients.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/DatagramSocket.<init>"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/ServerSocket.<init>"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/Socket.<init>"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/nio/channels/SocketChannel.open"
+        }
+      ],
+      "evidence_total": 4
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 772
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

@@ -1,0 +1,72 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "exec-process.jar",
+    "size": 846,
+    "sha256": "70bba75fe3db9ddb37136f1cbd4122a08cbc41f7e225cc75f8230380cc9177c3"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-exec-process",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "exec.process",
+      "severity": "notable",
+      "title": "Can run commands on your server's operating system",
+      "why": "The code can start any program the server's OS account can run. That is access to the whole machine, not just Minecraft.",
+      "legit_uses": "Running bundled tools (ffmpeg, git), backup plugins calling tar or zip, hosting-panel helpers.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/lang/ProcessBuilder.<init>"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/lang/ProcessBuilder.start"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/lang/Runtime.exec"
+        }
+      ],
+      "evidence_total": 3
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 770
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

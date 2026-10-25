@@ -1,0 +1,78 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "str-discord-webhook.jar",
+    "size": 790,
+    "sha256": "282947181003cc1d2eac8062ad9d8c784f788b55b78ee712bdec1db7f547500a"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-str-discord-webhook",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "str.discord-webhook",
+      "severity": "notable",
+      "title": "Can send data to a Discord webhook",
+      "why": "A webhook built into the code posts to a Discord channel the author controls, not you.",
+      "legit_uses": "Author error reporting. A plugin that lets you set a webhook in its config usually contains only the URL prefix, which is reported under str.url instead.",
+      "value": "000000000000000000",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "discord.com",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://discord.com/api/webhooks/"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 708
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

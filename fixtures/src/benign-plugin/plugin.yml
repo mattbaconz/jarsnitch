@@ -1,0 +1,13 @@
+name: HelloFixture
+version: 1.0.0
+main: fixture.Main
+api-version: '1.20'
+description: A small ordinary plugin used as the benign fixture.
+website: https://example.invalid/hello
+commands:
+  hello:
+    description: Says hello
+    usage: /hello
+permissions:
+  hello.use:
+    default: true

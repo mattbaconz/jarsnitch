@@ -1,0 +1,4 @@
+name: Fixture-obf-score
+version: 1.0.0
+main: a
+api-version: '1.20'

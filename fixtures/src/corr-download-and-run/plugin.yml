@@ -1,0 +1,4 @@
+name: Fixture-corr-download-and-run
+version: 1.0.0
+main: fixture.Main
+api-version: '1.20'

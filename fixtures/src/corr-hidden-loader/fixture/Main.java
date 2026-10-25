@@ -1,0 +1,19 @@
+package fixture;
+
+import org.bukkit.plugin.java.JavaPlugin;
+import java.net.URL;
+import java.net.URLClassLoader;
+
+public final class Main extends JavaPlugin {
+    @Override
+    public void onEnable() {}
+
+    // Fixture code: never called.
+    // Base64 of fixtures/payload/payload/Payload.class.
+    static final String PAYLOAD = "yv66vgAAAD0AIQoAAgADBwAEDAAFAAYBABBqYXZhL2xhbmcvT2JqZWN0AQAGPGluaXQ+AQADKClWCgAIAAkHAAoMAAsADAEAEWphdmEvbGFuZy9SdW50aW1lAQAKZ2V0UnVudGltZQEAFSgpTGphdmEvbGFuZy9SdW50aW1lOwcADgEAEGphdmEvbGFuZy9TdHJpbmcIABABAARlY2hvCAASAQAHZml4dHVyZQoACAAUDAAVABYBAARleGVjAQAoKFtMamF2YS9sYW5nL1N0cmluZzspTGphdmEvbGFuZy9Qcm9jZXNzOwcAGAEAD3BheWxvYWQvUGF5bG9hZAEABENvZGUBAA9MaW5lTnVtYmVyVGFibGUBAAZ1bnVzZWQBAApFeGNlcHRpb25zBwAeAQATamF2YS9sYW5nL0V4Y2VwdGlvbgEAClNvdXJjZUZpbGUBAAxQYXlsb2FkLmphdmEAMQAXAAIAAAAAAAIAAQAFAAYAAQAZAAAAHQABAAEAAAAFKrcAAbEAAAABABoAAAAGAAEAAAAGAAAAGwAGAAIAGQAAADIABQABAAAAFrgABwW9AA1ZAxIPU1kEEhFTtgATV7EAAAABABoAAAAKAAIAAAAIABUACQAcAAAABAABAB0AAQAfAAAAAgAg";
+
+    void unused() throws Exception {
+        getLogger().info(PAYLOAD);
+        new URLClassLoader(new URL[0]);
+    }
+}

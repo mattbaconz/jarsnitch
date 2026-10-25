@@ -1,0 +1,67 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "fs-write-archive.jar",
+    "size": 975,
+    "sha256": "ff485346bd527664d6ee7cce0f44a03e20bd4b2cfcddb86757d07ca7ec40ca19"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-fs-write-archive",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "fs.write-archive",
+      "severity": "notable",
+      "title": "Can write .jar or .class files",
+      "why": "Writing jar or class files is how code installs or changes plugins, including other plugins.",
+      "legit_uses": "Self-updaters writing to plugins/update, plugin managers, backup plugins that create zip files, library downloaders.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "download(Ljava/io/InputStream;)V",
+          "detail": "writes a file named .jar or .class"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/util/jar/JarOutputStream.<init>"
+        }
+      ],
+      "evidence_total": 2
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 1044
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

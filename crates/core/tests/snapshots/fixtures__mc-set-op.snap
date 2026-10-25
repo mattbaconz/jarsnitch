@@ -1,0 +1,67 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "mc-set-op.jar",
+    "size": 732,
+    "sha256": "4fc9def7fd32bcbe4904d7b1171bc545b76f5bbe2f3738850082319523b920da"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-mc-set-op",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "mc.set-op",
+      "severity": "notable",
+      "title": "Can give players operator",
+      "why": "An operator can run every command on the server.",
+      "legit_uses": "Admin and permission-management plugins, /op replacements, temporary-op tools.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused(Lorg/bukkit/entity/Player;Lorg/bukkit/OfflinePlayer;)V",
+          "detail": "org/bukkit/OfflinePlayer.setOp"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused(Lorg/bukkit/entity/Player;Lorg/bukkit/OfflinePlayer;)V",
+          "detail": "org/bukkit/entity/Player.setOp"
+        }
+      ],
+      "evidence_total": 2
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 553
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

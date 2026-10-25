@@ -1,0 +1,4 @@
+messages:
+  welcome: "Welcome to the server!"
+join-commands:
+  - "give %player% bread 1"

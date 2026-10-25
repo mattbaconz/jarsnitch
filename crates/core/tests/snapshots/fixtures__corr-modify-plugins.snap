@@ -1,0 +1,78 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "corr-modify-plugins.jar",
+    "size": 984,
+    "sha256": "52d7a9b9f6202c1083eced9a4ef2dd351952ff1b4be3610ef0a4a69d491095d8"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-corr-modify-plugins",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "corr.modify-plugins",
+      "severity": "high",
+      "title": "Can modify other plugins",
+      "why": "Code that writes jar files into the plugins folder can replace or alter other plugins. It's a known way for malicious code to spread between plugins.",
+      "legit_uses": "Self-updaters, plugin managers.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": null,
+          "detail": "writes jar or class files and refers to the plugins folder in one class"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "fs.write-archive",
+      "severity": "notable",
+      "title": "Can write .jar or .class files",
+      "why": "Writing jar or class files is how code installs or changes plugins, including other plugins.",
+      "legit_uses": "Self-updaters writing to plugins/update, plugin managers, backup plugins that create zip files, library downloaders.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused(Ljava/io/InputStream;)V",
+          "detail": "writes a file named .jar or .class"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 975
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

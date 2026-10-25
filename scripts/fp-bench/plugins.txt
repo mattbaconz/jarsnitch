@@ -1,0 +1,23 @@
+# One Modrinth project slug per line: popular server plugins from their official
+# Modrinth pages. Never add malware or links to it, not even "for testing".
+# run.ps1 / run.sh fetch the latest server-plugin build of each into cache/.
+luckperms
+essentialsx
+viaversion
+viabackwards
+worldedit
+worldguard
+coreprotect
+chunky
+multiverse-core
+geyser
+tab-was-taken
+decentholograms
+griefprevention
+dynmap
+bluemap
+squaremap
+simple-voice-chat
+plan
+fastasyncworldedit
+skinsrestorer

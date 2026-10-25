@@ -1,0 +1,48 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "meta-no-descriptor.jar",
+    "size": 449,
+    "sha256": "7b0b6febe259fb88200a0563ee888a84e6f0bd979462b8fb8733862ada08a0e7"
+  },
+  "partial": false,
+  "plugins": [],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "meta.no-descriptor",
+      "severity": "info",
+      "title": "Not a recognized plugin",
+      "why": "No plugin.yml or similar file was found. This may be a library, an API jar or not a Minecraft jar at all.",
+      "legit_uses": "Libraries and API jars.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "",
+          "method": null,
+          "detail": "no plugin or mod descriptor at the jar root"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 1,
+    "classes": 1,
+    "uncompressed_bytes": 252
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

@@ -1,0 +1,4 @@
+name: Fixture-deser-java
+version: 1.0.0
+main: fixture.Main
+api-version: '1.20'

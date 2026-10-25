@@ -1,0 +1,115 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "corr-hidden-loader.jar",
+    "size": 1305,
+    "sha256": "2164061df136b01880575d42c9cea2ec07d29e86fe314878f9f0734d1b94247c"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-corr-hidden-loader",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 2,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 1.0
+  },
+  "findings": [
+    {
+      "rule": "corr.hidden-loader",
+      "severity": "high",
+      "title": "Contains hidden code and can load it",
+      "why": "Encoded code plus the ability to load it is a common way to keep code out of sight.",
+      "legit_uses": "Some license systems.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "blob.embedded-code: base64 string decodes to a class file; scanned as fixture/Main!embedded-1"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "code.load: java/net/URLClassLoader.<init>"
+        }
+      ],
+      "evidence_total": 2
+    },
+    {
+      "rule": "blob.embedded-code",
+      "severity": "notable",
+      "title": "Contains hidden embedded code",
+      "why": "Code stored as encoded text doesn't show up as a normal class file. jarsnitch decoded it and scanned it; its findings carry the location <class>!embedded-<n>.",
+      "legit_uses": "Rare. Some license systems and obfuscators.",
+      "value": "e77fd5e7924b8620fd6269d8ff94c597387d88bfb725bbb3bb1f0166b92a5e4e",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "base64 string decodes to a class file; scanned as fixture/Main!embedded-1"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "code.load",
+      "severity": "notable",
+      "title": "Can load new code while running",
+      "why": "Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.",
+      "legit_uses": "Dependency loaders that fetch libraries at startup, addon or module systems, scripting add-ons.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/URLClassLoader.<init>"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "exec.process",
+      "severity": "notable",
+      "title": "Can run commands on your server's operating system",
+      "why": "The code can start any program the server's OS account can run. That is access to the whole machine, not just Minecraft.",
+      "legit_uses": "Running bundled tools (ffmpeg, git), backup plugins calling tar or zip, hosting-panel helpers.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main!embedded-1!/payload/Payload",
+          "method": "unused()V",
+          "detail": "java/lang/Runtime.exec"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 2,
+    "uncompressed_bytes": 1888
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

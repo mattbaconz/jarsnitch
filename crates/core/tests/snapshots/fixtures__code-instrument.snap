@@ -1,0 +1,67 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "code-instrument.jar",
+    "size": 1192,
+    "sha256": "c21d069432764507f3e413d3e05caa77b494ae29845e360af573ad441fd7d262"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-code-instrument",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "code.instrument",
+      "severity": "notable",
+      "title": "Can change other code as it loads",
+      "why": "A Java agent can rewrite the server's classes and other plugins' classes.",
+      "legit_uses": "Profilers, hot-reload tools, some compatibility patchers.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "agentmain(Ljava/lang/String;Ljava/lang/instrument/Instrumentation;)V",
+          "detail": "java/lang/instrument/Instrumentation.addTransformer"
+        },
+        {
+          "location": "fixture/Main$Transformer",
+          "method": null,
+          "detail": "implements java/lang/instrument/ClassFileTransformer"
+        }
+      ],
+      "evidence_total": 2
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 3,
+    "classes": 2,
+    "uncompressed_bytes": 1026
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

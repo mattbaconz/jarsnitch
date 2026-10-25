@@ -1,0 +1,4 @@
+name: Fixture-meta-missing-main
+version: 1.0.0
+main: fixture.Missing
+api-version: '1.20'

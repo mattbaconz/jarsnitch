@@ -1,0 +1,77 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "mc-console-command.jar",
+    "size": 1011,
+    "sha256": "4e2a055bd1f440ebba94157e385d17c5d9e6f6d0c609ea1d64c9452fd8ed2e56"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-mc-console-command",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "mc.console-command",
+      "severity": "info",
+      "title": "Can run server commands",
+      "why": "Commands run as the console have full operator power.",
+      "legit_uses": "Very common. Crates, votes, rewards and shops run commands from their config.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
+          "detail": "com/velocitypowered/api/command/CommandManager.executeAsync"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
+          "detail": "net/md_5/bungee/api/plugin/PluginManager.dispatchCommand"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
+          "detail": "org/bukkit/Bukkit.dispatchCommand"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
+          "detail": "org/bukkit/Server.dispatchCommand"
+        }
+      ],
+      "evidence_total": 4
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 1249
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

@@ -1,0 +1,62 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "meta-missing-main.jar",
+    "size": 599,
+    "sha256": "0e5dec1b5a8b067b4f3d46eb468da057856bdf056f98e3505e85c84391d41375"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-meta-missing-main",
+      "version": "1.0.0",
+      "main": "fixture.Missing",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "meta.missing-main",
+      "severity": "notable",
+      "title": "The declared main class is missing",
+      "why": "The server loads this class first. If it isn't in the jar, the plugin either fails to load or gets its code from somewhere jarsnitch can't see.",
+      "legit_uses": "Broken builds, a jar meant for another platform.",
+      "value": "fixture.Missing",
+      "evidence": [
+        {
+          "location": "plugin.yml",
+          "method": null,
+          "detail": "declared class fixture.Missing isn't in the jar"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 281
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

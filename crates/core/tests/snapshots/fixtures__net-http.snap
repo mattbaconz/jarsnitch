@@ -1,0 +1,89 @@
+---
+source: crates/core/tests/fixtures.rs
+assertion_line: 135
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "net-http.jar",
+    "size": 1647,
+    "sha256": "67e941cc8e368472dd60920771f991486afa14b0385c33ece444a6afc1934b72"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-net-http",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "net.http",
+      "severity": "info",
+      "title": "Can connect to websites",
+      "why": "The plugin can send and receive data over the internet. The hosts found in the jar are listed under str.url.",
+      "legit_uses": "Update checks, license checks, usage statistics (bStats), web APIs, Discord integrations.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/URL.openConnection"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/http/HttpClient.send"
+        }
+      ],
+      "evidence_total": 2
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "api.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://api.example.invalid/check"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://api.example.invalid/v2"
+        }
+      ],
+      "evidence_total": 2
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 3,
+    "classes": 2,
+    "uncompressed_bytes": 2076
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

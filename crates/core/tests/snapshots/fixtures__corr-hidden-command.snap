@@ -1,0 +1,78 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "corr-hidden-command.jar",
+    "size": 1263,
+    "sha256": "7f6c4edc14917abcf3a8db0cae9bbbe065a3d822cda643ceadfe4111943f843a"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-corr-hidden-command",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "corr.hidden-command",
+      "severity": "high",
+      "title": "Possible hidden command",
+      "why": "Typing a specific word in chat could give someone operator or run console commands, without that command appearing in the plugin's command list.",
+      "legit_uses": "Chat shortcuts and command aliases. Real features usually read their trigger words from the config instead of hardcoding them.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/ChatListener",
+          "method": null,
+          "detail": "chat or command handler, string-literal comparison and mc.set-op in one class"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "mc.set-op",
+      "severity": "notable",
+      "title": "Can give players operator",
+      "why": "An operator can run every command on the server.",
+      "legit_uses": "Admin and permission-management plugins, /op replacements, temporary-op tools.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/ChatListener",
+          "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
+          "detail": "org/bukkit/entity/Player.setOp"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 3,
+    "classes": 2,
+    "uncompressed_bytes": 1134
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

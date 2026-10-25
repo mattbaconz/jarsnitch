@@ -1,0 +1,75 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "lib-log4j-vulnerable.jar",
+    "size": 2017,
+    "sha256": "d2aed8954a89344118e962fe1dadcb983fbc37a1615a887ad8d7fa4c276afa8f"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-lib-log4j-vulnerable",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [
+    {
+      "group": "com.google.code.gson",
+      "artifact": "gson",
+      "version": "2.10.1",
+      "location": "META-INF/maven/com.google.code.gson/gson/pom.properties"
+    },
+    {
+      "group": "org.apache.logging.log4j",
+      "artifact": "log4j-core",
+      "version": "2.14.1",
+      "location": "META-INF/maven/org.apache.logging.log4j/log4j-core/pom.properties"
+    }
+  ],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "lib.log4j-vulnerable",
+      "severity": "high",
+      "title": "Bundles a log4j version with known security bugs",
+      "why": "log4j-core before 2.17.1 has known bugs, including Log4Shell (CVE-2021-44228), that can let other people run code on your server.",
+      "legit_uses": "None. It's an old build; ask the author for an update.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "META-INF/maven/org.apache.logging.log4j/log4j-core/pom.properties",
+          "method": null,
+          "detail": "org.apache.logging.log4j:log4j-core:2.14.1"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 4,
+    "classes": 1,
+    "uncompressed_bytes": 476
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}
