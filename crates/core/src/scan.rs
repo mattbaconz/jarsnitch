@@ -14,6 +14,9 @@ use crate::Limits;
 
 const EVIDENCE_CAP: usize = 50;
 pub(crate) const OBF_THRESHOLD: u32 = 25;
+/// More bare hostnames than this in one text file is a domain list (a public suffix
+/// list, say), not hosts the plugin contacts.
+const HOST_LIST: usize = 100;
 
 /// Text resources scanned for addresses and encoded payloads.
 const TEXT_EXTS: &[&str] = &["yml", "yaml", "json", "properties", "txt", "toml", "conf", "cfg"];
@@ -275,8 +278,14 @@ impl<'l> Scan<'l> {
 
     fn text(&mut self, text: &str, path: &str, depth: u32) {
         let is_sep = |c: char| c.is_whitespace() || "\"'<>(){}[],;=`".contains(c);
-        for token in text.split(is_sep).filter(|t| !t.is_empty()) {
-            self.literal(token, path, None, depth);
+        let tokens: Vec<&str> = text.split(is_sep).filter(|t| !t.is_empty()).collect();
+        let hosts = tokens.iter().filter(|t| strings::bare_host(t).is_some()).count();
+        let host_list = hosts > HOST_LIST;
+        if host_list {
+            self.warn("text.host-list", path, format!("{hosts} bare hostnames, probably a domain list such as a public suffix list; hosts in this file aren't listed"));
+        }
+        for token in tokens {
+            self.literal(token, path, None, depth, !host_list);
         }
         // A payload wrapped across lines, like MIME base64.
         let joined: String = text.split_whitespace().collect();
@@ -285,18 +294,20 @@ impl<'l> Scan<'l> {
         }
     }
 
-    /// Address, IP and payload checks for one string literal or text token.
-    fn literal(&mut self, s: &str, location: &str, method: Option<&str>, depth: u32) {
+    /// Address, IP and payload checks for one string literal or text token. `hosts`
+    /// is false inside a domain list: hostnames are skipped, IPs and webhooks aren't.
+    fn literal(&mut self, s: &str, location: &str, method: Option<&str>, depth: u32, hosts: bool) {
         for url in strings::urls(s) {
             let e = ev(location, method, url.text);
             match url.kind {
-                UrlKind::Host(h) => self.hit("str.url", Some(h), e),
+                UrlKind::Host(h) if hosts => self.hit("str.url", Some(h), e),
+                UrlKind::Host(_) => {}
                 UrlKind::Ip(ip) => self.hit("str.ip", Some(ip), e),
                 UrlKind::Discord { id } => self.hit("str.discord-webhook", Some(id), e),
                 UrlKind::Telegram { id } => self.hit("str.telegram-bot", Some(id), e),
             }
         }
-        if let Some(h) = strings::bare_host(s) {
+        if hosts && let Some(h) = strings::bare_host(s) {
             self.hit("str.url", Some(h.to_string()), ev(location, method, strings::cut(s.trim(), 200)));
         }
         if s.contains('.') && !s.contains("://") {
@@ -397,7 +408,7 @@ impl<'l> Scan<'l> {
                                     self.call(&mut facts, &mut mf, &loc, &method, o, n, d);
                                 } else if let Some(s) = cf.string(arg) {
                                     seen_strings.insert(arg);
-                                    self.literal(s, &loc, Some(&method), depth);
+                                    self.literal(s, &loc, Some(&method), depth, true);
                                 }
                             }
                         }
@@ -415,7 +426,7 @@ impl<'l> Scan<'l> {
                             if is_plugins_dir(s) {
                                 facts.plugins_ref = true;
                             }
-                            self.literal(s, &loc, Some(&method), depth);
+                            self.literal(s, &loc, Some(&method), depth, true);
                         }
                         Some(Const::Class(_)) => mf.class_consts.extend(cf.class_name(i)),
                         Some(Const::Handle(..)) => {
@@ -435,7 +446,7 @@ impl<'l> Scan<'l> {
             if !seen_strings.contains(&i)
                 && let Some(s) = cf.string(i)
             {
-                self.literal(s, &loc, None, depth);
+                self.literal(s, &loc, None, depth, true);
             }
         }
 

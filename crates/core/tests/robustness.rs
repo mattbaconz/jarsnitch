@@ -155,6 +155,22 @@ fn hex_payload_in_a_text_resource() {
 }
 
 #[test]
+fn domain_lists_are_not_listed_host_by_host() {
+    let mut list: String = (0..150).map(|i| format!("site{i}.example.com
+")).collect();
+    list.push_str("// Submitted by https://registry.example.invalid/
+");
+    let hook = format!("https://discord.com/api/webhooks/000000000000000000/{}
+", "x".repeat(68));
+    list.push_str(&hook);
+    let r = scan("psl.jar", &zip(&[("mozilla/public-suffix-list.txt", list.as_bytes())], false));
+    assert!(values(&r, "str.url").is_empty(), "{:?}", values(&r, "str.url"));
+    assert_eq!(values(&r, "str.discord-webhook"), ["000000000000000000"], "webhooks still count");
+    assert_eq!(warning_codes(&r), ["text.host-list"]);
+    assert!(!r.partial);
+}
+
+#[test]
 fn reports_are_deterministic() {
     for name in fixture_names() {
         let jar = fixture(&name);

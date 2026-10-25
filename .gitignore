@@ -2,3 +2,4 @@
 /fixtures/build
 /scripts/fp-bench/cache
 *.snap.new
+/web/jarsnitch.wasm

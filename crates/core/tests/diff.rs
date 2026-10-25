@@ -22,7 +22,7 @@ fn labels(items: &[Item]) -> Vec<String> {
                 Some(v) => format!("{}={v}", finding.rule),
                 None => finding.rule.clone(),
             },
-            Item::Class { value, rules } => format!("class:{value} {rules:?}"),
+            Item::Class { value, rules, .. } => format!("class:{value} {rules:?}"),
             Item::Command { value } => format!("command:{value}"),
             Item::Permission { value } => format!("permission:{value}"),
             Item::MavenLibrary { value } => format!("maven-library:{value}"),

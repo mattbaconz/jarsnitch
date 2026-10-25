@@ -67,7 +67,8 @@ pub struct OldNew<T> {
 pub enum Item {
     Finding { finding: Finding },
     /// A class that exists only on this side and carries notable or High evidence.
-    Class { value: String, rules: Vec<String> },
+    /// `severity` is that of its most severe rule.
+    Class { value: String, rules: Vec<String>, severity: Severity },
     Command { value: String },
     Permission { value: String },
     /// A `libraries:` entry from a descriptor, `group:artifact:version`.
@@ -80,7 +81,7 @@ impl Item {
     pub fn severity(&self) -> Severity {
         match self {
             Item::Finding { finding } => finding.severity,
-            Item::Class { rules, .. } => rules.iter().map(|r| rules::rule(r).severity).max().unwrap_or(Severity::Info),
+            Item::Class { severity, .. } => *severity,
             _ => Severity::Info,
         }
     }
@@ -150,7 +151,11 @@ pub fn diff((old, old_classes): (Report, Classes), (new, new_classes): (Report, 
             a.rules
                 .iter()
                 .filter(|(class, _)| !b.names.contains(*class))
-                .map(|(class, rules)| Item::Class { value: class.clone(), rules: rules.iter().map(|r| r.to_string()).collect() })
+                .map(|(class, ids)| Item::Class {
+                    value: class.clone(),
+                    rules: ids.iter().map(|r| r.to_string()).collect(),
+                    severity: ids.iter().map(|r| rules::rule(r).severity).max().unwrap_or(Severity::Info),
+                })
                 .collect()
         };
         added.extend(only(&new_classes, &old_classes));

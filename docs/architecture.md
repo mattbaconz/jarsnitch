@@ -10,8 +10,8 @@ jarsnitch/
   crates/
     core/               jarsnitch-core: bytes in, Report out
     cli/                jarsnitch-cli: builds the `jarsnitch` binary
-    wasm/               jarsnitch-wasm: wasm-bindgen wrapper
-  web/                  static site: index.html, style.css, app.js, worker.js, pkg/
+    wasm/               jarsnitch-wasm: exports scan and diff to JavaScript
+  web/                  static site: index.html, style.css, app.js, worker.js, engine.js, jarsnitch.wasm (built)
   fixtures/
     stubs/              minimal API stubs (org.bukkit..., net.md_5..., com.velocitypowered...)
     src/<fixture>/      Java sources, one folder per fixture
@@ -123,6 +123,7 @@ The `cafebabe` crate was considered and not used: jarsnitch needs only a small p
 | `zip.unreadable` | Not a zip, or the central directory can't be read. For the scanned file itself the report has no findings; a nested archive is skipped. |
 | `zip.limit` | A size, count or ratio limit was hit. Sets `partial`. |
 | `zip.duplicate-entry` | Two entries share a name. Both are scanned. |
+| `text.host-list` | A text file holds over 100 bare hostnames, so it's taken for a domain list (a public suffix list, say) and hostnames in it aren't reported. IPs and webhooks still are. |
 | `zip.unsupported` | Encrypted entry or a compression method other than stored/deflate. Sets `partial`. |
 | `zip.bad-entry` | An entry's local header or compressed data is corrupt. It's skipped. Sets `partial`. |
 | `class.malformed` | A class file couldn't be parsed. It's skipped. |
@@ -195,17 +196,21 @@ web/
   index.html    two tabs: Scan (one drop zone), Compare (old + new drop zones)
   style.css
   app.js        UI and rendering
-  worker.js     module worker: loads pkg/, runs scan and diff
-  pkg/          wasm-bindgen output (built, not hand-edited)
+  worker.js     module worker: fetches and compiles the wasm, runs scan and diff
+  engine.js     the calls into the wasm, shared with scripts/check-web.mjs
+  jarsnitch.wasm  built by scripts/build-web.ps1 / .sh, not committed
+  _headers      the CSP and other headers for hosts that read this file
 ```
+
+`crates/wasm` exports its memory and five plain functions instead of using wasm-bindgen: `input(slot, len)` returns where JavaScript writes an input (0 old name, 1 old bytes, 2 new name, 3 new bytes; `scan` uses 0 and 1), `scan()` and `diff()` return the length of the JSON result, `output_ptr()` says where it is, and `clear()` frees everything. There is no generated glue and no `unsafe` block, and building needs only `cargo` and the wasm32 target.
 
 Flow:
 
-1. On page load, `app.js` starts the worker right away. The worker imports `pkg/jarsnitch_wasm.js`, instantiates the wasm and posts `ready`. Everything is fetched now, so nothing is fetched later.
-2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`).
+1. On page load, `app.js` starts the worker right away. The worker fetches and compiles `jarsnitch.wasm` and posts `ready`. Everything is fetched now, so nothing is fetched later.
+2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`). Dropping one jar anywhere scans it; dropping two compares them, older name first (`Foo-1.9.jar` before `Foo-1.10.jar`), with a Swap button.
 3. `app.js` reads `file.arrayBuffer()` and posts it to the worker as a transferable (no copy).
-4. The worker calls the wasm `scan(name, bytes)` or `diff(old_name, old_bytes, new_name, new_bytes)`, which return JSON strings, and posts them back.
-5. `app.js` renders the report in the same order as the CLI and offers "Download JSON", built locally from a `Blob`.
+4. The worker runs `scan` or `diff` through `engine.js` and posts the parsed result back. If the wasm traps, the worker starts a fresh instance for the next request.
+5. `app.js` renders the report in the same order as the CLI and offers "Download JSON", built locally from a `Blob`. Findings that share a rule (hosts, say) share one card; info findings start collapsed. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
 
 Privacy rules:
 
@@ -219,7 +224,9 @@ Privacy rules:
   A `<meta>` CSP doesn't cover the worker. Hosts that support response headers (for example a `_headers` file) should send the same policy as a header.
 - Check: open DevTools > Network, load the page, clear the log, run a scan and a diff. The log must stay empty. Then go offline and repeat; both must still work.
 
-Accessibility and layout basics: results go into an `aria-live` region, severity is shown as text and not only as color, light and dark themes follow `prefers-color-scheme`, and the page works at phone width.
+Accessibility and layout basics: a status line in an `aria-live` region announces each result in one sentence and focus moves to the result heading (reading a whole report aloud on every scan would be too much), severity is shown as text and not only as color, light and dark themes follow `prefers-color-scheme`, tabs follow the ARIA tabs pattern with arrow keys, and the page works at phone width without sideways scrolling.
+
+Speed: in Chromium on a laptop, a 52 MB plugin (Geyser) scans in about 1.2 s; paper.jar (55 MB, 10,000 classes) takes about 1.6 s under Node.
 
 ## Limits and robustness
 
@@ -255,14 +262,16 @@ rustup target add wasm32-unknown-unknown
 ```
 
 ```bash
-cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown
+./scripts/build-web.sh
 ```
+
+On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 0.5 MB). Release builds use `lto = true`, `codegen-units = 1`.
 
 ```bash
-wasm-bindgen --target web --out-dir web/pkg target/wasm32-unknown-unknown/release/jarsnitch_wasm.wasm
+node scripts/check-web.mjs
 ```
 
-`scripts/build-web.ps1` and `scripts/build-web.sh` run the last two steps. `wasm-bindgen-cli` must be the exact version of the `wasm-bindgen` crate in `Cargo.lock`. Release builds for wasm use `opt-level = 3`, `lto = true`, `codegen-units = 1`.
+Loads the built wasm through `web/engine.js`, the code the page runs, and checks a scan, a diff and a broken file. Pass jar paths to also scan and time them.
 
 Any static server works for local testing, for example:
 
@@ -283,7 +292,6 @@ Keep the list short; every crate in `core` also ships in the wasm.
 | `miniz_oxide` | core | Inflating zip entries, with an output cap. Pure Rust, builds for wasm32. |
 | `serde`, `serde_json` | core | Report types, JSON, `velocity-plugin.json` |
 | `sha2` | core | File and payload hashes |
-| `wasm-bindgen` | wasm | JS bindings |
 | `insta` (json, redactions) | dev | Snapshot tests |
 | `miniz_oxide` | dev | Deflating entries of archives built in tests |
 

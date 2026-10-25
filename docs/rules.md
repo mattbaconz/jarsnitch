@@ -140,7 +140,7 @@ Value-carrying rules report one finding per value (one per host, IP, webhook, pa
 
 - **Why it matters:** These are hosts the plugin may contact. Unfamiliar ones are worth a look.
 - **Legit uses:** Update checks, statistics, documentation links, APIs.
-- **Triggers:** Strings containing `http://`, `https://`, `ws://`, `wss://` or `ftp://`, and bare hostnames that end in a common top-level domain and don't look like a Java package or class name (`play.example.net` counts, `net.example.Foo` doesn't). The value is the host.
+- **Triggers:** Strings containing `http://`, `https://`, `ws://`, `wss://` or `ftp://`, and bare hostnames that end in a common top-level domain and don't look like a Java package or class name (`play.example.net` counts, `net.example.Foo` doesn't). The value is the host. A text file with more than 100 bare hostnames is taken for a domain list, such as the public suffix list bundled with Apache HttpClient: hostnames in it aren't reported, and a `text.host-list` warning names the file.
 
 ### `str.ip` · notable
 

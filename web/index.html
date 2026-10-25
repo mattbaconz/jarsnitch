@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <title>jarsnitch: see what a Minecraft plugin can do</title>
+  <meta name="description" content="Check a Minecraft server plugin before you install it, or see what an update adds. Runs in your browser; nothing is uploaded.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232e7d32'/%3E%3Cpath d='M4 4h3v3H4zM9 4h3v3H9zM6 8h4v4H9v-2H7v2H6z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <p class="brand">jarsnitch</p>
+      <h1>See what a Minecraft plugin can do before you install it.</h1>
+      <p class="privacy">Files are analyzed here in your browser. Nothing is uploaded, and once this page has loaded it works offline.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="tabs" role="tablist" aria-label="Mode">
+      <button type="button" role="tab" id="tab-scan" aria-selected="true" aria-controls="panel-scan">Scan a plugin</button>
+      <button type="button" role="tab" id="tab-compare" aria-selected="false" aria-controls="panel-compare" tabindex="-1">Compare two versions</button>
+    </div>
+
+    <section id="panel-scan" class="panel" role="tabpanel" aria-labelledby="tab-scan">
+      <label class="drop" data-slot="scan">
+        <input type="file" accept=".jar,.zip,application/java-archive,application/zip">
+        <span class="drop-title">Drop a plugin .jar here</span>
+        <span class="drop-hint">or click to choose one. Drop two jars to compare versions.</span>
+        <span class="drop-file"></span>
+      </label>
+    </section>
+
+    <section id="panel-compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
+      <p class="panel-intro">See what an update adds before you install it.</p>
+      <div class="pair">
+        <label class="drop" data-slot="old">
+          <input type="file" accept=".jar,.zip,application/java-archive,application/zip">
+          <span class="drop-title">Old version</span>
+          <span class="drop-hint">Drop or choose the .jar you have now</span>
+          <span class="drop-file"></span>
+        </label>
+        <label class="drop" data-slot="new">
+          <input type="file" accept=".jar,.zip,application/java-archive,application/zip">
+          <span class="drop-title">New version</span>
+          <span class="drop-hint">Drop or choose the update</span>
+          <span class="drop-file"></span>
+        </label>
+      </div>
+      <button type="button" id="swap" class="button">Swap old and new</button>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <div id="results"></div>
+  </main>
+
+  <footer class="wrap foot">
+    <p>This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.</p>
+    <p>jarsnitch reads the bytecode and never runs the plugin. Free and open source under MIT or Apache-2.0.</p>
+  </footer>
+</body>
+</html>

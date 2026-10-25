@@ -6,7 +6,7 @@ Thanks for helping. Most contributions are new rules, better rule copy, or false
 
 - Rust stable
 - JDK 17 or newer, only to rebuild fixture jars
-- For the web page: `rustup target add wasm32-unknown-unknown` and `wasm-bindgen-cli` at the version in `Cargo.lock`
+- For the web page: `rustup target add wasm32-unknown-unknown`, and Node 18 or newer to run `scripts/check-web.mjs`
 - `cargo install cargo-insta` for reviewing snapshots
 
 Everything builds and tests on Windows, Linux and macOS. Scripts come in pairs: `.ps1` for Windows, `.sh` for the rest.
@@ -96,6 +96,7 @@ Adding a field to the report is fine. Renaming, removing or changing the meaning
 ## Pull request checklist
 
 - [ ] `cargo test --workspace` passes on your platform
+- [ ] If you touched `crates/wasm` or `web/`: `scripts/build-web` then `node scripts/check-web.mjs`, and try the page in a browser
 - [ ] New or changed rules have a fixture and a reviewed snapshot
 - [ ] Benign fixture still has zero High findings
 - [ ] `docs/rules.md` matches the rule table

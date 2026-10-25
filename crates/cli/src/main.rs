@@ -175,7 +175,7 @@ fn print_diff(d: &Diff) {
         for item in items {
             match item {
                 Item::Finding { finding } => print_finding(finding),
-                Item::Class { value, rules } => println!("{:<8} {verb} class: {value}   [{}]
+                Item::Class { value, rules, .. } => println!("{:<8} {verb} class: {value}   [{}]
 ", item.severity().label(), rules.join(", ")),
                 Item::Command { value } => println!("{:<8} {verb} command: /{value}
 ", item.severity().label()),
