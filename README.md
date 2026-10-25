@@ -71,15 +71,42 @@ High is used for combinations that give a jar a lot of control (for example netw
 
 ## What it looks for
 
-| Area | Examples |
-|---|---|
-| Your machine | Running OS commands, loading native code, Java agents, instant shutdown |
-| New code | Runtime class loading, code hidden in encoded strings, writing jar files |
-| Your server | Giving operator, running console commands, possible hidden chat commands |
-| Network | Web and raw socket connections, hardcoded hosts and IPs, Discord and Telegram webhooks |
-| The jar itself | Nested jars, files disguised as another type, unsafe paths, obfuscation score, plugin.yml problems, bundled log4j with known bugs |
+Every rule in v1. Rule ids never change, so you can filter on them in `--json` output.
 
-Full list with ids, severities and exactly what triggers each: [docs/rules.md](docs/rules.md).
+| Rule | Severity | Finding |
+|---|---|---|
+| `exec.process` | notable | Can run commands on your server's operating system |
+| `code.load` | notable | Can load new code while running |
+| `code.instrument` | notable | Can change other code as it loads |
+| `code.native` | notable | Can load native (non-Java) code |
+| `net.http` | info | Can connect to websites |
+| `net.socket` | notable | Can open raw network connections |
+| `mc.set-op` | notable | Can give players operator |
+| `mc.console-command` | info | Can run server commands |
+| `fs.write-archive` | notable | Can write .jar or .class files |
+| `reflect.indirect` | notable | Reaches a powerful feature through reflection |
+| `deser.java` | notable | Reads Java serialized objects |
+| `script.engine` | notable | Can run scripts |
+| `proc.exit` | notable | Can shut the server down instantly |
+| `str.url` | info | Contains web addresses |
+| `str.ip` | notable | Contains a hardcoded IP address |
+| `str.discord-webhook` | notable | Can send data to a Discord webhook |
+| `str.telegram-bot` | notable | Can send data to a Telegram bot |
+| `blob.embedded-code` | notable | Contains hidden embedded code |
+| `res.type-mismatch` | notable | A file's contents don't match its name |
+| `jar.nested` | info | Bundles other archives |
+| `jar.unsafe-path` | notable | Archive has file paths that point outside it |
+| `meta.missing-main` | notable | The declared main class is missing |
+| `meta.no-descriptor` | info | Not a recognized plugin |
+| `lib.log4j-vulnerable` | high | Bundles a log4j version with known security bugs |
+| `obf.score` | info | Code is obfuscated |
+| `corr.download-and-run` | high | Can download and run code from the internet |
+| `corr.hidden-command` | high | Possible hidden command |
+| `corr.modify-plugins` | high | Can modify other plugins |
+| `corr.command-and-network` | high | Can run operating-system commands and connect to the internet |
+| `corr.hidden-loader` | high | Contains hidden code and can load it |
+
+`corr.*` rules are combinations: they fire when the parts they list appear together in one class (`corr.hidden-loader`: anywhere in the jar). What triggers each rule, its legitimate uses and its exact limits: [docs/rules.md](docs/rules.md).
 
 ## How to read a report
 

@@ -18,9 +18,9 @@ cargo test --workspace
 ## Adding a rule
 
 1. **Pick an id**: `<area>.<name>` in lowercase kebab case, e.g. `net.socket`. Areas in use: `exec`, `code`, `net`, `mc`, `fs`, `reflect`, `deser`, `script`, `proc`, `str`, `blob`, `res`, `jar`, `meta`, `lib`, `obf`, `corr`. Ids are permanent: never rename or reuse one. To retire a rule, delete it and leave its id unused.
-2. **Add it to the rule table** in `crates/core` with severity, title, why it matters and legitimate uses. Follow [Writing copy](#writing-copy).
-3. **Add the matcher.** Prefer a table entry (owner, name, descriptor) over custom code. If your rule needs custom code, keep it inside core with no I/O.
-4. **Add a fixture**: `fixtures/src/<rule-id>/` with the smallest Java source that triggers the rule. Follow [Fixtures](#fixtures).
+2. **Add it to `RULES`** in `crates/core/src/rules.rs` with severity, title, why it matters and legitimate uses. Follow [Writing copy](#writing-copy).
+3. **Add the matcher.** For a method call, add an entry to `CALLS` in the same file (rule id, owner, method name, and optionally a descriptor or owner prefix) instead of writing code. Anything else goes in `crates/core/src/scan.rs`, with no I/O and no panics.
+4. **Add a fixture**: `fixtures/src/<rule-id-with-dashes>/` (`net.socket` becomes `net-socket`) with the smallest Java source that triggers the rule. Follow [Fixtures](#fixtures).
 5. **Build fixtures** and commit the jar:
 
    ```bash
@@ -33,12 +33,13 @@ cargo test --workspace
    .\fixtures\build.ps1
    ```
 
-6. **Add a snapshot test** for the fixture's report, run `cargo test`, then review with `cargo insta review`. Check that the new finding has the right location and that nothing unrelated changed.
-7. **Check the benign fixture** still has zero High findings. The test fails if it doesn't.
-8. **Check false positives** with `scripts/fp-bench` if the rule could fire on ordinary plugins. Put the summary in your pull request.
-9. **Document it** in [docs/rules.md](docs/rules.md): same title and copy as the rule table, plus exactly what triggers it.
+6. **Add the fixture to `EXPECT`** in `crates/core/tests/fixtures.rs`: its name, the rules it must trigger and the rules it must not. Tests fail while a rule has no fixture listing it (rules tested in memory go in `IN_MEMORY` instead) or a fixture jar has no entry.
+7. **Review the snapshot.** Every fixture jar gets one automatically. Run `cargo test`, then `cargo insta review`. Check that the new finding has the right location and that no other snapshot changed.
+8. **Check the benign fixture** still has zero High findings. The test fails if it doesn't.
+9. **Check false positives** with `scripts/fp-bench` if the rule could fire on ordinary plugins. Put the summary in your pull request.
+10. **Document it** in [docs/rules.md](docs/rules.md) (a `` ### `id` · severity `` heading, the title, the same copy, and exactly what triggers it) and add a row to the rule table in [README.md](README.md#what-it-looks-for). `crates/core/tests/docs.rs` fails if either is missing or out of date.
 
-Correlations follow the same steps. State the scope (one class or the whole jar) and make the fixture contain all parts in that scope, plus a second fixture that has only some parts and must not trigger it.
+Correlations follow the same steps. State the scope (one class or the whole jar) and make the fixture contain all parts in that scope, plus a second fixture, `<name>-negative`, that has only some parts and must not trigger it.
 
 ## Writing copy
 
@@ -99,6 +100,6 @@ Adding a field to the report is fine. Renaming, removing or changing the meaning
 - [ ] If you touched `crates/wasm` or `web/`: `scripts/build-web` then `node scripts/check-web.mjs`, and try the page in a browser
 - [ ] New or changed rules have a fixture and a reviewed snapshot
 - [ ] Benign fixture still has zero High findings
-- [ ] `docs/rules.md` matches the rule table
+- [ ] `docs/rules.md` and the README rule table match `RULES`
 - [ ] Fixtures are inert and contain no real hosts, IPs, webhooks or tokens
 - [ ] No new dependency in `crates/core` without a reason in the pull request
