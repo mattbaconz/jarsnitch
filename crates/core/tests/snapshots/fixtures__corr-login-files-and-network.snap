@@ -1,0 +1,115 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "corr-login-files-and-network.jar",
+    "size": 909,
+    "sha256": "de8c43f0b715656f864bdc7fffc01cf77f10b6ed59ee84354e22b645c5dde758"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-corr-login-files-and-network",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "corr.login-files-and-network",
+      "severity": "high",
+      "title": "Names password or login files and can connect to the internet",
+      "why": "One class has both the path of a login file and network access, which is what sending that file somewhere would take.",
+      "legit_uses": "Rare. SSH and SFTP libraries that load a key file and open a connection.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "net.http: java/net/URL.openConnection"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "str.login-file: .aws/credentials"
+        }
+      ],
+      "evidence_total": 2
+    },
+    {
+      "rule": "str.login-file",
+      "severity": "notable",
+      "title": "Contains the path of a password or login file",
+      "why": "These files hold logins for browsers, game launchers or SSH. A Minecraft plugin rarely has a reason to name them.",
+      "legit_uses": "Rare. SSH and SFTP libraries look for key files; backup tools may list paths to skip.",
+      "value": ".aws/credentials",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": ".aws/credentials"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "net.http",
+      "severity": "info",
+      "title": "Can connect to websites",
+      "why": "The plugin can send and receive data over the internet. The hosts found in the jar are listed under str.url.",
+      "legit_uses": "Update checks, license checks, usage statistics (bStats), web APIs, Discord integrations.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "java/net/URL.openConnection"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "upload.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://upload.example.invalid/"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 825
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

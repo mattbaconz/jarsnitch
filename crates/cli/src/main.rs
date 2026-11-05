@@ -9,22 +9,31 @@ jarsnitch: see what a Minecraft plugin can do before you install it
 usage:
   jarsnitch scan <jar|folder>... [--json]
   jarsnitch diff <old.jar> <new.jar> [--json]
+  jarsnitch --version
 
 A folder scans every .jar directly inside it.
-Exit codes: 0 no High findings (diff: none added), 1 a file couldn't be read,
-2 at least one High finding (diff: the update adds one).";
+Exit codes: 0 no High findings (diff: none added), 1 a file couldn't be read or
+there was nothing to scan, 2 at least one High finding (diff: the update adds one).";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.iter().any(|a| a == "-h" || a == "--help") || args.first().is_some_and(|a| a == "help") {
+        println!("{USAGE}");
+        return ExitCode::SUCCESS;
+    }
+    if args.iter().any(|a| a == "-V" || a == "--version") {
+        println!("jarsnitch {}", env!("CARGO_PKG_VERSION"));
+        return ExitCode::SUCCESS;
+    }
     let json = args.iter().any(|a| a == "--json");
     let rest: Vec<&String> = args.iter().filter(|a| *a != "--json").collect();
+    if let Some(flag) = rest.iter().find(|a| a.starts_with('-')) {
+        eprintln!("error: unknown option {flag}\n\n{USAGE}");
+        return ExitCode::from(1);
+    }
     match rest.split_first() {
         Some((cmd, paths)) if cmd.as_str() == "scan" && !paths.is_empty() => scan(paths, json),
         Some((cmd, [old, new])) if cmd.as_str() == "diff" => diff(old, new, json),
-        Some((cmd, _)) if matches!(cmd.as_str(), "-h" | "--help" | "help") => {
-            println!("{USAGE}");
-            ExitCode::SUCCESS
-        }
         _ => {
             eprintln!("{USAGE}");
             ExitCode::from(1)
@@ -78,6 +87,9 @@ fn scan(args: &[&String], json: bool) -> ExitCode {
             }
         }
     }
+
+    // A CI job pointed at the wrong folder shouldn't pass.
+    failed |= reports.is_empty();
 
     if json {
         match serde_json::to_string_pretty(&reports) {

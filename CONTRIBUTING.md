@@ -84,7 +84,7 @@ A rule that gives a High finding on a popular, reputable plugin needs either a t
 
 ## Known-bad indicators
 
-v1 ships an empty indicator list. To add an entry (a file hash or a host):
+v1 has no indicator list, and the code has no place for one yet. If you propose one, each entry (a file hash or a host) must follow these rules:
 
 - Put a comment next to it with a public source URL: a published advisory, a security write-up or an official project announcement.
 - Private reports, other tools' signature databases, and "I saw it on Discord" don't count.
@@ -94,6 +94,27 @@ v1 ships an empty indicator list. To add an entry (a file hash or a host):
 
 Adding a field to the report is fine. Renaming, removing or changing the meaning of a field requires bumping `schema_version` and saying so in the pull request. See [docs/architecture.md](docs/architecture.md#report-format).
 
+## Releasing
+
+For maintainers. Set the new version in the root `Cargo.toml` and in the `jarsnitch-core` dependency in `crates/cli/Cargo.toml`, and move the `CHANGELOG.md` entries under it. On the first release, also replace the status line and the Install section in the README.
+
+```bash
+cargo publish --workspace --exclude jarsnitch-wasm
+```
+
+```bash
+git tag v0.1.0
+```
+
+```bash
+git push origin main v0.1.0
+```
+
+The tag starts two workflows:
+
+- `release.yml` builds binaries for Windows, macOS and Linux (static x86-64, and arm64) with install scripts, and creates the GitHub release. It's generated from `dist-workspace.toml`: change that file, then run `dist generate`.
+- `web.yml` builds the page and deploys it to Cloudflare Pages. It needs the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, and a Pages project named `jarsnitch`.
+
 ## Pull request checklist
 
 - [ ] `cargo test --workspace` passes on your platform
@@ -101,5 +122,6 @@ Adding a field to the report is fine. Renaming, removing or changing the meaning
 - [ ] New or changed rules have a fixture and a reviewed snapshot
 - [ ] Benign fixture still has zero High findings
 - [ ] `docs/rules.md` and the README rule table match `RULES`
+- [ ] User-visible changes have a `CHANGELOG.md` entry under "Unreleased"
 - [ ] Fixtures are inert and contain no real hosts, IPs, webhooks or tokens
 - [ ] No new dependency in `crates/core` without a reason in the pull request

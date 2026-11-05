@@ -6,7 +6,13 @@ members = ["crates/core", "crates/cli", "crates/wasm"]
 version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
+rust-version = "1.88"
+repository = "https://github.com/mattbaconz/jarsnitch"
+homepage = "https://github.com/mattbaconz/jarsnitch"
 
 [profile.release]
 lto = true
 codegen-units = 1
+
+[profile.dist]
+inherits = "release"

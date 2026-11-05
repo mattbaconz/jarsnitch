@@ -92,6 +92,8 @@ Every rule in v1. Rule ids never change, so you can filter on them in `--json` o
 | `str.ip` | notable | Contains a hardcoded IP address |
 | `str.discord-webhook` | notable | Can send data to a Discord webhook |
 | `str.telegram-bot` | notable | Can send data to a Telegram bot |
+| `str.hidden-text` | notable | Contains text hidden from simple searches |
+| `str.login-file` | notable | Contains the path of a password or login file |
 | `blob.embedded-code` | notable | Contains hidden embedded code |
 | `res.type-mismatch` | notable | A file's contents don't match its name |
 | `jar.nested` | info | Bundles other archives |
@@ -104,6 +106,7 @@ Every rule in v1. Rule ids never change, so you can filter on them in `--json` o
 | `corr.hidden-command` | high | Possible hidden command |
 | `corr.modify-plugins` | high | Can modify other plugins |
 | `corr.command-and-network` | high | Can run operating-system commands and connect to the internet |
+| `corr.login-files-and-network` | high | Names password or login files and can connect to the internet |
 | `corr.hidden-loader` | high | Contains hidden code and can load it |
 
 `corr.*` rules are combinations: they fire when the parts they list appear together in one class (`corr.hidden-loader`: anywhere in the jar). What triggers each rule, its legitimate uses and its exact limits: [docs/rules.md](docs/rules.md).
@@ -121,8 +124,8 @@ Every report ends with:
 ## What it can't catch
 
 - **Code that isn't in the jar.** Anything downloaded or generated at runtime is invisible. You'll see that the jar *can* load code, not what it loads.
-- **Names built at runtime.** Reflection is resolved only when class and method names are plain string literals. Names assembled, decrypted or downloaded at runtime are not.
-- **Encrypted payloads.** Base64 and hex are decoded. XOR, AES or custom encoding is not; it may only show up as a higher obfuscation score.
+- **Text built at runtime.** jarsnitch reads string literals, text written as constant byte or char arrays, and base64 or hex. Addresses and class names assembled, decrypted or downloaded at runtime stay hidden.
+- **Encrypted payloads.** XOR, AES or custom encoding isn't decoded; it may only show up as a higher obfuscation score.
 - **Intent.** A legitimate updater and a malicious dropper can use exactly the same calls.
 - **Combinations spread over classes.** The High findings for network access plus code loading or OS commands need both parts in one class. Split across classes, each part is still listed on its own.
 - **Reachability.** No call-graph analysis: a finding in dead code or an unused library counts the same as one in `onEnable`.
@@ -137,6 +140,7 @@ Every report ends with:
 ```text
 jarsnitch scan <jar|folder>... [--json]
 jarsnitch diff <old.jar> <new.jar> [--json]
+jarsnitch --version
 ```
 
 - `scan` on a folder scans every `.jar` directly inside it (not subfolders).
@@ -147,7 +151,7 @@ Exit codes:
 | Code | `scan` | `diff` |
 |---|---|---|
 | 0 | No High findings | The update adds no High findings |
-| 1 | A file couldn't be read or isn't a zip (and no High findings) | Either file couldn't be read |
+| 1 | A file couldn't be read or isn't a zip, or there was nothing to scan (and no High findings) | Either file couldn't be read |
 | 2 | At least one High finding | The update adds at least one High finding |
 
 Use exit code 2 to fail a CI job or an update script.

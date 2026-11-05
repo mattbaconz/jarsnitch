@@ -155,6 +155,21 @@ fn hex_payload_in_a_text_resource() {
 }
 
 #[test]
+fn skin_textures_are_not_hidden_text() {
+    // {"textures":{"SKIN":{"url":"http://textures.minecraft.net/texture/abc123"}}}
+    let skin = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWJjMTIzIn19fQ==";
+    let r = scan("heads.jar", &zip(&[("heads.yml", format!("texture: {skin}\n").as_bytes())], false));
+    assert!(values(&r, "str.url").is_empty(), "{:?}", values(&r, "str.url"));
+    assert!(!rules(&r).contains(&"str.hidden-text"));
+
+    // https://cdn.example.invalid/a.jar
+    let hidden = "aHR0cHM6Ly9jZG4uZXhhbXBsZS5pbnZhbGlkL2EuamFy";
+    let r = scan("heads.jar", &zip(&[("heads.yml", format!("texture: {hidden}\n").as_bytes())], false));
+    assert_eq!(values(&r, "str.url"), ["cdn.example.invalid"]);
+    assert!(rules(&r).contains(&"str.hidden-text"));
+}
+
+#[test]
 fn domain_lists_are_not_listed_host_by_host() {
     let mut list: String = (0..150).map(|i| format!("site{i}.example.com
 ")).collect();

@@ -1,5 +1,6 @@
 //! Walks the archive tree, collects rule hits, and builds the report.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use sha2::{Digest, Sha256};
@@ -75,7 +76,9 @@ struct ClassFacts {
 #[derive(Default)]
 struct MethodFacts<'c> {
     /// String literals pushed since the last call; a call's string argument is the last one.
-    since_call: Vec<&'c str>,
+    since_call: Vec<Cow<'c, str>>,
+    /// Text a `Base64.Decoder.decode` call just returned, for the `new String` around it.
+    decoded: Option<String>,
     reflect_classes: Vec<String>,
     reflect_names: Vec<String>,
     class_consts: Vec<&'c str>,
@@ -297,6 +300,29 @@ impl<'l> Scan<'l> {
     /// Address, IP and payload checks for one string literal or text token. `hosts`
     /// is false inside a domain list: hostnames are skipped, IPs and webhooks aren't.
     fn literal(&mut self, s: &str, location: &str, method: Option<&str>, depth: u32, hosts: bool) {
+        self.text_checks(s, location, method, hosts);
+        if let Some(text) = strings::hidden_address(s) {
+            self.hit("str.hidden-text", None, ev(location, method, strings::cut(&text, 200)));
+            self.text_checks(&text, location, method, hosts);
+        }
+        self.payload(s, location, method, depth);
+    }
+
+    /// Text the code builds from an array of numbers or decodes from base64: a finding of
+    /// its own, then treated like the literal it stands in for.
+    #[allow(clippy::too_many_arguments)]
+    fn hidden_text(&mut self, facts: &mut ClassFacts, mf: &mut MethodFacts, s: &str, loc: &str, method: &str, depth: u32) {
+        if s.contains("textures.minecraft.net") {
+            return;
+        }
+        if !strings::is_package_name(s) {
+            self.class_hit(facts, "str.hidden-text", ev(loc, Some(method), strings::cut(s, 200)));
+        }
+        code_string_facts(facts, mf, s);
+        self.literal(s, loc, Some(method), depth, true);
+    }
+
+    fn text_checks(&mut self, s: &str, location: &str, method: Option<&str>, hosts: bool) {
         for url in strings::urls(s) {
             let e = ev(location, method, url.text);
             match url.kind {
@@ -315,7 +341,9 @@ impl<'l> Scan<'l> {
                 self.hit("str.ip", Some(ip), ev(location, method, strings::cut(s, 200)));
             }
         }
-        self.payload(s, location, method, depth);
+        if let Some(file) = strings::login_file(s) {
+            self.hit("str.login-file", Some(file.to_string()), ev(location, method, strings::cut(s, 200)));
+        }
     }
 
     fn payload(&mut self, s: &str, location: &str, method: Option<&str>, depth: u32) {
@@ -388,13 +416,23 @@ impl<'l> Scan<'l> {
             let Some(code) = m.code else { continue };
             let method = format!("{mname}{mdesc}");
             let mut mf = MethodFacts::default();
-            for op in class::ops(code) {
+            let mut walker = class::ops(code);
+            while let Some(op) = walker.next() {
                 match op {
                     Op::Invoke(i) => {
+                        let decoded = mf.decoded.take();
+                        let mut hidden = None;
                         if let Some((o, n, d)) = cf.member(i) {
                             self.call(&mut facts, &mut mf, &loc, &method, o, n, d);
+                            if rules::is_string_from_array(o, n, d) {
+                                hidden = walker.array_text().or(decoded);
+                            }
                         }
                         mf.since_call.clear();
+                        if let Some(text) = hidden {
+                            self.hidden_text(&mut facts, &mut mf, &text, &loc, &method, depth);
+                            mf.since_call.push(Cow::Owned(text));
+                        }
                     }
                     Op::Indy(i) => {
                         if let Some(Const::Indy(bsm)) = cf.cp.get(usize::from(i))
@@ -418,14 +456,8 @@ impl<'l> Scan<'l> {
                         Some(Const::Str(_)) => {
                             let Some(s) = cf.string(i) else { continue };
                             seen_strings.insert(i);
-                            mf.since_call.push(s);
-                            let lower = s.to_ascii_lowercase();
-                            if lower.ends_with(".jar") || lower.ends_with(".class") {
-                                mf.jar_literal = true;
-                            }
-                            if is_plugins_dir(s) {
-                                facts.plugins_ref = true;
-                            }
+                            mf.since_call.push(Cow::Borrowed(s));
+                            code_string_facts(&mut facts, &mut mf, s);
                             self.literal(s, &loc, Some(&method), depth, true);
                         }
                         Some(Const::Class(_)) => mf.class_consts.extend(cf.class_name(i)),
@@ -503,6 +535,9 @@ impl<'l> Scan<'l> {
             ("java/lang/Class", "getConstructor" | "getDeclaredConstructor") | ("java/lang/invoke/MethodHandles$Lookup", "findConstructor") => {
                 mf.reflect_names.push("<init>".into());
                 mf.reflect_lookup = true;
+            }
+            ("java/util/Base64$Decoder", "decode") if desc == "(Ljava/lang/String;)[B" => {
+                mf.decoded = last.and_then(|s| strings::readable(strings::b64_decode(&s)?));
             }
             ("java/io/File", "getParentFile") => mf.parent_file = true,
             // ponytail: method-level, so a method that opens a resource and a remote URL
@@ -610,10 +645,11 @@ impl<'l> Scan<'l> {
 
         // Correlations. Each part is a list of alternatives; the first evidence of each
         // part goes into the finding. Class scope groups evidence by its location.
-        const NET: &[&str] = &["net.http", "net.socket", "str.url"];
-        let correlations: [(&'static str, bool, [&[&str]; 2]); 3] = [
+        const NET: &[&str] = &["net.http", "net.socket", "str.url", "str.ip"];
+        let correlations: [(&'static str, bool, [&[&str]; 2]); 4] = [
             ("corr.download-and-run", true, [NET, &["code.load"]]),
             ("corr.command-and-network", true, [&["exec.process"], NET]),
+            ("corr.login-files-and-network", true, [&["str.login-file"], NET]),
             ("corr.hidden-loader", false, [&["blob.embedded-code"], &["code.load"]]),
         ];
         let mut found = Vec::new();
@@ -735,6 +771,17 @@ fn may_be_in_jar(owner: &str) -> bool {
     !["java/", "javax/", "jdk/", "sun/", "com/sun/", "kotlin/", "org/bukkit/", "net/md_5/", "com/velocitypowered/"]
         .iter()
         .any(|p| owner.starts_with(p))
+}
+
+/// What a string used in code says about jar writes and the plugins folder.
+fn code_string_facts(facts: &mut ClassFacts, mf: &mut MethodFacts, s: &str) {
+    let lower = s.to_ascii_lowercase();
+    if lower.ends_with(".jar") || lower.ends_with(".class") {
+        mf.jar_literal = true;
+    }
+    if is_plugins_dir(s) {
+        facts.plugins_ref = true;
+    }
 }
 
 fn is_plugins_dir(s: &str) -> bool {

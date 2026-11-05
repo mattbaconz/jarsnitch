@@ -1,0 +1,62 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "str-login-file.jar",
+    "size": 772,
+    "sha256": "f5b845878a95d77ec8ea8373c5f60096a71bf2b009594a3be04f1ad3b541a292"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-str-login-file",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "str.login-file",
+      "severity": "notable",
+      "title": "Contains the path of a password or login file",
+      "why": "These files hold logins for browsers, game launchers or SSH. A Minecraft plugin rarely has a reason to name them.",
+      "legit_uses": "Rare. SSH and SFTP libraries look for key files; backup tools may list paths to skip.",
+      "value": ".aws/credentials",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()Ljava/io/File;",
+          "detail": ".aws/credentials"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 615
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

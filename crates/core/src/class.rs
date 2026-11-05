@@ -239,13 +239,62 @@ pub enum Op {
 pub struct Ops<'a> {
     code: &'a [u8],
     pc: usize,
+    /// The last two integer constants pushed, if nothing else has run since.
+    pushes: [Option<i32>; 2],
+    /// A constant byte or char array being filled, and the one finished before the last call.
+    filling: Option<Vec<u16>>,
+    finished: Option<Vec<u16>>,
+    wide: bool,
 }
 
 pub fn ops(code: &[u8]) -> Ops<'_> {
-    Ops { code, pc: 0 }
+    Ops { code, pc: 0, pushes: [None; 2], filling: None, finished: None, wide: false }
 }
 
 impl Ops<'_> {
+    /// Text of the constant array filled in before the call `next` just returned, as in
+    /// `new String(new byte[] {104, 116, 116, 112})`. Three characters or more, no control
+    /// characters.
+    pub fn array_text(&self) -> Option<String> {
+        let array = self.finished.as_ref()?;
+        let text = if self.wide {
+            String::from_utf16(array).ok()?
+        } else {
+            String::from_utf8(array.iter().map(|&b| b as u8).collect()).ok()?
+        };
+        (text.chars().count() >= 3 && !text.chars().any(char::is_control)).then_some(text)
+    }
+
+    /// A constant array compiles to newarray, then dup, index, value and a store per
+    /// element. Anything that doesn't fit that stops the array.
+    fn track_array(&mut self, pc: usize) {
+        let op = self.code[pc];
+        let pushed = match op {
+            0x02..=0x08 => Some(i32::from(op) - 3),
+            0x10 => Some(i32::from(self.code[pc + 1] as i8)),
+            0x11 => self.u2(pc + 1).map(|v| i32::from(v as i16)),
+            _ => None,
+        };
+        if pushed.is_some() {
+            self.pushes = [self.pushes[1], pushed];
+            return;
+        }
+        match op {
+            0xbc => {
+                let atype = self.code[pc + 1];
+                self.wide = atype == 5;
+                self.filling = matches!(atype, 5 | 8).then(Vec::new);
+            }
+            0x54 | 0x55 => match (self.filling.as_mut(), self.pushes) {
+                (Some(array), [Some(index), Some(value)]) if index as usize == array.len() => array.push(value as u16),
+                _ => self.filling = None,
+            },
+            0xb6..=0xb9 => self.finished = self.filling.take(),
+            _ => {}
+        }
+        self.pushes = [None; 2];
+    }
+
     fn u2(&self, at: usize) -> Option<u16> {
         Some(u16::from_be_bytes([*self.code.get(at)?, *self.code.get(at + 1)?]))
     }
@@ -303,6 +352,7 @@ impl Iterator for Ops<'_> {
                 return None;
             }
             self.pc += len;
+            self.track_array(pc);
             let op = match self.code[pc] {
                 0xb6..=0xb9 => Op::Invoke(self.u2(pc + 1)?),
                 0xba => Op::Indy(self.u2(pc + 1)?),
@@ -333,6 +383,31 @@ mod tests {
     fn mach_o_universal_is_not_a_class() {
         assert!(!is_class(&[0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, 2, 0, 0]));
         assert!(is_class(&[0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, 61, 0, 0]));
+    }
+
+    #[test]
+    fn walker_reads_constant_arrays() {
+        // Index, value and store for "abc", then the call that takes the array.
+        let fill = |atype: u8, store: u8| {
+            let mut code = vec![0x06, 0xbc, atype];
+            for (i, c) in [97u8, 98, 99].iter().enumerate() {
+                code.extend_from_slice(&[0x59, 0x03 + i as u8, 0x10, *c, store]);
+            }
+            code.extend_from_slice(&[0xb7, 0, 1]);
+            code
+        };
+        let text = |code: &[u8]| {
+            let mut walker = ops(code);
+            walker.next();
+            walker.array_text()
+        };
+        assert_eq!(text(&fill(8, 0x54)).as_deref(), Some("abc"));
+        assert_eq!(text(&fill(5, 0x55)).as_deref(), Some("abc"));
+        // An int array isn't text, and neither is an element the code computes.
+        assert_eq!(text(&fill(10, 0x4f)), None);
+        let mut computed = fill(8, 0x54);
+        computed[4] = 0x60;
+        assert_eq!(text(&computed), None);
     }
 
     #[test]

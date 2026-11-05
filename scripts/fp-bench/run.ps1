@@ -34,7 +34,7 @@ foreach ($slug in $slugs) {
 if ($List) { return }
 
 $json = Join-Path $cache 'reports.json'
-cargo run -q --release --manifest-path ../../Cargo.toml -p jarsnitch-cli -- scan $cache --json | Set-Content $json
+cargo run -q --release --manifest-path ../../Cargo.toml -p jarsnitch -- scan $cache --json | Set-Content $json
 (Get-Content $json -Raw | ConvertFrom-Json) | ForEach-Object {
     $sev = @($_.findings | ForEach-Object { $_.severity })
     [pscustomobject]@{

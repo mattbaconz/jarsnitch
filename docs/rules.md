@@ -16,7 +16,7 @@ Every rule jarsnitch v1 applies. Rule ids are stable: an id is never renamed or 
 - **Owners** are matched exactly unless a rule says otherwise. Where a rule says "in-jar subclasses", a class in the scanned jar whose superclass chain reaches the listed owner also matches.
 - **Reflection.** Targets resolved from string literals (see [`reflect.indirect`](#reflectindirect--notable)) count as real calls for every rule and every correlation.
 - **Evidence** is the class and method that contain the instruction, plus the matched call. Classes in nested jars carry their jar path: `libs/helper.jar!/com/example/Net`. Code decoded from a string carries the class it was found in, `!embedded-<n>` and its own path: `com/example/Main!embedded-1!/payload/Loader`.
-- **Strings** are string literals in class files (`CONSTANT_String`, not class, method or field names) and text resources up to 1 MiB: `.yml`, `.yaml`, `.json`, `.properties`, `.txt`, `.toml`, `.conf`, `.cfg`, and files without an extension that are valid UTF-8.
+- **Strings** are string literals in class files (`CONSTANT_String`, not class, method or field names) and text resources up to 1 MiB: `.yml`, `.yaml`, `.json`, `.properties`, `.txt`, `.toml`, `.conf`, `.cfg`, and files without an extension that are valid UTF-8. Text the code hides in a constant array or base64 counts too: see [`str.hidden-text`](#strhidden-text--notable).
 
 ---
 
@@ -167,6 +167,24 @@ Value-carrying rules report one finding per value (one per host, IP, webhook, pa
 - **Legit uses:** Author notifications. Rare in public plugins.
 - **Triggers:** `api.telegram.org/bot<id>:<token>`. The value is the bot id; the token is redacted like webhook tokens.
 
+### `str.hidden-text` · notable
+
+**Contains text hidden from simple searches**
+
+- **Why it matters:** The code writes this text as numbers or an encoded string, so it doesn't appear in the jar as plain text. jarsnitch decoded it and checked it like any other text.
+- **Legit uses:** Obfuscators used to protect paid plugins. A few libraries store small constants this way.
+- **Triggers:** `new String(...)`, `String.valueOf` or `String.copyValueOf` on a constant byte or char array of 3 or more readable characters, as [documented for real samples](https://github.com/trigram-mrp/fractureiser/blob/main/docs/tech.md). `new String(Base64.getDecoder().decode("..."))` on a literal. Any base64 or hex string of 16 to 4,096 characters that decodes to text with a URL or IP in it. Every other rule sees the decoded text: an address counts as `str.url` or `str.ip`, and a class name counts for reflection and correlations.
+- **Not counted:** lowercase names like `org.bstats`, which libraries write as bytes so that shading doesn't rewrite them (reflection still sees these), and skin textures, which are base64 JSON with a `textures.minecraft.net` URL.
+- **Limit:** Only constant values are read. Text that's XORed, encrypted, split across methods or computed at runtime isn't decoded.
+
+### `str.login-file` · notable
+
+**Contains the path of a password or login file**
+
+- **Why it matters:** These files hold logins for browsers, game launchers or SSH. A Minecraft plugin rarely has a reason to name them.
+- **Legit uses:** Rare. SSH and SFTP libraries look for key files; backup tools may list paths to skip.
+- **Triggers:** Text containing, in any case and with either slash: `Local Storage/leveldb`, `/Login Data`, `/Network/Cookies`, `cookies.sqlite`, `key4.db`, `launcher_accounts.json`, `launcher_msa_credentials`, `microsoft_accounts.json`, `wallet.dat`, `.ssh/id_`, `.aws/credentials`, `.git-credentials` or `/etc/shadow`. A string that is exactly `id_rsa` or `id_ed25519` also counts. The value is the matched text.
+
 ### `blob.embedded-code` · notable
 
 **Contains hidden embedded code**
@@ -265,13 +283,13 @@ Computed over the top-level jar's own classes, not nested jars. The weights and 
 
 Each raises a High finding when all its parts are present. Scope **jar** means the whole scanned file, including nested jars and decoded code. Scope **class** means one class. Evidence lists the parts that matched.
 
-The network correlations use class scope because large plugins bundle libraries (database drivers, dependency loaders) whose network and process code sits in unrelated classes; on the whole jar they fired on most popular plugins. A host string counts as the network part so that `new URLClassLoader(new URL[] { new URL("http://...") })` is caught. **Limit:** parts split across classes don't correlate; their individual findings still appear.
+The network correlations use class scope because large plugins bundle libraries (database drivers, dependency loaders) whose network and process code sits in unrelated classes; on the whole jar they fired on most popular plugins. A host or IP string counts as the network part so that `new URLClassLoader(new URL[] { new URL("http://...") })` is caught, including when the string is [hidden](#strhidden-text--notable). **Limit:** parts split across classes don't correlate; their individual findings still appear.
 
 ### `corr.download-and-run` · high
 
 **Can download and run code from the internet**
 
-- **Parts:** `net.http`, `net.socket` or a `str.url` host, plus `code.load`. Scope: class.
+- **Parts:** `net.http`, `net.socket`, a `str.url` host or a `str.ip` address, plus `code.load`. Scope: class.
 - **Why it matters:** The jar can fetch code that isn't in this file and run it, so this report can't tell you what that code does.
 - **Legit uses:** Dependency downloaders that fetch libraries from Maven repositories at startup. Check the hosts under `str.url`.
 
@@ -300,9 +318,17 @@ The network correlations use class scope because large plugins bundle libraries 
 
 **Can run operating-system commands and connect to the internet**
 
-- **Parts:** `exec.process`, plus `net.http`, `net.socket` or a `str.url` host. Scope: class.
+- **Parts:** `exec.process`, plus `net.http`, `net.socket`, a `str.url` host or a `str.ip` address. Scope: class.
 - **Why it matters:** Together these allow remote control of the machine: commands could arrive over the network and results go back out.
 - **Legit uses:** Hosting-panel integrations, plugins that download and run helper tools.
+
+### `corr.login-files-and-network` · high
+
+**Names password or login files and can connect to the internet**
+
+- **Parts:** `str.login-file`, plus `net.http`, `net.socket`, a `str.url` host or a `str.ip` address. Scope: class.
+- **Why it matters:** One class has both the path of a login file and network access, which is what sending that file somewhere would take.
+- **Legit uses:** Rare. SSH and SFTP libraries that load a key file and open a connection.
 
 ### `corr.hidden-loader` · high
 
@@ -316,4 +342,4 @@ The network correlations use class scope because large plugins bundle libraries 
 
 ## Known-bad indicators
 
-v1 ships an empty list. An entry (file hash, host) is added only with a public source URL in a comment next to it. jarsnitch never invents signatures. See [CONTRIBUTING.md](../CONTRIBUTING.md#known-bad-indicators).
+v1 doesn't compare jars against a list of known file hashes or hosts. If one is added, every entry needs a public source URL next to it. jarsnitch never invents signatures. See [CONTRIBUTING.md](../CONTRIBUTING.md#known-bad-indicators).

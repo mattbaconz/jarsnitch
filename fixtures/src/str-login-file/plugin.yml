@@ -1,0 +1,4 @@
+name: Fixture-str-login-file
+version: 1.0.0
+main: fixture.Main
+api-version: '1.20'

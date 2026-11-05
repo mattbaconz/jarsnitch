@@ -36,7 +36,7 @@ print(v["version_number"], f["url"], f["filename"], sep="\t")' <<<"$json")
 done
 [ "$list" = --list ] && exit 0
 
-cargo run -q --release --manifest-path ../../Cargo.toml -p jarsnitch-cli -- scan cache --json > cache/reports.json || true
+cargo run -q --release --manifest-path ../../Cargo.toml -p jarsnitch -- scan cache --json > cache/reports.json || true
 python3 -I - cache/reports.json <<'PY'
 import json, sys
 for r in json.load(open(sys.argv[1])):

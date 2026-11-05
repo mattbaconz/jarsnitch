@@ -9,7 +9,7 @@ jarsnitch/
   Cargo.toml            workspace
   crates/
     core/               jarsnitch-core: bytes in, Report out
-    cli/                jarsnitch-cli: builds the `jarsnitch` binary
+    cli/                jarsnitch: builds the `jarsnitch` binary
     wasm/               jarsnitch-wasm: exports scan and diff to JavaScript
   web/                  static site: index.html, style.css, app.js, worker.js, engine.js, jarsnitch.wasm (built)
   fixtures/
@@ -226,7 +226,7 @@ Privacy rules:
 
 Accessibility and layout basics: a status line in an `aria-live` region announces each result in one sentence and focus moves to the result heading (reading a whole report aloud on every scan would be too much), severity is shown as text and not only as color, light and dark themes follow `prefers-color-scheme`, tabs follow the ARIA tabs pattern with arrow keys, and the page works at phone width without sideways scrolling.
 
-Speed: in Chromium on a laptop, a 52 MB plugin (Geyser) scans in about 1.2 s; paper.jar (55 MB, 10,000 classes) takes about 1.6 s under Node.
+Speed: on a laptop, a 52 MB plugin (Geyser) scans in about 1.5 s in Chromium, 2 to 3 s in WebKit and 10 to 11 s in Firefox, measured through Playwright's browser builds. The worker keeps the tab responsive either way.
 
 ## Limits and robustness
 
@@ -254,7 +254,7 @@ cargo test --workspace
 ```
 
 ```bash
-cargo run -p jarsnitch-cli -- scan fixtures/jars/benign-plugin.jar
+cargo run -p jarsnitch -- scan fixtures/jars/benign-plugin.jar
 ```
 
 ```bash

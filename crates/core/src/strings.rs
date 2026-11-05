@@ -325,6 +325,71 @@ pub fn payload(s: &str) -> Option<(Payload, Encoding)> {
     None
 }
 
+/// `bytes` as text, if it's valid UTF-8 without control characters.
+pub fn readable(bytes: Vec<u8>) -> Option<String> {
+    String::from_utf8(bytes).ok().filter(|t| !t.chars().any(char::is_control))
+}
+
+/// The address a base64 or hex literal hides, as the decoded text. Skin textures are
+/// base64 JSON with a Mojang URL in nearly every plugin that draws heads; they don't count.
+pub fn hidden_address(s: &str) -> Option<String> {
+    let s = s.trim();
+    if !(16..=4096).contains(&s.len()) {
+        return None;
+    }
+    let bytes = if is_hex(s) {
+        hex_decode(s)?
+    } else if is_b64(s) {
+        b64_decode(s)?
+    } else {
+        return None;
+    };
+    let text = readable(bytes)?;
+    let address = !urls(&text).is_empty() || !ipv4s(&text).is_empty();
+    (address && !text.contains("textures.minecraft.net")).then_some(text)
+}
+
+/// A lowercase name such as `org.bstats` that isn't an address. Libraries write their own
+/// package name as bytes so that shading doesn't rewrite it (bStats does this in nearly every
+/// plugin), and a word like `run` says nothing alone. Reflection still sees these.
+pub fn is_package_name(s: &str) -> bool {
+    s.bytes().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, b'.' | b'_'))
+        && bare_host(s).is_none()
+        && ipv4s(s).is_empty()
+}
+
+/// Files that hold logins on someone's machine, in lowercase with forward slashes. Mentioned
+/// in public write-ups of credential stealers, such as
+/// https://github.com/trigram-mrp/fractureiser/blob/main/docs/tech.md
+const LOGIN_FILES: &[&str] = &[
+    "local storage/leveldb",
+    "/login data",
+    "/network/cookies",
+    "cookies.sqlite",
+    "key4.db",
+    "launcher_accounts.json",
+    "launcher_msa_credentials",
+    "microsoft_accounts.json",
+    "wallet.dat",
+    ".ssh/id_",
+    ".aws/credentials",
+    ".git-credentials",
+    "/etc/shadow",
+];
+
+/// The login file `s` refers to, if any. A key name counts alone only when it's the whole
+/// string, as in `Path.of(home, ".ssh", "id_rsa")`: `id_RSASSA-PSS` is a certificate term.
+pub fn login_file(s: &str) -> Option<&'static str> {
+    if matches!(s, "id_rsa" | "id_ed25519") {
+        return Some(".ssh/id_");
+    }
+    if s.len() < 6 {
+        return None;
+    }
+    let s = s.to_ascii_lowercase().replace('\\', "/");
+    LOGIN_FILES.iter().find(|f| s.contains(**f)).copied()
+}
+
 pub fn decode(s: &str, enc: &Encoding) -> Option<Vec<u8>> {
     match enc {
         Encoding::Base64 => b64_decode(s.trim()),

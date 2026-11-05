@@ -68,6 +68,12 @@ pub const RULES: &[Rule] = &[
     r("str.telegram-bot", Notable, "Can send data to a Telegram bot",
       "A bot token built into the code lets the plugin message a chat the author controls.",
       "Author notifications. Rare in public plugins."),
+    r("str.hidden-text", Notable, "Contains text hidden from simple searches",
+      "The code writes this text as numbers or an encoded string, so it doesn't appear in the jar as plain text. jarsnitch decoded it and checked it like any other text.",
+      "Obfuscators used to protect paid plugins. A few libraries store small constants this way."),
+    r("str.login-file", Notable, "Contains the path of a password or login file",
+      "These files hold logins for browsers, game launchers or SSH. A Minecraft plugin rarely has a reason to name them.",
+      "Rare. SSH and SFTP libraries look for key files; backup tools may list paths to skip."),
     r("blob.embedded-code", Notable, "Contains hidden embedded code",
       "Code stored as encoded text doesn't show up as a normal class file. jarsnitch decoded it and scanned it; its findings carry the location <class>!embedded-<n>.",
       "Rare. Some license systems and obfuscators."),
@@ -104,6 +110,9 @@ pub const RULES: &[Rule] = &[
     r("corr.command-and-network", High, "Can run operating-system commands and connect to the internet",
       "Together these allow remote control of the machine: commands could arrive over the network and results go back out.",
       "Hosting-panel integrations, plugins that download and run helper tools."),
+    r("corr.login-files-and-network", High, "Names password or login files and can connect to the internet",
+      "One class has both the path of a login file and network access, which is what sending that file somewhere would take.",
+      "Rare. SSH and SFTP libraries that load a key file and open a connection."),
     r("corr.hidden-loader", High, "Contains hidden code and can load it",
       "Encoded code plus the ability to load it is a common way to keep code out of sight.",
       "Some license systems."),
@@ -206,6 +215,17 @@ pub fn match_call<'a>(owner: &'a str, name: &'a str, desc: Option<&'a str>) -> i
 /// in-jar subclass is worth resolving against the superclass chain later.
 pub fn is_inheritable_name(name: &str) -> bool {
     name != "<init>" && CALLS.iter().any(|c| c.name == name)
+}
+
+/// `new String(byte[])`, `new String(char[])` and friends: the call that turns an array of
+/// numbers into text.
+pub fn is_string_from_array(owner: &str, name: &str, desc: &str) -> bool {
+    owner == "java/lang/String"
+        && match name {
+            "<init>" => matches!(desc, "([B)V" | "([C)V" | "([BLjava/lang/String;)V" | "([BLjava/nio/charset/Charset;)V"),
+            "valueOf" | "copyValueOf" => desc == "([C)Ljava/lang/String;",
+            _ => false,
+        }
 }
 
 /// Classes whose mere use through `Class.forName` is the capability.

@@ -1,0 +1,99 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "str-hidden-text.jar",
+    "size": 942,
+    "sha256": "a497595a73151dc202d7f9345f7c6cb3b12d60f9258f16c0c3824f81f566b3df"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-str-hidden-text",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "findings": [
+    {
+      "rule": "str.hidden-text",
+      "severity": "notable",
+      "title": "Contains text hidden from simple searches",
+      "why": "The code writes this text as numbers or an encoded string, so it doesn't appear in the jar as plain text. jarsnitch decoded it and checked it like any other text.",
+      "legit_uses": "Obfuscators used to protect paid plugins. A few libraries store small constants this way.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "203.0.113.9"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://cdn.example.invalid/a.jar"
+        }
+      ],
+      "evidence_total": 2
+    },
+    {
+      "rule": "str.ip",
+      "severity": "notable",
+      "title": "Contains a hardcoded IP address",
+      "why": "A fixed address skips DNS, which makes it harder to tell who it belongs to.",
+      "legit_uses": "Rare. Some network tools, server lists, DNS fallbacks.",
+      "value": "203.0.113.9",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "203.0.113.9"
+        }
+      ],
+      "evidence_total": 1
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "cdn.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://cdn.example.invalid/a.jar"
+        }
+      ],
+      "evidence_total": 1
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 830
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}
