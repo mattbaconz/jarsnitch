@@ -226,7 +226,7 @@ Privacy rules:
 
 Accessibility and layout basics: a status line in an `aria-live` region announces each result in one sentence and focus moves to the result heading (reading a whole report aloud on every scan would be too much), severity is shown as text and not only as color, light and dark themes follow `prefers-color-scheme`, tabs follow the ARIA tabs pattern with arrow keys, and the page works at phone width without sideways scrolling.
 
-Speed: on a laptop, a 52 MB plugin (Geyser) scans in about 1.5 s in Chromium and 2 to 3 s in WebKit, measured through Playwright's browser builds. Playwright's Firefox build took 10 to 11 s, but it runs any WebAssembly that much slower: a separate benchmark of SHA-256, inflate, a byte scan and a hash map, with none of jarsnitch's code, was 3 to 14 times slower there than in Chromium. Stock Firefox hasn't been measured. The worker keeps the tab responsive either way.
+Speed: on a laptop, a 52 MB plugin (Geyser) scans in about 1.5 s in Chromium, 1.6 to 1.8 s in Firefox 159 and 2 to 3 s in WebKit. Measure Firefox with the browser Mozilla ships: Playwright's Firefox build runs all WebAssembly several times slower and took 10 s for the same jar. The worker keeps the tab responsive either way.
 
 ## Limits and robustness
 
