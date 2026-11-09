@@ -11,3 +11,7 @@ install-path = "CARGO_HOME"
 install-updater = false
 # Build only the CLI package: the wasm crate is a cdylib, which musl cannot produce.
 precise-builds = true
+
+# GitHub no longer runs jobs on macos-14, which dist 0.32 picks for Apple silicon.
+[dist.github-custom-runners]
+aarch64-apple-darwin = "macos-15"
