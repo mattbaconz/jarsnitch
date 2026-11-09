@@ -1,0 +1,8 @@
+{
+  // Static site: Cloudflare serves the web folder as is, with web/_headers.
+  "name": "jarsnitch",
+  "compatibility_date": "2026-10-19",
+  "assets": {
+    "directory": "web"
+  }
+}

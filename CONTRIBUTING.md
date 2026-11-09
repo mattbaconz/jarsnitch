@@ -113,7 +113,7 @@ git push origin main v0.1.0
 The tag starts two workflows:
 
 - `release.yml` builds binaries for Windows, macOS and Linux (static x86-64, and arm64) with install scripts, and creates the GitHub release. It's generated from `dist-workspace.toml`: change that file, then run `dist generate`.
-- `web.yml` builds the page and deploys it to Cloudflare Pages. It needs the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, and a Pages project named `jarsnitch`.
+- `web.yml` builds the page and deploys it to Cloudflare as a static Worker named `jarsnitch` (see `wrangler.jsonc`). It needs the repository secrets `CLOUDFLARE_API_TOKEN` (a token with the Workers Scripts: Edit permission) and `CLOUDFLARE_ACCOUNT_ID`.
 
 ## Pull request checklist
 

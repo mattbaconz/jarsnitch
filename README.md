@@ -2,7 +2,7 @@
 
 See what a Minecraft plugin can do before you install it.
 
-> **Status: pre-release.** `jarsnitch scan`, `jarsnitch diff` and the website work. Nothing is released or hosted yet; build from source below.
+> **Try it in your browser:** https://jarsnitch.mbaconz.workers.dev. The page reads the jar on your machine; nothing is uploaded.
 
 jarsnitch reads a plugin `.jar` (Bukkit, Spigot, Paper, Folia, Velocity, BungeeCord) and tells you in plain English what its code is able to do: run commands on your machine, download and run new code, give players operator, send data to a Discord webhook. Each finding says where in the code it was found and why it matters.
 
@@ -158,11 +158,23 @@ Use exit code 2 to fail a CI job or an update script.
 
 ## Install
 
-Not released yet. From source, with Rust stable:
+Prebuilt binaries for Windows, macOS and Linux are on the [releases page](https://github.com/mattbaconz/jarsnitch/releases/latest). Or use the install script for your system:
 
 ```bash
-cargo install --path crates/cli
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/mattbaconz/jarsnitch/releases/latest/download/jarsnitch-installer.sh | sh
 ```
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/mattbaconz/jarsnitch/releases/latest/download/jarsnitch-installer.ps1 | iex"
+```
+
+With Rust stable:
+
+```bash
+cargo install jarsnitch
+```
+
+From a checkout: `cargo install --path crates/cli`.
 
 The website, built locally (needs the wasm32 target: `rustup target add wasm32-unknown-unknown`):
 
