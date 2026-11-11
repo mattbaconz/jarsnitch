@@ -21,4 +21,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # The action defaults to Wrangler 3, which cannot deploy a Worker that only serves files.
+          wranglerVersion: "4.152.0"
           command: deploy
