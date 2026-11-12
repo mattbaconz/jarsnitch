@@ -79,7 +79,7 @@ The network correlations use the same graph: a method's own parts and those of t
 ```json
 {
   "schema_version": 1,
-  "tool_version": "0.1.0",
+  "tool_version": "0.2.0",
   "file": { "name": "ExamplePlugin.jar", "size": 48213, "sha256": "9f2c..." },
   "partial": false,
   "plugins": [
