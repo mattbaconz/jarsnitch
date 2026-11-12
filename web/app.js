@@ -291,7 +291,7 @@ function fold(summary, build, open = false) {
   const fill = () => {
     if (d.dataset.filled) return;
     d.dataset.filled = "1";
-    d.append(build());
+    d.append(...[build()].flat());
   };
   if (open) fill();
   else d.addEventListener("toggle", fill);
