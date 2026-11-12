@@ -17,6 +17,7 @@ const EXPECT: &[(&str, &[&str], &[&str])] = &[
     ("corr-download-and-run", &["corr.download-and-run", "code.load", "net.http"], &[]),
     ("corr-download-and-run-hidden", &["corr.download-and-run", "code.load", "reflect.indirect", "str.ip", "str.hidden-text"], &[]),
     ("corr-download-and-run-negative", &["code.load", "net.http"], &["corr.download-and-run"]),
+    ("corr-download-and-run-split", &["corr.download-and-run", "code.load", "net.http"], &[]),
     ("corr-login-files-and-network", &["corr.login-files-and-network", "str.login-file", "net.http"], &[]),
     ("str-hidden-text", &["str.hidden-text", "str.ip", "str.url"], &["corr.download-and-run"]),
     ("str-login-file", &["str.login-file"], &["corr.login-files-and-network"]),
@@ -39,6 +40,7 @@ const EXPECT: &[(&str, &[&str], &[&str])] = &[
     ("net-socket", &["net.socket"], &[]),
     ("obf-score", &["obf.score"], &[]),
     ("proc-exit", &["proc.exit"], &[]),
+    ("reach-paths", &["str.url"], &[]),
     ("reflect-indirect", &["reflect.indirect", "exec.process"], &[]),
     ("script-engine", &["script.engine"], &[]),
     ("str-discord-webhook", &["str.discord-webhook", "str.url"], &[]),
@@ -132,6 +134,41 @@ fn detail_checks() {
     ] {
         assert!(details.contains(&want), "missing {want} in {details:?}");
     }
+}
+
+#[test]
+fn reachability() {
+    let r = scan("reach-paths.jar", &fixture("reach-paths"));
+    let reach = r.reachability.as_ref().expect("plugin with a main class");
+    assert_eq!(reach.entry_points, ["fixture/Main"]);
+    assert!(!reach.dynamic);
+    let reached: Vec<_> = r.findings.iter().filter(|f| f.rule == "str.url").map(|f| (f.value.as_deref().unwrap(), f.reached)).collect();
+    assert_eq!(
+        reached,
+        [
+            ("by-name.example.invalid", Some(true)),
+            ("lambda.example.invalid", Some(true)),
+            ("library.example.invalid", Some(false)),
+            ("listener.example.invalid", Some(true)),
+            ("never-made.example.invalid", Some(false)),
+            ("static-init.example.invalid", Some(true)),
+            ("tostring.example.invalid", Some(true)),
+            ("unused.example.invalid", Some(false)),
+            ("virtual.example.invalid", Some(true)),
+        ]
+    );
+
+    // Parts in two other classes, joined by one method that calls both.
+    let r = scan("corr-download-and-run-split.jar", &fixture("corr-download-and-run-split"));
+    let corr = r.findings.iter().find(|f| f.rule == "corr.download-and-run").unwrap();
+    assert!(corr.evidence.iter().all(|e| e.location == "fixture/Main" && e.method.as_deref() == Some("unused()V")), "{:?}", corr.evidence);
+    for part in ["(in fixture/Fetch.get)", "(in fixture/Load.run)"] {
+        assert!(corr.evidence.iter().any(|e| e.detail.ends_with(part)), "missing {part}: {:?}", corr.evidence);
+    }
+
+    // No plugin main class: nothing to start from.
+    let r = scan("meta-no-descriptor.jar", &fixture("meta-no-descriptor"));
+    assert!(r.reachability.is_none() && r.findings.iter().all(|f| f.reached.is_none()));
 }
 
 #[test]

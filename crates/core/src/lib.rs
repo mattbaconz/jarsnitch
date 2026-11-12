@@ -9,6 +9,7 @@ mod archive;
 mod class;
 mod diff;
 mod meta;
+mod reach;
 mod report;
 mod rules;
 mod scan;

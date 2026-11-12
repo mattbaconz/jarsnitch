@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 5,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "code.load",
@@ -59,7 +67,8 @@ expression: report
           "detail": "fixture/Main$Loader.defineClass (subclass of java/lang/ClassLoader)"
         }
       ],
-      "evidence_total": 3
+      "evidence_total": 3,
+      "reached": false
     }
   ],
   "warnings": [],

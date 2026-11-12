@@ -14,6 +14,7 @@ Every rule jarsnitch v1 applies. Rule ids are stable: an id is never renamed or 
 
 - **Calls.** Every `invoke*` instruction (`invokevirtual`, `invokestatic`, `invokespecial`, `invokeinterface`), the bootstrap method and bootstrap arguments of every `invokedynamic` (so a `Runtime::exec` method reference counts), and `MethodHandle` constants loaded with `ldc`.
 - **Owners** are matched exactly unless a rule says otherwise. Where a rule says "in-jar subclasses", a class in the scanned jar whose superclass chain reaches the listed owner also matches.
+- **Reachability.** Findings in the top-level jar's classes also say whether the plugin's entry points reach them (`reached`). It never changes severity. How the call graph is built: [architecture](architecture.md#reachability).
 - **Reflection.** Targets resolved from string literals (see [`reflect.indirect`](#reflectindirect--notable)) count as real calls for every rule and every correlation.
 - **Evidence** is the class and method that contain the instruction, plus the matched call. Classes in nested jars carry their jar path: `libs/helper.jar!/com/example/Net`. Code decoded from a string carries the class it was found in, `!embedded-<n>` and its own path: `com/example/Main!embedded-1!/payload/Loader`.
 - **Strings** are string literals in class files (`CONSTANT_String`, not class, method or field names) and text resources up to 1 MiB: `.yml`, `.yaml`, `.json`, `.properties`, `.txt`, `.toml`, `.conf`, `.cfg`, and files without an extension that are valid UTF-8. Text the code hides in a constant array or base64 counts too: see [`str.hidden-text`](#strhidden-text--notable).
@@ -281,15 +282,15 @@ Computed over the top-level jar's own classes, not nested jars. The weights and 
 
 ## Correlations
 
-Each raises a High finding when all its parts are present. Scope **jar** means the whole scanned file, including nested jars and decoded code. Scope **class** means one class. Evidence lists the parts that matched.
+Each raises a High finding when all its parts are present. Scope **jar** means the whole scanned file, including nested jars and decoded code. Scope **class** means one class. Scope **class or call** adds one method together with the methods it calls directly, so a method that downloads through one class and loads code through another counts; the evidence is placed at that method and names where each part is. Evidence lists the parts that matched.
 
-The network correlations use class scope because large plugins bundle libraries (database drivers, dependency loaders) whose network and process code sits in unrelated classes; on the whole jar they fired on most popular plugins. A host or IP string counts as the network part so that `new URLClassLoader(new URL[] { new URL("http://...") })` is caught, including when the string is [hidden](#strhidden-text--notable). **Limit:** parts split across classes don't correlate; their individual findings still appear.
+The network correlations use class scope because large plugins bundle libraries (database drivers, dependency loaders) whose network and process code sits in unrelated classes; on the whole jar they fired on most popular plugins. A host or IP string counts as the network part so that `new URLClassLoader(new URL[] { new URL("http://...") })` is caught, including when the string is [hidden](#strhidden-text--notable). **Limit:** parts joined only through longer call chains, fields or callbacks don't correlate; their individual findings still appear.
 
 ### `corr.download-and-run` · high
 
 **Can download and run code from the internet**
 
-- **Parts:** `net.http`, `net.socket`, a `str.url` host or a `str.ip` address, plus `code.load`. Scope: class.
+- **Parts:** `net.http`, `net.socket`, a `str.url` host or a `str.ip` address, plus `code.load`. Scope: class or call.
 - **Why it matters:** The jar can fetch code that isn't in this file and run it, so this report can't tell you what that code does.
 - **Legit uses:** Dependency downloaders that fetch libraries from Maven repositories at startup. Check the hosts under `str.url`.
 
@@ -318,7 +319,7 @@ The network correlations use class scope because large plugins bundle libraries 
 
 **Can run operating-system commands and connect to the internet**
 
-- **Parts:** `exec.process`, plus `net.http`, `net.socket`, a `str.url` host or a `str.ip` address. Scope: class.
+- **Parts:** `exec.process`, plus `net.http`, `net.socket`, a `str.url` host or a `str.ip` address. Scope: class or call.
 - **Why it matters:** Together these allow remote control of the machine: commands could arrive over the network and results go back out.
 - **Legit uses:** Hosting-panel integrations, plugins that download and run helper tools.
 
@@ -326,7 +327,7 @@ The network correlations use class scope because large plugins bundle libraries 
 
 **Names password or login files and can connect to the internet**
 
-- **Parts:** `str.login-file`, plus `net.http`, `net.socket`, a `str.url` host or a `str.ip` address. Scope: class.
+- **Parts:** `str.login-file`, plus `net.http`, `net.socket`, a `str.url` host or a `str.ip` address. Scope: class or call.
 - **Why it matters:** One class has both the path of a login file and network access, which is what sending that file somewhere would take.
 - **Legit uses:** Rare. SSH and SFTP libraries that load a key file and open a connection.
 

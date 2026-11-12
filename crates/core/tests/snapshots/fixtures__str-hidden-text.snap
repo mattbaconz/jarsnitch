@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 3,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "str.hidden-text",
@@ -54,7 +62,8 @@ expression: report
           "detail": "https://cdn.example.invalid/a.jar"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     },
     {
       "rule": "str.ip",
@@ -70,7 +79,8 @@ expression: report
           "detail": "203.0.113.9"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "str.url",
@@ -86,7 +96,8 @@ expression: report
           "detail": "https://cdn.example.invalid/a.jar"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     }
   ],
   "warnings": [],

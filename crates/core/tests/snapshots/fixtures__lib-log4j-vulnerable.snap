@@ -47,6 +47,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 2,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "lib.log4j-vulnerable",
@@ -62,7 +70,8 @@ expression: report
           "detail": "org.apache.logging.log4j:log4j-core:2.14.1"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": null
     }
   ],
   "warnings": [],

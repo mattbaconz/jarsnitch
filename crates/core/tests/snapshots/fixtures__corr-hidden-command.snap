@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 4,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "corr.hidden-command",
@@ -49,7 +57,8 @@ expression: report
           "detail": "chat or command handler, string-literal comparison and mc.set-op in one class"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "mc.set-op",
@@ -65,7 +74,8 @@ expression: report
           "detail": "org/bukkit/entity/Player.setOp"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     }
   ],
   "warnings": [],

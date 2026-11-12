@@ -1,6 +1,5 @@
 ---
 source: crates/core/tests/fixtures.rs
-assertion_line: 135
 expression: report
 ---
 {
@@ -35,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 5,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "net.http",
@@ -55,7 +62,8 @@ expression: report
           "detail": "java/net/http/HttpClient.send"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     },
     {
       "rule": "str.url",
@@ -76,7 +84,8 @@ expression: report
           "detail": "https://api.example.invalid/v2"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     }
   ],
   "warnings": [],

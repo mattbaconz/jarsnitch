@@ -19,10 +19,17 @@ pub enum Const<'a> {
 }
 
 pub struct Method<'a> {
+    pub access: u16,
     pub name: u16,
     pub desc: u16,
     pub code: Option<&'a [u8]>,
+    /// Has a `RuntimeVisibleAnnotations` attribute.
+    pub annotated: bool,
 }
+
+pub const ACC_PUBLIC: u16 = 0x0001;
+pub const ACC_PROTECTED: u16 = 0x0004;
+pub const ACC_STATIC: u16 = 0x0008;
 
 pub struct ClassFile<'a> {
     pub cp: Vec<Const<'a>>,
@@ -146,18 +153,16 @@ impl<'a> ClassFile<'a> {
 
         let mut cf = ClassFile { cp, this_class, super_class, interfaces, fields, methods: Vec::new(), bootstrap: Vec::new() };
         for _ in 0..r.u2()? {
-            r.u2()?;
+            let access = r.u2()?;
             let name = r.u2()?;
             let desc = r.u2()?;
-            let code = r
-                .attributes()?
-                .into_iter()
-                .find(|(n, _)| cf.utf8(*n) == Some("Code"))
-                .and_then(|(_, body)| {
-                    let len = u32::from_be_bytes(body.get(4..8)?.try_into().ok()?) as usize;
-                    body.get(8..8usize.checked_add(len)?)
-                });
-            cf.methods.push(Method { name, desc, code });
+            let attrs = r.attributes()?;
+            let annotated = attrs.iter().any(|(n, _)| cf.utf8(*n) == Some("RuntimeVisibleAnnotations"));
+            let code = attrs.into_iter().find(|(n, _)| cf.utf8(*n) == Some("Code")).and_then(|(_, body)| {
+                let len = u32::from_be_bytes(body.get(4..8)?.try_into().ok()?) as usize;
+                body.get(8..8usize.checked_add(len)?)
+            });
+            cf.methods.push(Method { access, name, desc, code, annotated });
         }
         for (name, body) in r.attributes()? {
             if cf.utf8(name) == Some("BootstrapMethods") {
@@ -232,6 +237,10 @@ pub enum Op {
     Indy(u16),
     /// ldc, ldc_w or ldc2_w of a constant.
     Ldc(u16),
+    /// new on a class constant.
+    New(u16),
+    /// getstatic or putstatic on a field reference: the owner class gets initialized.
+    Static(u16),
 }
 
 /// Walks bytecode and yields interesting instructions. Stops quietly at the first
@@ -358,6 +367,8 @@ impl Iterator for Ops<'_> {
                 0xba => Op::Indy(self.u2(pc + 1)?),
                 0x12 => Op::Ldc(u16::from(self.code[pc + 1])),
                 0x13 | 0x14 => Op::Ldc(self.u2(pc + 1)?),
+                0xbb => Op::New(self.u2(pc + 1)?),
+                0xb2 | 0xb3 => Op::Static(self.u2(pc + 1)?),
                 _ => continue,
             };
             return Some(op);

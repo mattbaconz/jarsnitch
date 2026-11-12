@@ -33,6 +33,9 @@ pub struct Report {
     pub libraries: Vec<Library>,
     pub nested: Vec<Nested>,
     pub obfuscation: Obfuscation,
+    /// Which of the jar's own methods the plugin's entry points can reach. None when
+    /// there's no plugin main class to start from (a mod, a library, a broken jar).
+    pub reachability: Option<Reachability>,
     pub findings: Vec<Finding>,
     pub warnings: Vec<Warning>,
     pub stats: Stats,
@@ -100,6 +103,19 @@ pub struct Obfuscation {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct Reachability {
+    /// Classes the call graph starts from: the descriptor's main classes, then classes a
+    /// service file or another resource names (sorted), then the manifest's. First 100.
+    pub entry_points: Vec<String>,
+    /// Methods in the top-level jar's classes, and how many of them are reachable.
+    pub methods: u64,
+    pub reached_methods: u64,
+    /// Reachable code loads classes by names built at runtime or defines classes from
+    /// bytes, so code marked unreached may still run.
+    pub dynamic: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct Finding {
     pub rule: String,
     pub severity: Severity,
@@ -111,6 +127,10 @@ pub struct Finding {
     /// First 50 locations, sorted.
     pub evidence: Vec<Evidence>,
     pub evidence_total: usize,
+    /// True when the plugin's entry points can reach at least one location, false when
+    /// every location is code they can't reach. None when it doesn't apply: a resource,
+    /// a nested jar, the jar as a whole, or no reachability for this jar.
+    pub reached: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]

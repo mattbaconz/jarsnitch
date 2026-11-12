@@ -66,6 +66,7 @@ Findings are matched by rule and value (host, webhook id, path), not by where th
 - **Why it matters**, in one line.
 - **Typical legitimate uses**, because most capabilities have them.
 - **Where:** class and method, with nested jars shown as `libs/helper.jar!/com/example/Net`.
+- **Not called**, when nothing the plugin starts from (its main class, event handlers, commands, service files) calls that code. These findings are listed last.
 
 High is used for combinations that give a jar a lot of control (for example network access plus runtime code loading) and for bundled libraries with known security bugs.
 
@@ -109,11 +110,12 @@ Every rule in v1. Rule ids never change, so you can filter on them in `--json` o
 | `corr.login-files-and-network` | high | Names password or login files and can connect to the internet |
 | `corr.hidden-loader` | high | Contains hidden code and can load it |
 
-`corr.*` rules are combinations: they fire when the parts they list appear together in one class (`corr.hidden-loader`: anywhere in the jar). What triggers each rule, its legitimate uses and its exact limits: [docs/rules.md](docs/rules.md).
+`corr.*` rules are combinations: they fire when the parts they list appear together in one class (`corr.hidden-loader`: anywhere in the jar). The three network combinations also fire when the parts sit in other classes but one method calls them directly. What triggers each rule, its legitimate uses and its exact limits: [docs/rules.md](docs/rules.md).
 
 ## How to read a report
 
-- **"Can" means the code is in the jar, not that it runs.** jarsnitch doesn't trace whether a capability is ever used. A bundled library may carry features the plugin never calls.
+- **"Can" means the code is in the jar, not that it runs.** jarsnitch follows calls from the plugin's entry points: the main class, the methods the server calls on it, event handlers, and classes named in the manifest, service files or configs. A finding in code nothing there calls, often an unused part of a bundled library, is marked "not called" and listed last. Its severity doesn't change.
+- **"Not called" is an estimate.** Code reached only through reflection, or loaded by a name built at runtime, can still run. When the plugin's reachable code loads classes that way, the report says so.
 - **Most findings have ordinary explanations.** Paid plugins often obfuscate their code and contact a license server. Reward plugins run console commands from their config. Dependency loaders download libraries at startup. Ask whether a finding fits what the plugin says it does.
 - **jarsnitch never calls a plugin malware, safe or clean.** It reports facts and leaves the judgement to you.
 
@@ -127,8 +129,8 @@ Every report ends with:
 - **Text built at runtime.** jarsnitch reads string literals, text written as constant byte or char arrays, and base64 or hex. Addresses and class names assembled, decrypted or downloaded at runtime stay hidden.
 - **Encrypted payloads.** XOR, AES or custom encoding isn't decoded; it may only show up as a higher obfuscation score.
 - **Intent.** A legitimate updater and a malicious dropper can use exactly the same calls.
-- **Combinations spread over classes.** The High findings for network access plus code loading or OS commands need both parts in one class. Split across classes, each part is still listed on its own.
-- **Reachability.** No call-graph analysis: a finding in dead code or an unused library counts the same as one in `onEnable`.
+- **Combinations spread further.** The High findings for network access plus code loading, OS commands or login files need both parts in one class, or in one method and the methods it calls directly. Parts joined through longer call chains, fields or callbacks are each listed on their own.
+- **Exact reachability.** The call graph assumes that every method the server could call on a plugin class runs, and it can't follow names built at runtime, so "not called" isn't proof that the code never runs.
 - **Known malware by name.** v1 ships no malware signatures. It won't tell you "this is family X".
 - **Non-Java code in resources.** Scripts (Skript, JavaScript) and native libraries inside the jar are not analyzed, though disguised ones are flagged.
 - **Mods.** Fabric, Quilt, Forge and NeoForge jars get their name and version read and the same bytecode rules, but no mod-specific checks.

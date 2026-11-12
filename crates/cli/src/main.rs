@@ -252,11 +252,24 @@ fn print_report(r: &Report) {
         if r.stats.classes == 1 { "" } else { "es" },
         r.obfuscation.score
     );
+    if let Some(reach) = &r.reachability {
+        let from = reach.entry_points.first().map_or("?", String::as_str);
+        let more = match reach.entry_points.len() {
+            0 | 1 => String::new(),
+            n => format!(" and {} more", n - 1),
+        };
+        println!("call graph from {from}{more}: {} of {} methods reached", reach.reached_methods, reach.methods);
+        if reach.dynamic {
+            println!("  it also loads classes by names built at runtime, so code it doesn't reach may still run");
+        }
+    }
     if r.partial {
         println!("PARTIAL REPORT: a scan limit was hit, so some of the jar wasn't checked. See warnings.");
     }
     println!();
-    for f in &r.findings {
+    // Code the entry points never call goes last; its severity stays the same.
+    let (unreached, reached): (Vec<&Finding>, Vec<&Finding>) = r.findings.iter().partition(|f| f.reached == Some(false));
+    for f in reached.iter().chain(&unreached) {
         print_finding(f);
     }
     if !r.warnings.is_empty() {
@@ -268,8 +281,12 @@ fn print_report(r: &Report) {
         println!();
     }
     let count = |s| r.findings.iter().filter(|f| f.severity == s).count();
+    let not_called = match unreached.len() {
+        0 => String::new(),
+        n => format!(" · {n} not called from entry points"),
+    };
     println!(
-        "{} high · {} notable · {} info\n",
+        "{} high · {} notable · {} info{not_called}\n",
         count(Severity::High),
         count(Severity::Notable),
         count(Severity::Info)
@@ -298,5 +315,9 @@ fn print_finding(f: &Finding) {
     places.dedup();
     let more = f.evidence_total.saturating_sub(3);
     let tail = if more > 0 { format!(", +{more} more") } else { String::new() };
-    println!("         at {}{tail}\n", places.join(", "));
+    println!("         at {}{tail}", places.join(", "));
+    if f.reached == Some(false) {
+        println!("         not called from the plugin's entry points");
+    }
+    println!();
 }

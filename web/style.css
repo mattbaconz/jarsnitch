@@ -190,6 +190,7 @@ main { padding-top: 24px; padding-bottom: 32px; }
 .rule { color: var(--muted); font-size: 0.8rem; }
 .finding p { margin: 6px 0 0; overflow-wrap: anywhere; }
 .legit { color: var(--muted); font-size: 0.92rem; }
+.unreached { color: var(--muted); font-size: 0.9rem; }
 .where { margin-top: 8px; font-size: 0.9rem; overflow-wrap: anywhere; }
 .where summary { cursor: pointer; }
 .where ul { margin: 6px 0 0; padding-left: 18px; }

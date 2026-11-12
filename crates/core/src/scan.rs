@@ -6,8 +6,9 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use sha2::{Digest, Sha256};
 
 use crate::archive::{self, ReadError};
-use crate::class::{self, ClassFile, Const, Op};
+use crate::class::{self, ACC_PROTECTED, ACC_PUBLIC, ACC_STATIC, ClassFile, Const, Op};
 use crate::meta;
+use crate::reach::{Graph, Ref, Sig};
 use crate::report::*;
 use crate::rules::{self, REFLECT_CLASS_ONLY};
 use crate::strings::{self, Payload, UrlKind};
@@ -21,6 +22,12 @@ const HOST_LIST: usize = 100;
 
 /// Text resources scanned for addresses and encoded payloads.
 const TEXT_EXTS: &[&str] = &["yml", "yaml", "json", "properties", "txt", "toml", "conf", "cfg"];
+/// Class names collected from resources as call-graph entry points, at most.
+const NAMED_CLASSES: usize = 100_000;
+/// Entry points listed in the report, at most.
+const ENTRY_LIST: usize = 100;
+/// Rules that count as the network part of the correlations.
+const NET: &[&str] = &["net.http", "net.socket", "str.url", "str.ip"];
 
 pub fn run(name: &str, bytes: &[u8], limits: &Limits) -> (Report, Classes) {
     let mut s = Scan::new(limits);
@@ -112,6 +119,14 @@ struct Scan<'l> {
     descriptors: Vec<(PluginInfo, String)>,
     libraries: BTreeSet<Library>,
     nested: Vec<Nested>,
+    /// Call graph of the top-level jar's classes.
+    graph: Graph,
+    /// The graph method whose code is being walked.
+    cur: Option<u32>,
+    /// Classes named by service files and other top-level resources.
+    named_classes: BTreeSet<String>,
+    /// Classes the manifest names to start (`Main-Class`, agent classes).
+    manifest_classes: Vec<String>,
 }
 
 impl<'l> Scan<'l> {
@@ -135,6 +150,32 @@ impl<'l> Scan<'l> {
             descriptors: Vec::new(),
             libraries: BTreeSet::new(),
             nested: Vec::new(),
+            graph: Graph::default(),
+            cur: None,
+            named_classes: BTreeSet::new(),
+            manifest_classes: Vec::new(),
+        }
+    }
+
+    fn graph_ref(&mut self, r: Ref) {
+        if let Some(m) = self.cur {
+            self.graph.add(m, r);
+        }
+    }
+
+    /// The method being walked uses the named class by reflection or by name.
+    fn graph_reflect(&mut self, name: &str) {
+        if self.cur.is_some() {
+            let id = self.graph.names.id(name);
+            self.graph_ref(Ref::Reflect(id));
+        }
+    }
+
+    fn name_class(&mut self, s: &str) {
+        if self.named_classes.len() < NAMED_CLASSES
+            && let Some(name) = class_name_like(s)
+        {
+            self.named_classes.insert(name);
         }
     }
 
@@ -253,10 +294,20 @@ impl<'l> Scan<'l> {
             return;
         }
         if clean.eq_ignore_ascii_case("META-INF/MANIFEST.MF") {
-            for attr in meta::agent_attributes(&String::from_utf8_lossy(bytes)) {
+            let manifest = String::from_utf8_lossy(bytes);
+            for attr in meta::agent_attributes(&manifest) {
                 self.hit("code.instrument", None, ev(path, None, format!("manifest declares {attr}")));
             }
+            if prefix.is_empty() {
+                self.manifest_classes.extend(meta::manifest_classes(&manifest).iter().filter_map(|c| class_name_like(c)));
+            }
             return;
+        }
+        // ServiceLoader provider lists: one class name per line, `#` starts a comment.
+        if prefix.is_empty() && clean.starts_with("META-INF/services/") && bytes.len() <= self.limits.max_text_bytes {
+            for line in String::from_utf8_lossy(bytes).lines() {
+                self.name_class(line.split('#').next().unwrap_or("").trim());
+            }
         }
         let text_ext = TEXT_EXTS.contains(&ext.as_str()) || meta::platform_for(clean).is_some();
         if bytes.len() <= self.limits.max_text_bytes {
@@ -288,6 +339,9 @@ impl<'l> Scan<'l> {
             self.warn("text.host-list", path, format!("{hosts} bare hostnames, probably a domain list such as a public suffix list; hosts in this file aren't listed"));
         }
         for token in tokens {
+            if depth == 0 {
+                self.name_class(token);
+            }
             self.literal(token, path, None, depth, !host_list);
         }
         // A payload wrapped across lines, like MIME base64.
@@ -391,16 +445,21 @@ impl<'l> Scan<'l> {
             return self.warn("class.malformed", path, "missing class name");
         };
         self.classes += 1;
+        let outer = self.cur.take();
         let loc = format!("{prefix}{name}");
         self.class_locs.insert(loc.clone());
         if let Some(sup) = cf.super_name() {
             self.supers.entry(name.to_string()).or_insert_with(|| sup.to_string());
         }
         let top = prefix.is_empty();
-        if top {
+        let graph_class = if top {
             self.top_classes.insert(name.to_string());
             self.obf_class(&cf, name);
-        }
+            let ifaces: Vec<&str> = cf.interfaces.iter().filter_map(|&i| cf.class_name(i)).collect();
+            Some(self.graph.class(name, cf.super_name(), &ifaces))
+        } else {
+            None
+        };
 
         let mut facts = ClassFacts::default();
         if cf.interfaces.iter().any(|&i| cf.class_name(i) == Some("java/lang/instrument/ClassFileTransformer")) {
@@ -413,6 +472,8 @@ impl<'l> Scan<'l> {
             if rules::CHAT_HANDLER_DESCS.contains(&mdesc) {
                 facts.chat_handler = true;
             }
+            let (is_static, visible) = (m.access & ACC_STATIC != 0, m.access & (ACC_PUBLIC | ACC_PROTECTED) != 0);
+            self.cur = graph_class.map(|c| self.graph.method(c, mname, mdesc, is_static, visible, m.code.is_some(), m.annotated));
             let Some(code) = m.code else { continue };
             let method = format!("{mname}{mdesc}");
             let mut mf = MethodFacts::default();
@@ -458,9 +519,17 @@ impl<'l> Scan<'l> {
                             seen_strings.insert(i);
                             mf.since_call.push(Cow::Borrowed(s));
                             code_string_facts(&mut facts, &mut mf, s);
+                            if let Some(name) = class_name_like(s) {
+                                self.graph_reflect(&name);
+                            }
                             self.literal(s, &loc, Some(&method), depth, true);
                         }
-                        Some(Const::Class(_)) => mf.class_consts.extend(cf.class_name(i)),
+                        Some(Const::Class(_)) => {
+                            if let Some(c) = cf.class_name(i) {
+                                mf.class_consts.push(c);
+                                self.graph_reflect(c);
+                            }
+                        }
                         Some(Const::Handle(..)) => {
                             if let Some((o, n, d)) = cf.handle(i) {
                                 self.call(&mut facts, &mut mf, &loc, &method, o, n, d);
@@ -468,10 +537,32 @@ impl<'l> Scan<'l> {
                         }
                         _ => {}
                     },
+                    Op::New(i) => {
+                        if self.cur.is_some()
+                            && let Some(c) = cf.class_name(i)
+                        {
+                            let id = self.graph.names.id(c);
+                            self.graph_ref(Ref::New(id));
+                        }
+                    }
+                    Op::Static(i) => {
+                        if self.cur.is_some()
+                            && let Some((o, _, _)) = cf.member(i)
+                        {
+                            let id = self.graph.names.id(o);
+                            self.graph_ref(Ref::Init(id));
+                        }
+                    }
                 }
             }
             self.end_method(&mut facts, mf, &loc, &method);
+            if let Some(m) = self.cur.take() {
+                self.graph.end_method(m);
+            }
         }
+        // A class decoded from a string literal is scanned in the middle of the method
+        // that holds the literal; that method's walk goes on after this returns.
+        self.cur = outer;
 
         // String constants only reachable from fields or annotations, not from code.
         for i in 0..cf.cp.len() as u16 {
@@ -496,8 +587,23 @@ impl<'l> Scan<'l> {
 
     #[allow(clippy::too_many_arguments)]
     fn call<'c>(&mut self, facts: &mut ClassFacts, mf: &mut MethodFacts<'c>, loc: &str, method: &str, owner: &'c str, name: &'c str, desc: &'c str) {
+        if self.cur.is_some() {
+            let o = self.graph.names.id(owner);
+            let s = self.graph.sig(name, desc);
+            self.graph_ref(Ref::Call(o, s));
+            // Classes defined from bytes, by any loader: code the graph can't see.
+            if matches!(name, "defineClass" | "defineHiddenClass" | "defineAnonymousClass") {
+                self.graph_ref(Ref::Dynamic);
+            }
+            if owner == "java/lang/Class" && matches!(name, "getDeclaredMethods" | "getMethods" | "getDeclaredConstructors" | "getConstructors") {
+                self.graph_ref(Ref::Enumerate);
+            }
+        }
         let detail = format!("{owner}.{name}");
         for rule in rules::match_call(owner, name, Some(desc)) {
+            if rule == "code.load" {
+                self.graph_ref(Ref::Dynamic);
+            }
             // A class's own serialization hook reads its fields back; that isn't reading
             // objects from somewhere else.
             if rule == "deser.java" && method == "readObject(Ljava/io/ObjectInputStream;)V" {
@@ -525,6 +631,9 @@ impl<'l> Scan<'l> {
         match (owner, name) {
             ("java/lang/String", n) if rules::STRING_COMPARES.contains(&n) && last.is_some() => facts.compares_literal = true,
             ("java/lang/Class", "forName") | ("java/lang/ClassLoader", "loadClass") | ("java/lang/invoke/MethodHandles$Lookup", "findClass") => {
+                if last.is_none() {
+                    self.graph_ref(Ref::Dynamic);
+                }
                 mf.reflect_classes.extend(last.map(|s| s.replace('.', "/")));
             }
             ("java/lang/Class", "getMethod" | "getDeclaredMethod")
@@ -566,6 +675,9 @@ impl<'l> Scan<'l> {
         if mf.data_folder && mf.parent_file {
             facts.plugins_ref = true;
         }
+        for class in &mf.reflect_classes {
+            self.graph_reflect(class);
+        }
         let mut owners: Vec<String> = mf.reflect_classes.clone();
         if mf.reflect_lookup {
             owners.extend(mf.class_consts.iter().map(|s| s.to_string()));
@@ -584,6 +696,57 @@ impl<'l> Scan<'l> {
                 self.class_hit(facts, "reflect.indirect", ev(loc, Some(method), owner.clone()));
             }
         }
+    }
+
+    /// Correlation pairs split over a method and the methods it calls directly, with the
+    /// two parts in different classes (one class is the class-scope case). The evidence
+    /// points at the calling method.
+    fn call_correlations(&self) -> Vec<(&'static str, Evidence)> {
+        const PARTS: [&[&str]; 4] = [NET, &["code.load"], &["exec.process"], &["str.login-file"]];
+        const PAIRS: [(&str, usize, usize); 3] =
+            [("corr.download-and-run", 0, 1), ("corr.command-and-network", 2, 0), ("corr.login-files-and-network", 3, 0)];
+        let mut parts: HashMap<u32, [Option<Evidence>; 4]> = HashMap::new();
+        for ((rule, _), evidence) in &self.hits {
+            for (k, part) in PARTS.iter().enumerate() {
+                if !part.contains(rule) {
+                    continue;
+                }
+                for e in evidence {
+                    let Some(m) = e.method.as_deref().and_then(|m| self.graph.method_at(&e.location, m)) else { continue };
+                    let slot = &mut parts.entry(m).or_default()[k];
+                    if slot.is_none() {
+                        *slot = Some(Evidence { detail: format!("{rule}: {}", e.detail), ..e.clone() });
+                    }
+                }
+            }
+        }
+        let mut found = Vec::new();
+        if parts.is_empty() {
+            return found;
+        }
+        // Only calls with the signature of a method that has parts can matter.
+        let sigs: HashSet<Sig> = parts.keys().map(|&m| self.graph.sig_of(m)).collect();
+        for m in 0..self.graph.method_count() as u32 {
+            let callees: Vec<u32> = self.graph.callees(m, &sigs).into_iter().filter(|c| parts.contains_key(c)).collect();
+            if callees.is_empty() {
+                continue;
+            }
+            let own = parts.get(&m);
+            let pick = |k: usize| own.and_then(|p| p[k].as_ref()).or_else(|| callees.iter().find_map(|c| parts[c][k].as_ref()));
+            for (corr, a, b) in PAIRS {
+                let (Some(x), Some(y)) = (pick(a), pick(b)) else { continue };
+                if x.location == y.location {
+                    continue;
+                }
+                let (location, method) = self.graph.describe(m);
+                for e in [x, y] {
+                    let name = e.method.as_deref().and_then(|m| m.split('(').next()).unwrap_or_default();
+                    let detail = format!("{} (in {}.{name})", e.detail, e.location);
+                    found.push((corr, Evidence { location: location.clone(), method: Some(method.clone()), detail }));
+                }
+            }
+        }
+        found
     }
 
     fn obf_class(&mut self, cf: &ClassFile, name: &str) {
@@ -645,7 +808,6 @@ impl<'l> Scan<'l> {
 
         // Correlations. Each part is a list of alternatives; the first evidence of each
         // part goes into the finding. Class scope groups evidence by its location.
-        const NET: &[&str] = &["net.http", "net.socket", "str.url", "str.ip"];
         let correlations: [(&'static str, bool, [&[&str]; 2]); 4] = [
             ("corr.download-and-run", true, [NET, &["code.load"]]),
             ("corr.command-and-network", true, [&["exec.process"], NET]),
@@ -676,6 +838,7 @@ impl<'l> Scan<'l> {
                 }
             }
         }
+        found.extend(self.call_correlations());
         for (corr, e) in found {
             self.hit(corr, None, e);
         }
@@ -729,12 +892,51 @@ impl<'l> Scan<'l> {
         }
         let classes = Classes { names: std::mem::take(&mut self.class_locs), rules: class_rules };
 
+        // Reachability starts from the plugin's own main classes; without one there's
+        // nothing to start from.
+        let mut entries: Vec<String> = plugins
+            .iter()
+            .filter(|p| matches!(p.platform.as_str(), "bukkit" | "paper" | "bungee" | "velocity"))
+            .flat_map(|p| [&p.main, &p.bootstrapper, &p.loader].into_iter().flatten().map(|c| c.replace('.', "/")))
+            .filter(|c| self.graph.has_class(c))
+            .collect();
+        let mut seen = HashSet::new();
+        entries.retain(|c| seen.insert(c.clone()));
+        let graph = std::mem::take(&mut self.graph);
+        let reach = (!entries.is_empty()).then(|| {
+            let named: Vec<String> = self.named_classes.iter().filter(|c| graph.has_class(c) && !entries.contains(c)).cloned().collect();
+            entries.extend(named);
+            let manifest: Vec<String> = self.manifest_classes.iter().filter(|c| graph.has_class(c)).cloned().collect();
+            let r = graph.reach(&entries, &manifest);
+            entries.extend(manifest.into_iter().filter(|c| !entries.contains(c)).collect::<Vec<_>>());
+            r
+        });
+        let reachability = reach.as_ref().map(|r| Reachability {
+            entry_points: entries.iter().take(ENTRY_LIST).cloned().collect(),
+            methods: graph.method_count() as u64,
+            reached_methods: r.reached_count() as u64,
+            dynamic: r.dynamic,
+        });
+
         let mut findings: Vec<Finding> = self
             .hits
             .into_iter()
             .map(|((id, value), evidence)| {
                 let r = rules::rule(id);
                 let title = if id == "obf.score" { format!("{} (score {score}/100)", r.title) } else { r.title.to_string() };
+                // Reached if any location is; unreached only if every location is code
+                // that can't be reached.
+                let reached = reach.as_ref().and_then(|reach| {
+                    let mut unreached = false;
+                    for e in &evidence {
+                        match reach.at(&graph, &e.location, e.method.as_deref()) {
+                            Some(true) => return Some(true),
+                            Some(false) => unreached = true,
+                            None => return None,
+                        }
+                    }
+                    unreached.then_some(false)
+                });
                 Finding {
                     rule: id.to_string(),
                     severity: r.severity,
@@ -744,6 +946,7 @@ impl<'l> Scan<'l> {
                     value,
                     evidence_total: evidence.len(),
                     evidence: evidence.into_iter().take(EVIDENCE_CAP).collect(),
+                    reached,
                 }
             })
             .collect();
@@ -758,6 +961,7 @@ impl<'l> Scan<'l> {
             libraries,
             nested: self.nested,
             obfuscation: Obfuscation { score, short_names: round(sn), default_package: round(dp), encoded_strings: round(es) },
+            reachability,
             findings,
             warnings: self.warnings,
             stats: Stats { entries: self.entries, classes: self.classes, uncompressed_bytes: self.total_bytes },
@@ -782,6 +986,24 @@ fn code_string_facts(facts: &mut ClassFacts, mf: &mut MethodFacts, s: &str) {
     if is_plugins_dir(s) {
         facts.plugins_ref = true;
     }
+}
+
+/// `a.b.C`, `a.b.C$D` or `a/b/C` as an internal name: a string that may name a class.
+fn class_name_like(s: &str) -> Option<String> {
+    if s.len() < 3 || s.len() > 200 {
+        return None;
+    }
+    let sep = if s.contains('/') { '/' } else { '.' };
+    let mut parts = 0;
+    for part in s.split(sep) {
+        let ident = part.chars().next().is_some_and(|c| c.is_alphabetic() || c == '_' || c == '$')
+            && part.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$');
+        if !ident {
+            return None;
+        }
+        parts += 1;
+    }
+    (parts >= 2).then(|| s.replace('.', "/"))
 }
 
 fn is_plugins_dir(s: &str) -> bool {

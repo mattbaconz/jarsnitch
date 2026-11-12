@@ -38,6 +38,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 5,
+    "reached_methods": 5,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "mc.console-command",
@@ -53,7 +61,8 @@ expression: report
           "detail": "org/bukkit/Bukkit.dispatchCommand"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": true
     },
     {
       "rule": "net.http",
@@ -69,7 +78,8 @@ expression: report
           "detail": "java/net/URL.openConnection"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": true
     },
     {
       "rule": "str.url",
@@ -85,7 +95,8 @@ expression: report
           "detail": "https://api.example.invalid/hello/latest"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": true
     },
     {
       "rule": "str.url",
@@ -101,7 +112,8 @@ expression: report
           "detail": "https://example.invalid/hello"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": null
     }
   ],
   "warnings": [],

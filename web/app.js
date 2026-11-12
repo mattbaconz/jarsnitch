@@ -237,15 +237,22 @@ function findingCard(f) {
     h("div", { class: "finding-head" }, sevBadge(f.severity), h("h4", {}, title), h("code", { class: "rule" }, f.rule)),
     h("p", { class: "why" }, f.why),
     h("p", { class: "legit" }, "Common legitimate uses: ", f.legit_uses),
-    evidence(f));
+    evidence(f),
+    f.reached === false ? notCalled() : null);
 }
 
-/** Cards for findings in report order; findings that share a rule (hosts, say) share a card. */
+const notCalled = () => h("p", { class: "unreached" }, "Not called from the plugin's entry points.");
+
+/**
+ * Cards for findings in report order, with code the entry points don't call last;
+ * findings that share a rule (hosts, say) share a card.
+ */
 function findingCards(findings) {
   const groups = [];
-  for (const f of findings) {
+  const called = findings.filter((f) => f.reached !== false);
+  for (const f of [...called, ...findings.filter((f) => f.reached === false)]) {
     const last = groups.at(-1);
-    if (last?.[0].rule === f.rule) last.push(f);
+    if (last?.[0].rule === f.rule && (last[0].reached === false) === (f.reached === false)) last.push(f);
     else groups.push([f]);
   }
   return groups.map((g) => (g.length === 1 ? findingCard(g[0]) : groupCard(g)));
@@ -262,7 +269,8 @@ function groupCard(group) {
     h("ul", { class: "values" }, group.slice(0, shown).map(row)),
     group.length > shown
       ? h("details", { class: "where" }, h("summary", {}, `Show ${group.length - shown} more`), h("ul", { class: "values" }, group.slice(shown).map(row)))
-      : null);
+      : null,
+    f.reached === false ? notCalled() : null);
 }
 
 function evidence(f) {
@@ -290,13 +298,17 @@ function fold(summary, build, open = false) {
   return d;
 }
 
-function findingsSection(findings) {
+function findingsSection(findings, reach) {
   const important = findings.filter((f) => f.severity !== "info");
   const info = findings.filter((f) => f.severity === "info");
+  const notCalledCount = findings.filter((f) => f.reached === false).length;
   return h("section", { class: "section", "aria-label": "Findings" },
     findings.length === 0
       ? h("p", {}, "jarsnitch found nothing from its rule list in this jar.")
       : [
+          notCalledCount && reach?.dynamic
+            ? h("p", { class: "muted" }, `${plural(notCalledCount, "finding is", "findings are")} in code the plugin's entry points don't call, but the plugin also loads classes by names built at runtime, so that code may still run.`)
+            : null,
           important.length ? h("div", { class: "list" }, findingCards(important)) : h("p", { class: "muted" }, "No high or notable findings."),
           info.length ? fold(`Info findings (${info.length})`, () => h("div", { class: "list" }, findingCards(info))) : null,
         ]);
@@ -313,6 +325,7 @@ function plainList(items) {
 function jarDetails(r) {
   return fold("About this jar", () => {
     const o = r.obfuscation;
+    const reach = r.reachability;
     const parts = [
       facts([
         ["File", r.file.name],
@@ -321,6 +334,8 @@ function jarDetails(r) {
         ["Classes", String(r.stats.classes)],
         ["Entries", String(r.stats.entries)],
         ["Obfuscation", `${o.score}/100 (short or garbled names ${Math.round(o.short_names * 100)}%, default package ${Math.round(o.default_package * 100)}%, encoded strings ${Math.round(o.encoded_strings * 100)}%)`],
+        ["Call graph", reach ? `${reach.reached_methods} of ${reach.methods} methods reached from ${plural(reach.entry_points.length, "entry point")}` : null],
+        ["Entry points", reach ? reach.entry_points.slice(0, 3).join(", ") + (reach.entry_points.length > 3 ? ` and ${reach.entry_points.length - 3} more` : "") : null],
       ]),
     ];
     for (const p of r.plugins) {
@@ -373,7 +388,7 @@ function renderReport(r) {
       h("div", { class: "head-row" }, countList(counts(r.findings)), downloadButton(`${r.file.name}.jarsnitch.json`, r))),
     unreadable(r.warnings) ? h("p", { class: "banner error" }, "This file isn't a readable jar or zip, so nothing in it was checked.") : null,
     r.partial ? h("p", { class: "banner warn" }, "Partial report: a scan limit was hit, so part of the jar wasn't checked. A partial report is not a clean one.") : null,
-    unreadable(r.warnings) ? null : findingsSection(r.findings),
+    unreadable(r.warnings) ? null : findingsSection(r.findings, r.reachability),
     jarDetails(r),
     warningsSection(r.warnings));
 }

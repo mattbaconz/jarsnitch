@@ -1,6 +1,5 @@
 ---
 source: crates/core/tests/fixtures.rs
-assertion_line: 131
 expression: report
 ---
 {
@@ -35,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 5,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "deser.java",
@@ -50,7 +57,8 @@ expression: report
           "detail": "java/io/ObjectInputStream.readObject"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     }
   ],
   "warnings": [],

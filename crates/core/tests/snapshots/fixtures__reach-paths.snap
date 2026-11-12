@@ -1,0 +1,207 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "reach-paths.jar",
+    "size": 4738,
+    "sha256": "ff17cf81ec2e22593ca5d6667350caaf7aad6a52df4d6e577f48bd05fa7ec375"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-reach-paths",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [],
+      "permissions": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 19,
+    "reached_methods": 13,
+    "dynamic": false
+  },
+  "findings": [
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "by-name.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/ByName",
+          "method": "host()Ljava/lang/String;",
+          "detail": "https://by-name.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "lambda.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "lambda$onEnable$0()V",
+          "detail": "https://lambda.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "library.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/lib/Lib",
+          "method": "host()Ljava/lang/String;",
+          "detail": "https://library.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": false
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "listener.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Events",
+          "method": "onJoin(Lorg/bukkit/event/player/PlayerJoinEvent;)V",
+          "detail": "https://listener.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "never-made.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/NeverMade",
+          "method": "run()V",
+          "detail": "https://never-made.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": false
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "static-init.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Config",
+          "method": "<clinit>()V",
+          "detail": "https://static-init.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "tostring.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Overrider",
+          "method": "toString()Ljava/lang/String;",
+          "detail": "https://tostring.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "unused.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "unused()V",
+          "detail": "https://unused.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": false
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "virtual.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/TaskImpl",
+          "method": "run()V",
+          "detail": "https://virtual.example.invalid/"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 10,
+    "classes": 9,
+    "uncompressed_bytes": 4998
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

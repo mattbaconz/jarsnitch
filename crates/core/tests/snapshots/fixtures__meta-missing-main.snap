@@ -34,6 +34,7 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": null,
   "findings": [
     {
       "rule": "meta.missing-main",
@@ -49,7 +50,8 @@ expression: report
           "detail": "declared class fixture.Missing isn't in the jar"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": null
     }
   ],
   "warnings": [],

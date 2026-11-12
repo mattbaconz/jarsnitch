@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 3,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "code.native",
@@ -54,7 +62,8 @@ expression: report
           "detail": "java/lang/System.loadLibrary"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     }
   ],
   "warnings": [],

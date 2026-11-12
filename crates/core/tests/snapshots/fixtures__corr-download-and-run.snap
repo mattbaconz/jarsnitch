@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 3,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "corr.download-and-run",
@@ -54,7 +62,8 @@ expression: report
           "detail": "net.http: java/net/URL.openConnection"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     },
     {
       "rule": "code.load",
@@ -70,7 +79,8 @@ expression: report
           "detail": "java/net/URLClassLoader.<init>"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "net.http",
@@ -86,7 +96,8 @@ expression: report
           "detail": "java/net/URL.openConnection"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "str.url",
@@ -102,7 +113,8 @@ expression: report
           "detail": "https://cdn.example.invalid/addon.jar"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     }
   ],
   "warnings": [],

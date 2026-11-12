@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 4,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "fs.write-archive",
@@ -54,7 +62,8 @@ expression: report
           "detail": "java/util/jar/JarOutputStream.<init>"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     }
   ],
   "warnings": [],

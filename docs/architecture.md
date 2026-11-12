@@ -43,13 +43,14 @@ pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Lim
 1. Hash the file (SHA-256) and open the zip from its central directory, as the JVM's `JarFile` does.
 2. Walk entries in central-directory order, enforcing [limits](#limits-and-robustness) and cleaning names.
 3. Classify each entry by its bytes first and its name second: class, archive, descriptor, `pom.properties`, manifest, text resource, other.
-4. Classes: parse the constant pool, methods and `Code` attributes and record facts: call sites, string literals with their location, superclass and interfaces, event-handler signatures, comparisons against string literals.
+4. Classes: parse the constant pool, methods and `Code` attributes and record facts: call sites, string literals with their location, superclass and interfaces, event-handler signatures, comparisons against string literals, call-graph edges.
 5. Archives (nested, disguised, decoded): recurse with depth + 1 into the same fact store, prefixing locations with `path!/`.
 6. Strings and text resources: extract URLs, IPs and webhooks; decode base64 and hex candidates and feed results back to step 4 or 5.
 7. Resolve reflection targets, then match all facts against the rule tables to produce findings.
-8. Evaluate correlations over the findings.
-9. Compute the obfuscation score; parse descriptors and libraries.
-10. Sort everything and build the `Report`.
+8. Evaluate correlations over the findings, per class and per method with its direct callees.
+9. Walk the call graph from the entry points and mark each finding reached or not.
+10. Compute the obfuscation score; parse descriptors and libraries.
+11. Sort everything and build the `Report`.
 
 ### Class parsing
 
@@ -58,6 +59,18 @@ pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Lim
 The `cafebabe` crate was considered and not used: jarsnitch needs only a small part of the format, and its own parser keeps the wasm small and the failure behaviour under its control.
 
 `CAFEBABE` is also the magic of a Mach-O universal binary. Treat bytes as a class file only if the major version (bytes 6–7) is at least 45; a smaller value there is the binary's architecture count.
+
+### Reachability
+
+`crates/core/src/reach.rs` builds a call graph over the top-level jar's classes while they're parsed, then walks it from the plugin's entry points in the style of rapid type analysis: a virtual call only reaches implementations in classes the code creates.
+
+- **Entry points:** the descriptor's `main`, `bootstrapper` and `loader` classes (Bukkit, Paper, BungeeCord, Velocity), plus classes named in `META-INF/services/` files or other top-level text resources. They're treated as created, so their constructors run. Classes the manifest names (`Main-Class`, `Premain-Class`, `Agent-Class`, `Launcher-Agent-Class`) count with every method. Without a descriptor entry point (mods, libraries), `reachability` is `null`.
+- **Edges:** calls, including `invokedynamic` bootstrap arguments (lambdas, method references); `new`; static field access, which runs `<clinit>` after the superclasses'; class literals and constant names passed to `Class.forName`, `loadClass` or `findClass`; string literals that look like class names.
+- **Creating a class** reaches its public and protected instance methods when it extends or implements a type outside the jar other than `Object` (listeners, `Runnable`, `CommandExecutor`), plus methods with runtime-visible annotations (`@EventHandler`), `toString`, `hashCode`, `equals`, `finalize`, and methods matching a virtual call seen so far.
+- **Runtime lookups:** `getDeclaredMethods`, `getMethods`, `getDeclaredConstructors` or `getConstructors` in reachable code makes every method of every created class reachable. Loading a class by a computed name, `defineClass`, `defineHiddenClass` or a `code.load` call sets `dynamic`: code marked unreached may still run.
+- A finding is reached when any of its locations is a reached method (or, for class-level evidence, a reached class), unreached when every location is graph code that isn't reached, and `null` otherwise. Severity and exit codes ignore it.
+
+The network correlations use the same graph: a method's own parts and those of the methods it calls directly (the resolved target, or the only implementation when the target is abstract) count together when they come from different classes.
 
 ## Report format
 
@@ -88,6 +101,7 @@ The `cafebabe` crate was considered and not used: jarsnitch needs only a small p
   ],
   "nested": [ { "path": "libs/helper.jar", "size": 10240, "sha256": "41ab..." } ],
   "obfuscation": { "score": 4, "short_names": 0.05, "default_package": 0.0, "encoded_strings": 0.01 },
+  "reachability": { "entry_points": ["com/example/ExamplePlugin"], "methods": 210, "reached_methods": 162, "dynamic": false },
   "findings": [
     {
       "rule": "str.url",
@@ -100,7 +114,8 @@ The `cafebabe` crate was considered and not used: jarsnitch needs only a small p
         { "location": "com/example/UpdateChecker", "method": "check()V",
           "detail": "https://api.example.invalid/v1/latest" }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": true
     }
   ],
   "warnings": [ { "code": "class.malformed", "location": "a/B.class", "message": "truncated constant pool" } ],
@@ -111,6 +126,8 @@ The `cafebabe` crate was considered and not used: jarsnitch needs only a small p
 
 - `value` is `null` for capability rules and holds the host, IP, webhook id, path, class name or hash for value-carrying rules.
 - `evidence` is capped at 50 entries per finding; `evidence_total` gives the real count.
+- `reachability` is `null` when the jar has no plugin main class to start from. `entry_points` lists the first 100 classes the call graph starts from; `dynamic` means reachable code loads classes by computed names or defines classes from bytes.
+- `reached` is `true` when the entry points reach at least one of the finding's locations, `false` when every location is code they don't reach, and `null` when it doesn't apply: resources, nested jars, the jar as a whole, or no `reachability`.
 - Ordering: findings by severity (high first), then rule id, then value. Evidence by location, method, detail, deduplicated.
 - `platform` is one of `bukkit`, `paper`, `bungee`, `velocity`, `fabric`, `quilt`, `forge`, `neoforge`.
 - Stability: adding a field is not a breaking change. Renaming, removing or changing the meaning of a field bumps `schema_version`. Rule ids never change.
@@ -184,7 +201,7 @@ In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permi
 ## CLI
 
 - Argument parsing with `std::env::args`; two subcommands and one flag don't need a framework.
-- Default output is plain text: a header per jar (name, version, platform, short hash, obfuscation score), then one block per finding with severity, title, rule id, the "why" line and up to 3 locations plus "+N more", then severity counts and the disclaimer. Partial reports say so at the top.
+- Default output is plain text: a header per jar (name, version, platform, short hash, obfuscation score, call-graph size), then one block per finding with severity, title, rule id, the "why" line and up to 3 locations plus "+N more", then severity counts and the disclaimer. Findings in code the entry points don't call come last and say so. Partial reports say so at the top.
 - `--json` prints the serde output: an array of reports for `scan`, one object for `diff`.
 - Exit codes are listed in the [README](../README.md#command-line-reference).
 - Folder scans read every `.jar` directly in the folder, sorted by name, one at a time.
@@ -210,7 +227,7 @@ Flow:
 2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`). Dropping one jar anywhere scans it; dropping two compares them, older name first (`Foo-1.9.jar` before `Foo-1.10.jar`), with a Swap button.
 3. `app.js` reads `file.arrayBuffer()` and posts it to the worker as a transferable (no copy).
 4. The worker runs `scan` or `diff` through `engine.js` and posts the parsed result back. If the wasm traps, the worker starts a fresh instance for the next request.
-5. `app.js` renders the report in the same order as the CLI and offers "Download JSON", built locally from a `Blob`. Findings that share a rule (hosts, say) share one card; info findings start collapsed. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
+5. `app.js` renders the report in the same order as the CLI and offers "Download JSON", built locally from a `Blob`. Findings that share a rule (hosts, say) share one card; info findings start collapsed. Findings in code the entry points don't call come last in each section and say so; "About this jar" shows the call-graph size and entry points. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
 
 Privacy rules:
 

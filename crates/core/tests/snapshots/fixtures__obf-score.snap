@@ -34,6 +34,14 @@ expression: report
     "default_package": 1.0,
     "encoded_strings": 1.0
   },
+  "reachability": {
+    "entry_points": [
+      "a"
+    ],
+    "methods": 8,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "obf.score",
@@ -49,7 +57,8 @@ expression: report
           "detail": "short or garbled names 92%, default package 100%, encoded strings 100%"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": null
     }
   ],
   "warnings": [],

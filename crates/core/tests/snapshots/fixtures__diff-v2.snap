@@ -1,6 +1,5 @@
 ---
 source: crates/core/tests/fixtures.rs
-assertion_line: 137
 expression: report
 ---
 {
@@ -39,6 +38,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 7,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "code.load",
@@ -54,7 +61,8 @@ expression: report
           "detail": "java/net/URLClassLoader.<init>"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "str.discord-webhook",
@@ -70,7 +78,8 @@ expression: report
           "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "net.http",
@@ -91,7 +100,8 @@ expression: report
           "detail": "java/net/URL.openConnection"
         }
       ],
-      "evidence_total": 2
+      "evidence_total": 2,
+      "reached": false
     },
     {
       "rule": "str.url",
@@ -107,7 +117,8 @@ expression: report
           "detail": "https://api.example.invalid/version"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": false
     },
     {
       "rule": "str.url",
@@ -123,7 +134,8 @@ expression: report
           "detail": "https://discord.com/invite/example"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": true
     }
   ],
   "warnings": [],

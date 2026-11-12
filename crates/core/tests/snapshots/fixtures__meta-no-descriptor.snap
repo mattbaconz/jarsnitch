@@ -20,6 +20,7 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": null,
   "findings": [
     {
       "rule": "meta.no-descriptor",
@@ -35,7 +36,8 @@ expression: report
           "detail": "no plugin or mod descriptor at the jar root"
         }
       ],
-      "evidence_total": 1
+      "evidence_total": 1,
+      "reached": null
     }
   ],
   "warnings": [],

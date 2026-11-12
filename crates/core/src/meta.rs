@@ -205,6 +205,20 @@ pub fn agent_attributes(manifest: &str) -> Vec<&'static str> {
         .collect()
 }
 
+/// Classes a manifest names to start: `Main-Class` and the Java-agent entry classes.
+pub fn manifest_classes(manifest: &str) -> Vec<String> {
+    // Long values wrap onto continuation lines that start with a space.
+    let unfolded = manifest.replace("\r\n ", "").replace("\n ", "");
+    unfolded
+        .lines()
+        .filter_map(|l| {
+            let (k, v) = l.split_once(':')?;
+            let named = ["Main-Class", "Premain-Class", "Agent-Class", "Launcher-Agent-Class"].iter().any(|a| k.trim().eq_ignore_ascii_case(a));
+            (named && !v.trim().is_empty()).then(|| v.trim().to_string())
+        })
+        .collect()
+}
+
 /// log4j-core versions affected by Log4Shell and its follow-ups (fixed in 2.17.1, with
 /// patched backports 2.12.4 for Java 7 and 2.3.2 for Java 6).
 /// Source: https://logging.apache.org/security.html
@@ -265,5 +279,6 @@ mod tests {
     fn manifest_agents() {
         assert_eq!(agent_attributes("Manifest-Version: 1.0\r\nPremain-Class: a.B\r\n"), ["Premain-Class"]);
         assert!(agent_attributes("Main-Class: a.B\n").is_empty());
+        assert_eq!(manifest_classes("Main-Class: a.b.VeryLongName\r\n Continued\r\nAgent-Class: c.D\r\nX: y\r\n"), ["a.b.VeryLongNameContinued", "c.D"]);
     }
 }

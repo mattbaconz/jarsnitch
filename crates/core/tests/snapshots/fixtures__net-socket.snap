@@ -34,6 +34,14 @@ expression: report
     "default_package": 0.0,
     "encoded_strings": 0.0
   },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 3,
+    "reached_methods": 2,
+    "dynamic": false
+  },
   "findings": [
     {
       "rule": "net.socket",
@@ -64,7 +72,8 @@ expression: report
           "detail": "java/nio/channels/SocketChannel.open"
         }
       ],
-      "evidence_total": 4
+      "evidence_total": 4,
+      "reached": false
     }
   ],
   "warnings": [],
