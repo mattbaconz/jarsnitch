@@ -11,7 +11,7 @@ jarsnitch/
     core/               jarsnitch-core: bytes in, Report out
     cli/                jarsnitch: builds the `jarsnitch` binary
     wasm/               jarsnitch-wasm: exports scan and diff to JavaScript
-  web/                  static site: index.html, style.css, app.js, worker.js, engine.js, jarsnitch.wasm (built)
+  web/                  static site: index.html, style.css, app.js, worker.js, engine.js, jarsnitch.wasm and samples/ (built)
   fixtures/
     stubs/              minimal API stubs (org.bukkit..., net.md_5..., com.velocitypowered...)
     src/<fixture>/      Java sources, one folder per fixture
@@ -126,7 +126,7 @@ The network correlations use the same graph: a method's own parts and those of t
 
 - `value` is `null` for capability rules and holds the host, IP, webhook id, path, class name or hash for value-carrying rules.
 - `evidence` is capped at 50 entries per finding; `evidence_total` gives the real count.
-- `reachability` is `null` when the jar has no plugin main class to start from. `entry_points` lists the first 100 classes the call graph starts from; `dynamic` means reachable code loads classes by computed names or defines classes from bytes.
+- `reachability` is `null` when the jar has no plugin main class to start from. `entry_points` lists the first 100 classes the call graph starts from; `dynamic` means reachable code loads code at runtime: classes by computed names, class loaders (`code.load`) or classes defined from bytes.
 - `reached` is `true` when the entry points reach at least one of the finding's locations, `false` when every location is code they don't reach, and `null` when it doesn't apply: resources, nested jars, the jar as a whole, or no `reachability`.
 - Ordering: findings by severity (high first), then rule id, then value. Evidence by location, method, detail, deduplicated.
 - `platform` is one of `bukkit`, `paper`, `bungee`, `velocity`, `fabric`, `quilt`, `forge`, `neoforge`.
@@ -216,6 +216,7 @@ web/
   worker.js     module worker: fetches and compiles the wasm, runs scan and diff
   engine.js     the calls into the wasm, shared with scripts/check-web.mjs
   jarsnitch.wasm  built by scripts/build-web.ps1 / .sh, not committed
+  samples/      SampleShop-1.4.0.jar and -1.4.1.jar, copied from fixtures/jars/sample-v1 and -v2 by the same scripts
   _headers      the CSP and other headers for hosts that read this file
 ```
 
@@ -223,8 +224,8 @@ web/
 
 Flow:
 
-1. On page load, `app.js` starts the worker right away. The worker fetches and compiles `jarsnitch.wasm` and posts `ready`. Everything is fetched now, so nothing is fetched later.
-2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`). Dropping one jar anywhere scans it; dropping two compares them, older name first (`Foo-1.9.jar` before `Foo-1.10.jar`), with a Swap button.
+1. On page load, `app.js` starts the worker right away. The worker fetches and compiles `jarsnitch.wasm` and posts `ready`, and `app.js` fetches the two sample jars (a few KB each). Everything is fetched now, so nothing is fetched later.
+2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`; the Scan one takes several files). One jar is scanned. Two jars whose names share a stem before the version (`Foo-1.9.jar`, `foo_2.0.jar`), or any two dropped while the Compare tab is open, are compared, older name first (`Foo-1.9.jar` before `Foo-1.10.jar`), with a Swap button. Anything else, including a dropped folder (the `.jar` files directly in it, like the CLI), is scanned jar by jar into one row per jar, most High then most Notable findings first, each opening to its full report. The sample buttons load the sample jars into the same flow.
 3. `app.js` reads `file.arrayBuffer()` and posts it to the worker as a transferable (no copy).
 4. The worker runs `scan` or `diff` through `engine.js` and posts the parsed result back. If the wasm traps, the worker starts a fresh instance for the next request.
 5. `app.js` renders the report in the same order as the CLI and offers "Download JSON", built locally from a `Blob`. Findings that share a rule (hosts, say) share one card; info findings start collapsed. Findings in code the entry points don't call come last in each section and say so; "About this jar" shows the call-graph size and entry points. Report text comes from the jar, so it's only ever inserted as text, never as HTML.

@@ -1,0 +1,233 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "sample-v2.jar",
+    "size": 5264,
+    "sha256": "778291a71c6d97f2fb1c52ba7651ecff64970da5cc34853b71bab3903334aaa5"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "SampleShop",
+      "version": "1.4.1",
+      "main": "example.sampleshop.SampleShop",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [
+        "shop"
+      ],
+      "permissions": [
+        "sampleshop.use"
+      ],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "example/sampleshop/SampleShop"
+    ],
+    "methods": 12,
+    "reached_methods": 10,
+    "dynamic": true
+  },
+  "findings": [
+    {
+      "rule": "corr.download-and-run",
+      "severity": "high",
+      "title": "Can download and run code from the internet",
+      "why": "The jar can fetch code that isn't in this file and run it, so this report can't tell you what that code does.",
+      "legit_uses": "Dependency downloaders that fetch libraries from Maven repositories at startup. Check the hosts under str.url.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "detail": "code.load: java/net/URLClassLoader.<init>"
+        },
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "detail": "str.url: https://cdn.example.invalid/addons/boost.jar"
+        }
+      ],
+      "evidence_total": 2,
+      "reached": true
+    },
+    {
+      "rule": "corr.hidden-command",
+      "severity": "high",
+      "title": "Possible hidden command",
+      "why": "Typing a specific word in chat could give someone operator or run console commands, without that command appearing in the plugin's command list.",
+      "legit_uses": "Chat shortcuts and command aliases. Real features usually read their trigger words from the config instead of hardcoding them.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/ChatListener",
+          "method": null,
+          "detail": "chat or command handler, string-literal comparison and mc.set-op in one class"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "code.load",
+      "severity": "notable",
+      "title": "Can load new code while running",
+      "why": "Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.",
+      "legit_uses": "Dependency loaders that fetch libraries at startup, addon or module systems, scripting add-ons.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "detail": "java/net/URLClassLoader.<init>"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "fs.write-archive",
+      "severity": "notable",
+      "title": "Can write .jar or .class files",
+      "why": "Writing jar or class files is how code installs or changes plugins, including other plugins.",
+      "legit_uses": "Self-updaters writing to plugins/update, plugin managers, backup plugins that create zip files, library downloaders.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "detail": "writes a file named .jar or .class"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "mc.set-op",
+      "severity": "notable",
+      "title": "Can give players operator",
+      "why": "An operator can run every command on the server.",
+      "legit_uses": "Admin and permission-management plugins, /op replacements, temporary-op tools.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/ChatListener",
+          "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
+          "detail": "org/bukkit/entity/Player.setOp"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "net.socket",
+      "severity": "notable",
+      "title": "Can open raw network connections",
+      "why": "A raw socket can talk any protocol to any host, or listen for incoming connections on your server.",
+      "legit_uses": "Vote listeners, query and RCON tools, proxies, database drivers, bundled HTTP clients.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/libs/net/TcpClient",
+          "method": "connect(Ljava/lang/String;I)Ljava/net/Socket;",
+          "detail": "java/net/Socket.<init>"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": false
+    },
+    {
+      "rule": "mc.console-command",
+      "severity": "info",
+      "title": "Can run server commands",
+      "why": "Commands run as the console have full operator power.",
+      "legit_uses": "Very common. Crates, votes, rewards and shops run commands from their config.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/ShopCommand",
+          "method": "onCommand(Lorg/bukkit/command/CommandSender;Lorg/bukkit/command/Command;Ljava/lang/String;[Ljava/lang/String;)Z",
+          "detail": "org/bukkit/Bukkit.dispatchCommand"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "net.http",
+      "severity": "info",
+      "title": "Can connect to websites",
+      "why": "The plugin can send and receive data over the internet. The hosts found in the jar are listed under str.url.",
+      "legit_uses": "Update checks, license checks, usage statistics (bStats), web APIs, Discord integrations.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "detail": "java/net/URL.openConnection"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "api.example.invalid",
+      "evidence": [
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "detail": "https://api.example.invalid/sampleshop/latest"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "cdn.example.invalid",
+      "evidence": [
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "detail": "https://cdn.example.invalid/addons/boost.jar"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 7,
+    "classes": 6,
+    "uncompressed_bytes": 6421
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

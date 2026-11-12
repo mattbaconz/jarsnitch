@@ -63,6 +63,17 @@ fn same_jar_has_no_changes() {
 }
 
 #[test]
+fn sample_update_adds_the_demo_findings() {
+    // The update the web page's "Try a sample update" button compares.
+    let d = diff("sample-v1", "sample-v2");
+    let added = labels(&d.added);
+    for rule in ["corr.download-and-run", "corr.hidden-command", "code.load", "mc.set-op"] {
+        assert!(added.iter().any(|l| l == rule), "missing {rule} in {added:?}");
+    }
+    assert!(d.adds_high() && d.removed.is_empty());
+}
+
+#[test]
 fn added_high_finding() {
     let d = diff("code-load", "corr-download-and-run");
     assert!(d.adds_high());

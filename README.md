@@ -10,7 +10,7 @@ It reads the bytecode. It never loads or runs the plugin.
 
 ## Two ways to use it
 
-**Website.** Drop one jar to scan it, or two to compare versions. The analysis runs in your browser (WebAssembly). Your files never leave your machine: no upload, no backend, no telemetry. Once the page has loaded it needs no network at all.
+**Website.** Drop one jar to scan it, two versions of a plugin to compare them, or your whole plugins folder to scan every jar in it. No jar at hand? The page has a sample plugin and a sample update to try. The analysis runs in your browser (WebAssembly). Your files never leave your machine: no upload, no backend, no telemetry. Once the page has loaded it needs no network at all.
 
 **Command line.**
 
@@ -115,7 +115,7 @@ Every rule in v1. Rule ids never change, so you can filter on them in `--json` o
 ## How to read a report
 
 - **"Can" means the code is in the jar, not that it runs.** jarsnitch follows calls from the plugin's entry points: the main class, the methods the server calls on it, event handlers, and classes named in the manifest, service files or configs. A finding in code nothing there calls, often an unused part of a bundled library, is marked "not called" and listed last. Its severity doesn't change.
-- **"Not called" is an estimate.** Code reached only through reflection, or loaded by a name built at runtime, can still run. When the plugin's reachable code loads classes that way, the report says so.
+- **"Not called" is an estimate.** Code reached only through reflection, or from code the plugin loads at runtime, can still run. When the plugin loads code at runtime, the report says so.
 - **Most findings have ordinary explanations.** Paid plugins often obfuscate their code and contact a license server. Reward plugins run console commands from their config. Dependency loaders download libraries at startup. Ask whether a finding fits what the plugin says it does.
 - **jarsnitch never calls a plugin malware, safe or clean.** It reports facts and leaves the judgement to you.
 

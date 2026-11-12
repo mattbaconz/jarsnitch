@@ -23,6 +23,13 @@ const d = engine.diff(
 assert.deepEqual(d.added.map((i) => i.finding.rule), ["code.load", "str.discord-webhook"]);
 assert.equal(d.removed.length, 0);
 
+// The page's "Try a sample" jars, copied into web/samples by build-web.
+const sample = engine.diff(
+  "SampleShop-1.4.0.jar", await read("web/samples/SampleShop-1.4.0.jar"),
+  "SampleShop-1.4.1.jar", await read("web/samples/SampleShop-1.4.1.jar"),
+);
+assert.ok(sample.added.some((i) => i.finding?.rule === "corr.download-and-run"), "the sample update lost its High finding");
+
 const junk = engine.scan("junk.jar", new TextEncoder().encode("not a zip"));
 assert.ok(junk.warnings.some((w) => w.code === "zip.unreadable"));
 

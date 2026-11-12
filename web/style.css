@@ -132,6 +132,20 @@ main { padding-top: 24px; padding-bottom: 32px; }
 }
 .button:hover { border-color: var(--accent); }
 
+.sample { margin: 12px 0 0; color: var(--muted); font-size: 0.95rem; }
+.link {
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.link:hover { text-decoration-thickness: 2px; }
+
 .status { min-height: 1.5em; margin: 16px 0; color: var(--muted); }
 .status.error { color: var(--high-fg); font-weight: 600; }
 
@@ -145,7 +159,8 @@ main { padding-top: 24px; padding-bottom: 32px; }
   padding: 16px;
 }
 .report-head h2 { margin: 0; font-size: 1.35rem; overflow-wrap: anywhere; }
-.report-head h2:focus { outline: none; }
+.report-head h2:focus, .report-head h3:focus { outline: none; }
+.report-head h3 { margin: 0; font-size: 1.15rem; overflow-wrap: anywhere; }
 .meta { margin: 4px 0 12px; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
 .head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
@@ -170,6 +185,7 @@ main { padding-top: 24px; padding-bottom: 32px; }
 .banner { margin: 0; padding: 10px 14px; border-radius: var(--radius); border: 1px solid; }
 .banner.warn { background: var(--notable-bg); color: var(--notable-fg); border-color: var(--notable-line); }
 .banner.error { background: var(--high-bg); color: var(--high-fg); border-color: var(--high-line); }
+.banner.note { background: var(--info-bg); color: var(--info-fg); border-color: var(--info-line); }
 
 .section h3 { margin: 8px 0 8px; font-size: 1.05rem; }
 .section > p { margin: 0; }
@@ -222,6 +238,12 @@ main { padding-top: 24px; padding-bottom: 32px; }
 .fold > summary { cursor: pointer; font-weight: 700; }
 .fold[open] > summary { margin-bottom: 10px; }
 .fold .list { margin-top: 4px; }
+
+.fold.jar > summary { font-weight: 400; }
+.fold.jar[open] > summary { margin-bottom: 14px; }
+.jar-sum { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; width: calc(100% - 1.25em); }
+.jar-name { flex: 1 1 16em; font-weight: 700; overflow-wrap: anywhere; }
+.jar-name .detail { font-weight: 400; font-size: 0.9rem; }
 
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 0.92rem; }
 .facts dt { color: var(--muted); }

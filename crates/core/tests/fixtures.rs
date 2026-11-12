@@ -42,6 +42,8 @@ const EXPECT: &[(&str, &[&str], &[&str])] = &[
     ("proc-exit", &["proc.exit"], &[]),
     ("reach-paths", &["str.url"], &[]),
     ("reflect-indirect", &["reflect.indirect", "exec.process"], &[]),
+    ("sample-v1", &["mc.console-command", "net.http", "str.url", "net.socket"], &["corr.download-and-run", "corr.hidden-command"]),
+    ("sample-v2", &["corr.download-and-run", "corr.hidden-command", "code.load", "mc.set-op", "net.socket"], &[]),
     ("script-engine", &["script.engine"], &[]),
     ("str-discord-webhook", &["str.discord-webhook", "str.url"], &[]),
     ("str-ip", &["str.ip"], &[]),
@@ -165,6 +167,13 @@ fn reachability() {
     for part in ["(in fixture/Fetch.get)", "(in fixture/Load.run)"] {
         assert!(corr.evidence.iter().any(|e| e.detail.ends_with(part)), "missing {part}: {:?}", corr.evidence);
     }
+
+    // The web page's sample: the update's High findings are reachable, the unused library isn't.
+    let r = scan("sample-v2.jar", &fixture("sample-v2"));
+    let reached = |rule: &str| r.findings.iter().find(|f| f.rule == rule).and_then(|f| f.reached);
+    assert_eq!(reached("corr.download-and-run"), Some(true));
+    assert_eq!(reached("corr.hidden-command"), Some(true));
+    assert_eq!(reached("net.socket"), Some(false));
 
     // No plugin main class: nothing to start from.
     let r = scan("meta-no-descriptor.jar", &fixture("meta-no-descriptor"));

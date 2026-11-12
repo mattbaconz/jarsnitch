@@ -260,7 +260,7 @@ fn print_report(r: &Report) {
         };
         println!("call graph from {from}{more}: {} of {} methods reached", reach.reached_methods, reach.methods);
         if reach.dynamic {
-            println!("  it also loads classes by names built at runtime, so code it doesn't reach may still run");
+            println!("  the plugin also loads code at runtime, so code it doesn't reach may still run");
         }
     }
     if r.partial {

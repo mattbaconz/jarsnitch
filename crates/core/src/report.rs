@@ -110,8 +110,8 @@ pub struct Reachability {
     /// Methods in the top-level jar's classes, and how many of them are reachable.
     pub methods: u64,
     pub reached_methods: u64,
-    /// Reachable code loads classes by names built at runtime or defines classes from
-    /// bytes, so code marked unreached may still run.
+    /// Reachable code loads code at runtime (classes by computed names, class loaders,
+    /// classes defined from bytes), so code marked unreached may still run.
     pub dynamic: bool,
 }
 

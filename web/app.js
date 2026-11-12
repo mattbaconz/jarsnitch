@@ -29,7 +29,8 @@ function setStatus(text, error = false) {
 
 let fatal = null;
 let nextId = 0;
-let latest = 0;
+/** Bumped by every new scan or comparison, so an older one stops and never shows. */
+let generation = 0;
 const pending = new Map();
 const worker = new Worker(new URL("worker.js", import.meta.url), { type: "module" });
 
@@ -56,7 +57,6 @@ worker.onerror = (e) => fail(e.message || "the worker failed to load");
 async function analyze(op, files) {
   if (fatal) throw new Error(fatal);
   const id = ++nextId;
-  latest = id;
   const loaded = await Promise.all(files.map(async (f) => ({ name: f.name, bytes: await f.arrayBuffer() })));
   const answer = new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
   worker.postMessage({ id, op, files: loaded }, loaded.map((f) => f.bytes));
@@ -110,8 +110,10 @@ function pick(slot, file) {
 for (const [slot, zone] of Object.entries(zones)) {
   const input = zone.querySelector("input");
   input.addEventListener("change", () => {
-    if (input.files[0]) pick(slot, input.files[0]);
+    const files = [...input.files];
     input.value = "";
+    if (slot === "scan") handle(files, zone);
+    else if (files[0]) pick(slot, files[0]);
   });
 }
 
@@ -135,46 +137,129 @@ document.addEventListener("drop", (e) => {
   if (!hasFiles(e)) return;
   e.preventDefault();
   document.body.classList.remove("dragging");
-  const files = [...e.dataTransfer.files];
   const zone = e.target.closest?.(".drop");
-  if (files.length === 1 && zone) {
-    pick(zone.dataset.slot, files[0]);
-  } else if (files.length === 1) {
-    selectTab(tabs[0]);
-    pick("scan", files[0]);
-  } else if (files.length === 2) {
-    // Older first when the names carry versions: Foo-1.9.jar before Foo-1.10.jar.
-    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  // Entries can only be read during the event. A dropped folder counts the jars directly in it.
+  const entries = [...(e.dataTransfer.items ?? [])].map((i) => i.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.some((entry) => entry.isDirectory)) return handle([...e.dataTransfer.files], zone);
+  setStatus("Reading the folder…");
+  jarsIn(entries).then((files) => handle(files, null, true), (err) => setStatus(`Couldn't read that folder: ${err.message}`, true));
+});
+
+const fileOf = (entry) => new Promise((resolve, reject) => entry.file(resolve, reject));
+
+/** Dropped files as they are, plus the .jar files directly in dropped folders, like the CLI. */
+async function jarsIn(entries) {
+  const files = [];
+  for (const entry of entries) {
+    if (entry.isFile) files.push(await fileOf(entry));
+    if (!entry.isDirectory) continue;
+    const reader = entry.createReader();
+    for (let batch; (batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject))).length; ) {
+      for (const child of batch) {
+        if (child.isFile && /\.jar$/i.test(child.name)) files.push(await fileOf(child));
+      }
+    }
+  }
+  return files;
+}
+
+/** "Foo-1.9.jar" and "foo_2.0 (1).jar" share the stem "foo": two versions of one plugin. */
+const stem = (name) => name.toLowerCase().replace(/\.(jar|zip)$/, "").replace(/\d.*$/, "").replace(/[^a-z]+$/, "");
+
+/** One jar is scanned, two versions of one plugin are compared, anything else is scanned jar by jar. */
+function handle(files, zone, folder = false) {
+  if (!files.length) return setStatus(folder ? "There's no .jar file directly in that folder." : "There's no file to scan.", true);
+  if (files.length === 1) {
+    const slot = zone?.dataset.slot ?? "scan";
+    if (slot === "scan") selectTab(tabs[0]);
+    return pick(slot, files[0]);
+  }
+  // Older first when the names carry versions: Foo-1.9.jar before Foo-1.10.jar.
+  files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const comparing = !zones.old.closest(".panel").hidden;
+  if (files.length === 2 && !folder && (comparing || (stem(files[0].name) && stem(files[0].name) === stem(files[1].name)))) {
     selectTab(tabs[1]);
     [pair.old, pair.new] = files;
     showFile("old", pair.old);
     showFile("new", pair.new);
-    compare();
-  } else {
-    setStatus("Drop one jar to scan it, or two to compare versions.", true);
+    return compare();
   }
-});
+  selectTab(tabs[0]);
+  zones.scan.querySelector(".drop-file").textContent = plural(files.length, "jar");
+  return scanMany(files);
+}
 
-async function scan(file) {
+// Samples: a made-up plugin built from fixtures/ by scripts/build-web. Fetched with the page,
+// a few KB each, so the buttons work offline too.
+const SAMPLE_NOTE = "Sample: SampleShop is a made-up plugin. Its 1.4.1 update adds a downloader and a hidden operator command.";
+const samples = ["SampleShop-1.4.0.jar", "SampleShop-1.4.1.jar"].map((name) =>
+  fetch(new URL(`samples/${name}`, import.meta.url))
+    .then((res) => (res.ok ? res.blob() : null))
+    .then((blob) => blob && new File([blob], name, { type: "application/java-archive" }), () => null));
+
+for (const button of document.querySelectorAll("[data-sample]")) {
+  button.addEventListener("click", async () => {
+    const [old, update] = await Promise.all(samples);
+    if (!old || !update) return setStatus("The sample couldn't be loaded. Reload the page and try again.", true);
+    if (button.dataset.sample === "scan") {
+      showFile("scan", update);
+      return scan(update, SAMPLE_NOTE);
+    }
+    [pair.old, pair.new] = [old, update];
+    showFile("old", old);
+    showFile("new", update);
+    compare(SAMPLE_NOTE);
+  });
+}
+
+async function scan(file, note) {
+  const gen = ++generation;
   setStatus(`Analyzing ${file.name}…`);
   try {
-    const { id, result, ms } = await analyze("scan", [file]);
-    if (id !== latest) return;
+    const { result, ms } = await analyze("scan", [file]);
+    if (gen !== generation) return;
     const c = counts(result.findings);
     if (unreadable(result.warnings)) setStatus(`${file.name} isn't a readable jar or zip.`, true);
     else setStatus(`Scanned ${file.name} in ${seconds(ms)}: ${c.high} high, ${c.notable} notable, ${c.info} info.`);
-    show(renderReport(result));
+    show(withNote(renderReport(result), note));
   } catch (e) {
-    setStatus(e.message, true);
+    if (gen === generation) setStatus(e.message, true);
   }
 }
 
-async function compare() {
+/** Scans jars one after another; a jar that fails doesn't stop the rest. */
+async function scanMany(files) {
+  const gen = ++generation;
+  const start = performance.now();
+  const scanned = [];
+  results.replaceChildren();
+  for (const [i, file] of files.entries()) {
+    setStatus(`Scanning ${i + 1} of ${files.length}: ${file.name}…`);
+    try {
+      scanned.push({ file, report: (await analyze("scan", [file])).result });
+    } catch (e) {
+      if (fatal) return setStatus(fatal, true);
+      scanned.push({ file, error: e.message });
+    }
+    if (gen !== generation) return;
+  }
+  const readable = scanned.filter((s) => s.report && !unreadable(s.report.warnings)).map((s) => counts(s.report.findings));
+  const failed = scanned.length - readable.length;
+  setStatus(
+    `Scanned ${plural(files.length, "jar")} in ${seconds(performance.now() - start)}: ` +
+      `${readable.filter((c) => c.high).length} with high findings, ${readable.filter((c) => c.notable).length} with notable ones` +
+      `${failed ? `, ${failed} unreadable` : ""}.`,
+  );
+  show(renderMany(scanned));
+}
+
+async function compare(note) {
+  const gen = ++generation;
   const { old: a, new: b } = pair;
   setStatus(`Comparing ${a.name} with ${b.name}…`);
   try {
-    const { id, result, ms } = await analyze("diff", [a, b]);
-    if (id !== latest) return;
+    const { result, ms } = await analyze("diff", [a, b]);
+    if (gen !== generation) return;
     const bad = [[a, result.old], [b, result.new]].find(([, side]) => unreadable(side.warnings));
     if (bad) {
       results.replaceChildren();
@@ -183,9 +268,9 @@ async function compare() {
     const findings = result.added.filter((i) => i.kind === "finding").map((i) => i.finding);
     const c = counts(findings);
     setStatus(`Compared in ${seconds(ms)}. The update adds ${c.high} high, ${c.notable} notable and ${c.info} info findings.`);
-    show(renderDiff(result));
+    show(withNote(renderDiff(result), note));
   } catch (e) {
-    setStatus(e.message, true);
+    if (gen === generation) setStatus(e.message, true);
   }
 }
 
@@ -286,8 +371,8 @@ function evidence(f) {
 }
 
 /** A collapsed section whose content is only built when it's opened. */
-function fold(summary, build, open = false) {
-  const d = h("details", { class: "fold", open }, h("summary", {}, summary));
+function fold(summary, build, open = false, cls = "fold") {
+  const d = h("details", { class: cls, open }, h("summary", {}, summary));
   const fill = () => {
     if (d.dataset.filled) return;
     d.dataset.filled = "1";
@@ -307,7 +392,7 @@ function findingsSection(findings, reach) {
       ? h("p", {}, "jarsnitch found nothing from its rule list in this jar.")
       : [
           notCalledCount && reach?.dynamic
-            ? h("p", { class: "muted" }, `${plural(notCalledCount, "finding is", "findings are")} in code the plugin's entry points don't call, but the plugin also loads classes by names built at runtime, so that code may still run.`)
+            ? h("p", { class: "muted" }, `${plural(notCalledCount, "finding is", "findings are")} in code the plugin's entry points don't call, but the plugin also loads code at runtime, so that code may still run.`)
             : null,
           important.length ? h("div", { class: "list" }, findingCards(important)) : h("p", { class: "muted" }, "No high or notable findings."),
           info.length ? fold(`Info findings (${info.length})`, () => h("div", { class: "list" }, findingCards(info))) : null,
@@ -370,7 +455,7 @@ function warningsSection(warnings) {
     h("ul", { class: "plain" }, warnings.map((w) => h("li", {}, h("code", {}, w.code), " ", w.location ? [h("code", {}, w.location), ": "] : null, w.message))));
 }
 
-function renderReport(r) {
+function renderReport(r, heading = "h2") {
   const p = r.plugins[0];
   const name = p?.name ? `${p.name} ${p.version ?? ""}`.trim() : r.file.name;
   const meta = [
@@ -383,7 +468,7 @@ function renderReport(r) {
   ].filter(Boolean).join(" · ");
   return h("article", { class: "report" },
     h("header", { class: "report-head" },
-      h("h2", { tabindex: "-1" }, name),
+      h(heading, { tabindex: "-1" }, name),
       h("p", { class: "meta" }, meta),
       h("div", { class: "head-row" }, countList(counts(r.findings)), downloadButton(`${r.file.name}.jarsnitch.json`, r))),
     unreadable(r.warnings) ? h("p", { class: "banner error" }, "This file isn't a readable jar or zip, so nothing in it was checked.") : null,
@@ -391,6 +476,44 @@ function renderReport(r) {
     unreadable(r.warnings) ? null : findingsSection(r.findings, r.reachability),
     jarDetails(r),
     warningsSection(r.warnings));
+}
+
+/** Puts a note under a report's header. */
+function withNote(report, note) {
+  if (note) report.querySelector(".report-head").after(h("p", { class: "banner note" }, note));
+  return report;
+}
+
+/** Severity counts for a summary line, leaving out zeros. */
+function badges(c) {
+  const shown = ["high", "notable", "info"].filter((s) => c[s]);
+  if (!shown.length) return h("span", { class: "muted" }, "No findings");
+  return h("span", { class: "counts" }, shown.map((s) => h("span", { class: `sev sev-${s}` }, `${c[s]} ${LABEL[s]}`)));
+}
+
+/** Several jars: one row each, most High then most Notable findings first, full report on open. */
+function renderMany(scanned) {
+  const rank = ({ report: r }) => (r && !unreadable(r.warnings) ? counts(r.findings) : { high: -1, notable: -1 });
+  const order = [...scanned].sort((a, b) => {
+    const [x, y] = [rank(a), rank(b)];
+    return y.high - x.high || y.notable - x.notable || a.file.name.localeCompare(b.file.name, undefined, { numeric: true });
+  });
+  const reports = scanned.filter((s) => s.report).map((s) => s.report);
+  return h("article", { class: "report" },
+    h("header", { class: "report-head" },
+      h("h2", { tabindex: "-1" }, plural(scanned.length, "jar")),
+      h("p", { class: "meta" }, "Open a plugin for its full report."),
+      h("div", { class: "head-row" }, countList(counts(reports.flatMap((r) => r.findings))), downloadButton("plugins.jarsnitch.json", reports))),
+    h("div", { class: "list" }, order.map(jarRow)));
+}
+
+function jarRow({ file, report: r, error }) {
+  if (!r) return h("div", { class: "row" }, h("span", { class: "text" }, h("code", {}, file.name)), h("span", { class: "muted" }, error));
+  const p = r.plugins[0];
+  const summary = h("span", { class: "jar-sum" },
+    h("span", { class: "jar-name" }, p?.name ? [`${p.name} ${p.version ?? ""}`.trim(), h("span", { class: "detail" }, file.name)] : file.name),
+    unreadable(r.warnings) ? h("span", { class: "muted" }, "Not a readable jar or zip") : badges(counts(r.findings)));
+  return fold(summary, () => renderReport(r, "h3"), false, "fold jar");
 }
 
 // Diff.

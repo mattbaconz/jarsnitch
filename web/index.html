@@ -29,11 +29,12 @@
 
     <section id="panel-scan" class="panel" role="tabpanel" aria-labelledby="tab-scan">
       <label class="drop" data-slot="scan">
-        <input type="file" accept=".jar,.zip,application/java-archive,application/zip">
+        <input type="file" multiple accept=".jar,.zip,application/java-archive,application/zip">
         <span class="drop-title">Drop a plugin .jar here</span>
-        <span class="drop-hint">or click to choose one. Drop two jars to compare versions.</span>
+        <span class="drop-hint">or click to choose one or more. You can drop your whole plugins folder too.</span>
         <span class="drop-file"></span>
       </label>
+      <p class="sample"><button type="button" class="link" data-sample="scan">Try a sample plugin</button> to see a report without a jar of your own.</p>
     </section>
 
     <section id="panel-compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
@@ -53,6 +54,7 @@
         </label>
       </div>
       <button type="button" id="swap" class="button">Swap old and new</button>
+      <p class="sample"><button type="button" class="link" data-sample="compare">Try a sample update</button> to see what a comparison shows.</p>
     </section>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>

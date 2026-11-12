@@ -1,0 +1,126 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "sample-v1.jar",
+    "size": 3225,
+    "sha256": "56dd21c511f45220d270abedfa5711c8a043bbe0b6323a5b4683daba9a45345f"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "SampleShop",
+      "version": "1.4.0",
+      "main": "example.sampleshop.SampleShop",
+      "bootstrapper": null,
+      "loader": null,
+      "commands": [
+        "shop"
+      ],
+      "permissions": [
+        "sampleshop.use"
+      ],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "example/sampleshop/SampleShop"
+    ],
+    "methods": 8,
+    "reached_methods": 6,
+    "dynamic": false
+  },
+  "findings": [
+    {
+      "rule": "net.socket",
+      "severity": "notable",
+      "title": "Can open raw network connections",
+      "why": "A raw socket can talk any protocol to any host, or listen for incoming connections on your server.",
+      "legit_uses": "Vote listeners, query and RCON tools, proxies, database drivers, bundled HTTP clients.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/libs/net/TcpClient",
+          "method": "connect(Ljava/lang/String;I)Ljava/net/Socket;",
+          "detail": "java/net/Socket.<init>"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": false
+    },
+    {
+      "rule": "mc.console-command",
+      "severity": "info",
+      "title": "Can run server commands",
+      "why": "Commands run as the console have full operator power.",
+      "legit_uses": "Very common. Crates, votes, rewards and shops run commands from their config.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/ShopCommand",
+          "method": "onCommand(Lorg/bukkit/command/CommandSender;Lorg/bukkit/command/Command;Ljava/lang/String;[Ljava/lang/String;)Z",
+          "detail": "org/bukkit/Bukkit.dispatchCommand"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "net.http",
+      "severity": "info",
+      "title": "Can connect to websites",
+      "why": "The plugin can send and receive data over the internet. The hosts found in the jar are listed under str.url.",
+      "legit_uses": "Update checks, license checks, usage statistics (bStats), web APIs, Discord integrations.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "detail": "java/net/URL.openConnection"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "api.example.invalid",
+      "evidence": [
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "detail": "https://api.example.invalid/sampleshop/latest"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 5,
+    "classes": 4,
+    "uncompressed_bytes": 3288
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

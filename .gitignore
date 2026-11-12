@@ -3,6 +3,7 @@
 /scripts/fp-bench/cache
 *.snap.new
 /web/jarsnitch.wasm
+/web/samples
 
 # Cloudflare deploy cache
 .wrangler
