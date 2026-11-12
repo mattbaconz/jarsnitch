@@ -59,6 +59,8 @@ This shows what the code can do, not proof of what it will do. A clean report is
 
 Findings are matched by rule and value (host, webhook id, path), not by where they sit, so code that only moved doesn't show up. A capability the old version already had counts as unchanged even if it now appears in more places.
 
+`diff` also lists what changed around the code: commands, permissions, plugin dependencies, downloaded and bundled libraries, and the plugin's name, version, main class, authors and website. A different author or website can mean the plugin has a new owner.
+
 ## What a finding tells you
 
 - **Severity:** info, notable or high. See [severities](docs/rules.md#severities).

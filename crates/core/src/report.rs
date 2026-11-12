@@ -73,8 +73,14 @@ pub struct PluginInfo {
     pub main: Option<String>,
     pub bootstrapper: Option<String>,
     pub loader: Option<String>,
+    pub authors: Vec<String>,
+    pub website: Option<String>,
     pub commands: Vec<String>,
     pub permissions: Vec<String>,
+    /// Plugins this one needs to load, by name (Velocity: by id).
+    pub dependencies: Vec<String>,
+    /// Plugins it uses when they're installed.
+    pub optional_dependencies: Vec<String>,
     pub folia_supported: bool,
     pub maven_libraries: Vec<String>,
 }

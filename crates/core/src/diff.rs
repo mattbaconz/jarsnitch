@@ -75,6 +75,10 @@ pub enum Item {
     MavenLibrary { value: String },
     /// A bundled library from `pom.properties`, `group:artifact:version`.
     Library { value: String },
+    /// A plugin this one needs to load.
+    Dependency { value: String },
+    /// A plugin this one uses when it's installed.
+    OptionalDependency { value: String },
 }
 
 impl Item {
@@ -94,6 +98,8 @@ impl Item {
             Item::Permission { value } => (3, value.clone()),
             Item::MavenLibrary { value } => (4, value.clone()),
             Item::Library { value } => (5, value.clone()),
+            Item::Dependency { value } => (6, value.clone()),
+            Item::OptionalDependency { value } => (7, value.clone()),
         };
         (Reverse(self.severity()), kind, key)
     }
@@ -163,9 +169,11 @@ pub fn diff((old, old_classes): (Report, Classes), (new, new_classes): (Report, 
     }
 
     let values = |r: &Report, f: fn(&PluginInfo) -> &[String]| -> BTreeSet<String> { r.plugins.iter().flat_map(|p| f(p).iter().cloned()).collect() };
-    let lists: [(Field, MakeItem); 2] = [
+    let lists: [(Field, MakeItem); 4] = [
         (|p| &p.commands, |value| Item::Command { value }),
         (|p| &p.permissions, |value| Item::Permission { value }),
+        (|p| &p.dependencies, |value| Item::Dependency { value }),
+        (|p| &p.optional_dependencies, |value| Item::OptionalDependency { value }),
     ];
     for (field, make) in lists {
         let (a, b) = (values(&old, field), values(&new, field));
@@ -209,7 +217,17 @@ pub fn diff((old, old_classes): (Report, Classes), (new, new_classes): (Report, 
     for d in descriptors {
         let find = |r: &'_ Report| r.plugins.iter().find(|p| p.descriptor == d).cloned().unwrap_or_default();
         let (a, b) = (find(&old), find(&new));
-        for (field, x, y) in [("name", a.name, b.name), ("version", a.version, b.version), ("main", a.main, b.main)] {
+        // Authors in any order, so reordering them isn't a change.
+        let authors = |p: &PluginInfo| Some(join(&p.authors.iter().cloned().collect())).filter(|s| !s.is_empty());
+        let (old_authors, new_authors) = (authors(&a), authors(&b));
+        let fields = [
+            ("name", a.name, b.name),
+            ("version", a.version, b.version),
+            ("main", a.main, b.main),
+            ("authors", old_authors, new_authors),
+            ("website", a.website, b.website),
+        ];
+        for (field, x, y) in fields {
             if x != y {
                 changed.push(Change { kind: "plugin-field", key: format!("{d} {field}"), old: x, new: y });
             }

@@ -89,8 +89,12 @@ The network correlations use the same graph: a method's own parts and those of t
       "name": "ExamplePlugin",
       "version": "1.2.0",
       "main": "com.example.ExamplePlugin",
+      "authors": ["ExampleDev"],
+      "website": "https://plugin.example.com",
       "commands": ["example"],
       "permissions": ["example.use"],
+      "dependencies": ["Vault"],
+      "optional_dependencies": [],
       "folia_supported": false,
       "maven_libraries": []
     }
@@ -163,14 +167,14 @@ The zip reader (`crates/core/src/archive.rs`) reads the central directory the wa
 | `res.type-mismatch`, `jar.unsafe-path`, `jar.nested` | rule id + path |
 | Bundled libraries (`pom.properties`) and descriptor `libraries:` | `group:artifact`; a version change is listed under changes |
 | Nested jars | path; added and removed ones are `jar.nested` findings, a different SHA-256 is listed under changes |
-| Commands, permissions | the value |
+| Commands, permissions, dependencies, optional dependencies | the value |
 | Classes | location (`a/B`, `lib.jar!/a/B`) |
 
 Sections, in this order:
 
-1. **Adds:** new findings, new commands and permissions, new libraries, and new classes that carry notable or high evidence. Sorted by severity, then findings before classes before the rest.
+1. **Adds:** new findings, new commands, permissions and dependencies, new libraries, and new classes that carry notable or high evidence. Sorted by severity, then findings before classes before the rest.
 2. **Removes:** the same kinds, gone from the new version.
-3. **Changes:** library versions, nested jar hashes, plugin name, version or main class.
+3. **Changes:** library versions, nested jar hashes, and the plugin's name, version, main class, authors or website. When the authors or website differ, the CLI and the web page add that this can mean the plugin has a new owner.
 4. **Unchanged:** findings present in both, by rule id (and value).
 
 The header shows both file names, versions, short hashes and the obfuscation score old -> new. If either file isn't a readable zip, the CLI prints an error and exits 1 instead of a diff.
@@ -196,7 +200,7 @@ A capability that already existed but now appears in many more places counts as 
 }
 ```
 
-In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry) and `library` (bundled, from `pom.properties`); every kind except `finding` and `class` carries its `value`. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version` or `main` of one descriptor), and `old` / `new` are `null` when a side doesn't have it.
+In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry), `library` (bundled, from `pom.properties`), `dependency` and `optional-dependency`; every kind except `finding` and `class` carries its `value`. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version`, `main`, `authors` or `website` of one descriptor; authors are sorted and joined with ", ", so a new order isn't a change), and `old` / `new` are `null` when a side doesn't have it.
 
 ## CLI
 
@@ -263,7 +267,7 @@ Defaults, defined as constants in `crates/core`:
 
 When a limit is hit, that part stops, a warning is added and everything found so far is kept. Entries are decompressed one at a time, so memory stays near the size of the largest entry plus the input.
 
-YAML descriptors are read by a small hand-written parser that knows only the subset descriptors use (top-level scalars, the keys of `commands` and `permissions`, the `libraries` list). It has no anchors or aliases, so a small file can't expand into a huge document.
+YAML descriptors are read by a small hand-written parser that knows only the subset descriptors use (top-level scalars and lists, written as `[a, b]` or as `- a` items, indented or not; the keys of `commands` and `permissions`; Paper's `dependencies`). It has no anchors or aliases, so a small file can't expand into a huge document.
 
 ## Build and test
 

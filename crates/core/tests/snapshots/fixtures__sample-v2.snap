@@ -7,8 +7,8 @@ expression: report
   "tool_version": "[version]",
   "file": {
     "name": "sample-v2.jar",
-    "size": 5264,
-    "sha256": "778291a71c6d97f2fb1c52ba7651ecff64970da5cc34853b71bab3903334aaa5"
+    "size": 5316,
+    "sha256": "699600d2ac6a230cb881f8f12d0042ba13e3b8a30924d468643cefc967a70dcf"
   },
   "partial": false,
   "plugins": [
@@ -20,11 +20,19 @@ expression: report
       "main": "example.sampleshop.SampleShop",
       "bootstrapper": null,
       "loader": null,
+      "authors": [
+        "ExampleNewOwner"
+      ],
+      "website": "https://shop-plugins.example.net",
       "commands": [
         "shop"
       ],
       "permissions": [
         "sampleshop.use"
+      ],
+      "dependencies": [],
+      "optional_dependencies": [
+        "Vault"
       ],
       "folia_supported": false,
       "maven_libraries": []
@@ -221,13 +229,30 @@ expression: report
       ],
       "evidence_total": 1,
       "reached": true
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "shop-plugins.example.net",
+      "evidence": [
+        {
+          "location": "plugin.yml",
+          "method": null,
+          "detail": "https://shop-plugins.example.net"
+        }
+      ],
+      "evidence_total": 1,
+      "reached": null
     }
   ],
   "warnings": [],
   "stats": {
     "entries": 7,
     "classes": 6,
-    "uncompressed_bytes": 6421
+    "uncompressed_bytes": 6507
   },
   "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
 }

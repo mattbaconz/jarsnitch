@@ -1,6 +1,9 @@
 name: SampleShop
 version: 1.4.0
 main: example.sampleshop.SampleShop
+author: ExampleDev
+website: https://sampleshop.example.com
+softdepend: [Vault]
 api-version: '1.20'
 description: Made-up plugin for the jarsnitch demo. Its code never does anything.
 commands:

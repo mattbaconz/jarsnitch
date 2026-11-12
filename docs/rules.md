@@ -223,7 +223,7 @@ Value-carrying rules report one finding per value (one per host, IP, webhook, pa
 
 ## Plugin metadata
 
-Descriptors read into the report's `plugins` section: `plugin.yml`, `paper-plugin.yml`, `bungee.yml`, `velocity-plugin.json`. Fields: name, version, main (and Paper's `bootstrapper` and `loader`), commands, permissions, `folia-supported`, and the Maven libraries the server downloads for the plugin (`libraries:`). A multi-platform jar can contain several descriptors; all are listed.
+Descriptors read into the report's `plugins` section: `plugin.yml`, `paper-plugin.yml`, `bungee.yml`, `velocity-plugin.json`. Fields: name, version, main (and Paper's `bootstrapper` and `loader`), authors, website, commands, permissions, the plugins it depends on (`depend` / `softdepend`, Paper's `dependencies`, BungeeCord's `depends` / `softDepends`, Velocity's `dependencies`), `folia-supported`, and the Maven libraries the server downloads for the plugin (`libraries:`). A multi-platform jar can contain several descriptors; all are listed.
 
 Mods get name and version only, from `fabric.mod.json`, `quilt.mod.json`, `META-INF/mods.toml` or `META-INF/neoforge.mods.toml`.
 

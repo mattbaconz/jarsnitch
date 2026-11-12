@@ -1,7 +1,7 @@
 //! Plugin descriptors, bundled-library metadata and the jar manifest.
 //!
-//! The YAML reader handles only the subset plugin descriptors use (top-level scalars,
-//! the keys of `commands:` / `permissions:`, the items of `libraries:`). It never
+//! The YAML reader handles only the subset plugin descriptors use (top-level scalars and
+//! lists, the keys of `commands:` / `permissions:`, Paper's `dependencies:`). It never
 //! expands aliases, so a small file can't blow up into a huge document.
 
 use crate::PluginInfo;
@@ -27,10 +27,18 @@ pub fn descriptor(path: &str, text: &str) -> Option<PluginInfo> {
         "bukkit" | "paper" | "bungee" => yaml_descriptor(text),
         "velocity" => {
             let v: serde_json::Value = serde_json::from_str(text).ok()?;
+            let deps = |optional: bool| -> Vec<String> {
+                let all = v["dependencies"].as_array().into_iter().flatten();
+                all.filter(|d| d["optional"].as_bool().unwrap_or(false) == optional).filter_map(|d| d["id"].as_str().map(str::to_string)).collect()
+            };
             PluginInfo {
                 name: json_str(&v, &["name"]).or_else(|| json_str(&v, &["id"])),
                 version: json_str(&v, &["version"]),
                 main: json_str(&v, &["main"]),
+                authors: v["authors"].as_array().into_iter().flatten().filter_map(|a| a.as_str().map(str::to_string)).collect(),
+                website: json_str(&v, &["url"]),
+                dependencies: deps(false),
+                optional_dependencies: deps(true),
                 ..Default::default()
             }
         }
@@ -133,10 +141,30 @@ fn some(s: String) -> Option<String> {
     (!s.is_empty()).then_some(s)
 }
 
+fn add(list: &mut Vec<String>, item: String) {
+    if !item.is_empty() && !list.contains(&item) {
+        list.push(item);
+    }
+}
+
+/// The list a top-level key fills: Bukkit and Paper `depend` / `softdepend`, BungeeCord
+/// `depends` / `softDepends`.
+fn list_field<'a>(d: &'a mut PluginInfo, key: &str) -> Option<&'a mut Vec<String>> {
+    Some(match key {
+        "authors" => &mut d.authors,
+        "depend" | "depends" => &mut d.dependencies,
+        "softdepend" | "softDepends" => &mut d.optional_dependencies,
+        "libraries" => &mut d.maven_libraries,
+        _ => return None,
+    })
+}
+
 pub fn yaml_descriptor(text: &str) -> PluginInfo {
     let mut d = PluginInfo::default();
-    let mut section: Option<String> = None;
-    let mut child_indent = None;
+    // The keys that lead to the current line, outermost first, with their indents.
+    let mut path: Vec<(usize, String)> = Vec::new();
+    // Paper's `dependencies:` entries and whether each is required (the default).
+    let mut paper: Vec<(String, bool)> = Vec::new();
     for raw in text.lines() {
         let line = strip_comment(raw).trim_end();
         let t = line.trim_start();
@@ -144,39 +172,52 @@ pub fn yaml_descriptor(text: &str) -> PluginInfo {
             continue;
         }
         let indent = line.len() - t.len();
-        if indent == 0 {
-            section = None;
-            child_indent = None;
-            let Some((key, value)) = split_kv(t) else { continue };
-            match key.as_str() {
-                "name" => d.name = some(unquote(value)),
-                "version" => d.version = some(unquote(value)),
-                "main" => d.main = some(unquote(value)),
-                "bootstrapper" => d.bootstrapper = some(unquote(value)),
-                "loader" => d.loader = some(unquote(value)),
-                "folia-supported" => d.folia_supported = unquote(value).eq_ignore_ascii_case("true"),
-                "libraries" if value.starts_with('[') => d.maven_libraries = flow_list(value),
-                "commands" | "permissions" | "libraries" if value.is_empty() => section = Some(key),
-                _ => {}
+        // A list item belongs to the key above it, which may sit at the same indent.
+        if let Some(item) = t.strip_prefix('-').filter(|r| r.is_empty() || r.starts_with([' ', '\t'])) {
+            path.retain(|(i, _)| *i <= indent);
+            if let [(_, key)] = path.as_slice()
+                && let Some(list) = list_field(&mut d, key)
+            {
+                add(list, unquote(item.trim()));
             }
             continue;
         }
-        match section.as_deref() {
-            Some("libraries") => {
-                if let Some(item) = t.strip_prefix('-') {
-                    d.maven_libraries.extend(some(unquote(item.trim())));
+        path.retain(|(i, _)| *i < indent);
+        let Some((key, value)) = split_kv(t) else { continue };
+        let parents: Vec<&str> = path.iter().map(|(_, k)| k.as_str()).collect();
+        match (parents.as_slice(), key.as_str()) {
+            ([], "name") => d.name = some(unquote(value)),
+            ([], "version") => d.version = some(unquote(value)),
+            ([], "main") => d.main = some(unquote(value)),
+            ([], "bootstrapper") => d.bootstrapper = some(unquote(value)),
+            ([], "loader") => d.loader = some(unquote(value)),
+            ([], "author") => add(&mut d.authors, unquote(value)),
+            ([], "website") => d.website = some(unquote(value)),
+            ([], "folia-supported") => d.folia_supported = unquote(value).eq_ignore_ascii_case("true"),
+            ([], _) if !value.is_empty() => {
+                if let Some(list) = list_field(&mut d, &key) {
+                    flow_list(value).into_iter().for_each(|item| add(list, item));
                 }
             }
-            Some(sec) => {
-                let ci = *child_indent.get_or_insert(indent);
-                if indent == ci
-                    && let Some((key, _)) = split_kv(t)
-                {
-                    let list = if sec == "commands" { &mut d.commands } else { &mut d.permissions };
-                    list.push(key);
+            (["commands"], _) => d.commands.push(key.clone()),
+            (["permissions"], _) => d.permissions.push(key.clone()),
+            (["dependencies", "server" | "bootstrap"], _) => paper.push((key.clone(), true)),
+            (["dependencies", "server" | "bootstrap", _], "required") => {
+                if let Some(last) = paper.last_mut() {
+                    last.1 = !unquote(value).eq_ignore_ascii_case("false");
                 }
             }
-            None => {}
+            _ => {}
+        }
+        path.push((indent, key));
+    }
+    // A plugin listed in both `server` and `bootstrap` is required if either says so.
+    for (name, _) in paper.iter().filter(|(_, required)| *required) {
+        add(&mut d.dependencies, name.clone());
+    }
+    for (name, _) in paper {
+        if !d.dependencies.contains(&name) {
+            add(&mut d.optional_dependencies, name);
         }
     }
     d
@@ -265,6 +306,32 @@ mod tests {
         let f = descriptor("META-INF/mods.toml", "[[mods]]\nmodId=\"ex\"\nversion = \"1.0\"\n").unwrap();
         assert_eq!((f.name.as_deref(), f.version.as_deref()), (Some("ex"), Some("1.0")));
         assert!(descriptor("velocity-plugin.json", "{oops").is_none());
+    }
+
+    #[test]
+    fn authors_and_dependencies() {
+        // Lists in flow style, indented, and at the key's own indent, which YAML allows.
+        let yml = "name: X\nauthor: Ann\nauthors: [Bo, 'Ann']\nwebsite: https://x.example.com\ndescription: |\n  name: Wrong\n  - Wrong\n\
+                   depend:\n- Vault\n- \"LuckPerms\"\nsoftdepend:\n  - PlaceholderAPI\nlibraries:\n- a:b:1\n";
+        let d = yaml_descriptor(yml);
+        assert_eq!(d.name.as_deref(), Some("X"));
+        assert_eq!(d.authors, ["Ann", "Bo"]);
+        assert_eq!(d.website.as_deref(), Some("https://x.example.com"));
+        assert_eq!(d.dependencies, ["Vault", "LuckPerms"]);
+        assert_eq!(d.optional_dependencies, ["PlaceholderAPI"]);
+        assert_eq!(d.maven_libraries, ["a:b:1"]);
+
+        let paper = "dependencies:\n  bootstrap:\n    Lib:\n      required: false\n  server:\n    Vault:\n      load: BEFORE\n      required: false\n    Lib:\n      required: true\n    Core: {}\n";
+        let p = yaml_descriptor(paper);
+        assert_eq!((p.dependencies, p.optional_dependencies), (vec!["Lib".to_string(), "Core".into()], vec!["Vault".to_string()]));
+
+        let b = descriptor("bungee.yml", "name: X\nauthor: Ann\ndepends: [A]\nsoftDepends: [B]\n").unwrap();
+        assert_eq!((b.authors, b.dependencies, b.optional_dependencies), (vec!["Ann".to_string()], vec!["A".to_string()], vec!["B".to_string()]));
+
+        let json = r#"{"id":"x","authors":["Ann"],"url":"https://x.example.com","dependencies":[{"id":"luckperms"},{"id":"geyser","optional":true}]}"#;
+        let v = descriptor("velocity-plugin.json", json).unwrap();
+        assert_eq!((v.authors, v.website.as_deref()), (vec!["Ann".to_string()], Some("https://x.example.com")));
+        assert_eq!((v.dependencies, v.optional_dependencies), (vec!["luckperms".to_string()], vec!["geyser".to_string()]));
     }
 
     #[test]

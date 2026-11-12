@@ -197,6 +197,10 @@ fn print_diff(d: &Diff) {
 ", item.severity().label()),
                 Item::Library { value } => println!("{:<8} {verb} bundled library: {value}
 ", item.severity().label()),
+                Item::Dependency { value } => println!("{:<8} {verb} dependency: {value}
+", item.severity().label()),
+                Item::OptionalDependency { value } => println!("{:<8} {verb} optional dependency: {value}
+", item.severity().label()),
             }
         }
     }
@@ -205,6 +209,9 @@ fn print_diff(d: &Diff) {
         println!("Changes:");
         for c in &d.changed {
             print_change(c);
+        }
+        if d.changed.iter().any(|c| c.kind == "plugin-field" && (c.key.ends_with(" authors") || c.key.ends_with(" website"))) {
+            println!("A different author or website can mean the plugin has a new owner.");
         }
         println!();
     }

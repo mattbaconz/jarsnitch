@@ -20,8 +20,12 @@ expression: report
       "main": "a",
       "bootstrapper": null,
       "loader": null,
+      "authors": [],
+      "website": null,
       "commands": [],
       "permissions": [],
+      "dependencies": [],
+      "optional_dependencies": [],
       "folia_supported": false,
       "maven_libraries": []
     }

@@ -191,7 +191,7 @@ function handle(files, zone, folder = false) {
 
 // Samples: a made-up plugin built from fixtures/ by scripts/build-web. Fetched with the page,
 // a few KB each, so the buttons work offline too.
-const SAMPLE_NOTE = "Sample: SampleShop is a made-up plugin. Its 1.4.1 update adds a downloader and a hidden operator command.";
+const SAMPLE_NOTE = "Sample: SampleShop is a made-up plugin. Its 1.4.1 update names a new author and adds a downloader and a hidden operator command.";
 const samples = ["SampleShop-1.4.0.jar", "SampleShop-1.4.1.jar"].map((name) =>
   fetch(new URL(`samples/${name}`, import.meta.url))
     .then((res) => (res.ok ? res.blob() : null))
@@ -428,12 +428,16 @@ function jarDetails(r) {
       parts.push(facts([
         ["Name", p.name],
         ["Version", p.version],
+        ["Authors", p.authors.length ? p.authors.join(", ") : null],
+        ["Website", p.website],
         ["Main class", p.main],
         ["Bootstrapper", p.bootstrapper],
         ["Loader", p.loader],
         ["Folia", p.folia_supported ? "Declares Folia support" : null],
         ["Commands", p.commands.length ? p.commands.map((c) => `/${c}`).join(", ") : null],
         ["Permissions", p.permissions.length ? p.permissions.join(", ") : null],
+        ["Dependencies", p.dependencies.length ? p.dependencies.join(", ") : null],
+        ["Optional dependencies", p.optional_dependencies.length ? p.optional_dependencies.join(", ") : null],
       ]));
       if (p.maven_libraries.length) {
         parts.push(h("h4", {}, "Libraries the server downloads at startup"), plainList(p.maven_libraries));
@@ -523,6 +527,8 @@ const KIND = {
   permission: (v) => ["permission ", h("code", {}, v)],
   "maven-library": (v) => ["library downloaded at startup ", h("code", {}, v)],
   library: (v) => ["bundled library ", h("code", {}, v)],
+  dependency: (v) => ["dependency ", h("code", {}, v)],
+  "optional-dependency": (v) => ["optional dependency ", h("code", {}, v)],
 };
 
 function itemRow(item, verb) {
@@ -603,7 +609,10 @@ function renderDiff(d) {
       h("h3", {}, "This update removes"),
       d.removed.length ? h("div", { class: "list" }, d.removed.map(removedRow)) : h("p", { class: "muted" }, "Nothing.")),
     d.changed.length
-      ? h("section", { class: "section" }, h("h3", {}, "Changes"), h("div", { class: "list" }, d.changed.map(changeRow)))
+      ? h("section", { class: "section" }, h("h3", {}, "Changes"), h("div", { class: "list" }, d.changed.map(changeRow)),
+          d.changed.some((c) => c.kind === "plugin-field" && / (authors|website)$/.test(c.key))
+            ? h("p", { class: "muted" }, "A different author or website can mean the plugin has a new owner.")
+            : null)
       : null,
     unchanged.length
       ? h("section", { class: "section" },

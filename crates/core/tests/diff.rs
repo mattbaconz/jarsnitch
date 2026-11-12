@@ -27,6 +27,8 @@ fn labels(items: &[Item]) -> Vec<String> {
             Item::Permission { value } => format!("permission:{value}"),
             Item::MavenLibrary { value } => format!("maven-library:{value}"),
             Item::Library { value } => format!("library:{value}"),
+            Item::Dependency { value } => format!("dependency:{value}"),
+            Item::OptionalDependency { value } => format!("optional-dependency:{value}"),
         })
         .collect()
 }
@@ -70,7 +72,11 @@ fn sample_update_adds_the_demo_findings() {
     for rule in ["corr.download-and-run", "corr.hidden-command", "code.load", "mc.set-op"] {
         assert!(added.iter().any(|l| l == rule), "missing {rule} in {added:?}");
     }
-    assert!(d.adds_high() && d.removed.is_empty());
+    assert!(d.adds_high());
+    // The old website is also gone as a host.
+    assert_eq!(labels(&d.removed), ["str.url=sampleshop.example.com"]);
+    let keys: Vec<_> = d.changed.iter().map(|c| c.key.as_str()).collect();
+    assert_eq!(keys, ["plugin.yml authors", "plugin.yml version", "plugin.yml website"]);
 }
 
 #[test]
@@ -121,6 +127,26 @@ fn metadata_changes() {
     assert_eq!(d.changed[0], change("library", "com.google.code.gson:gson", "2.10.1", "2.11.0"));
     assert_eq!(d.changed[1], change("maven-library", "org.xerial:sqlite-jdbc", "3.46.1.0", "3.49.1.0"));
     assert_ne!(d.changed[2].old, d.changed[2].new);
+}
+
+#[test]
+fn author_website_and_dependency_changes() {
+    let jar = |desc: &str| zip(&[("plugin.yml", desc.as_bytes())], false);
+    let old = jar("name: X\nauthor: Ann\nwebsite: https://a.example.com\ndepend: [Vault]\nsoftdepend: [Essentials]\n");
+    let new = jar("name: X\nauthors: [Bo, Ann]\nwebsite: https://b.example.com\ndepend: [Vault, ProtocolLib]\n");
+    let d = diff_bytes(&old, &new);
+    // The website is also a host the plugin names.
+    assert_eq!(labels(&d.added), ["str.url=b.example.com", "dependency:ProtocolLib"]);
+    assert_eq!(labels(&d.removed), ["str.url=a.example.com", "optional-dependency:Essentials"]);
+    assert_eq!(
+        d.changed,
+        [
+            change("plugin-field", "plugin.yml authors", "Ann", "Ann, Bo"),
+            change("plugin-field", "plugin.yml website", "https://a.example.com", "https://b.example.com"),
+        ]
+    );
+    let reordered = diff_bytes(&jar("name: X\nauthors: [A, B]\n"), &jar("name: X\nauthors: [B, A]\n"));
+    assert!(reordered.changed.is_empty(), "reordered authors aren't a change");
 }
 
 #[test]

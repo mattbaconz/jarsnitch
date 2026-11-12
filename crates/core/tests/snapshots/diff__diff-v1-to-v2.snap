@@ -20,12 +20,16 @@ expression: "diff(\"diff-v1\", \"diff-v2\")"
         "main": "fixture.Main",
         "bootstrapper": null,
         "loader": null,
+        "authors": [],
+        "website": null,
         "commands": [
           "addons"
         ],
         "permissions": [
           "diff.addons"
         ],
+        "dependencies": [],
+        "optional_dependencies": [],
         "folia_supported": false,
         "maven_libraries": []
       }
@@ -48,12 +52,16 @@ expression: "diff(\"diff-v1\", \"diff-v2\")"
         "main": "fixture.Main",
         "bootstrapper": null,
         "loader": null,
+        "authors": [],
+        "website": null,
         "commands": [
           "addons"
         ],
         "permissions": [
           "diff.addons"
         ],
+        "dependencies": [],
+        "optional_dependencies": [],
         "folia_supported": false,
         "maven_libraries": []
       }

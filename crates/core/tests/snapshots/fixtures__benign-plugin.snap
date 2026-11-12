@@ -20,12 +20,16 @@ expression: report
       "main": "fixture.Main",
       "bootstrapper": null,
       "loader": null,
+      "authors": [],
+      "website": "https://example.invalid/hello",
       "commands": [
         "hello"
       ],
       "permissions": [
         "hello.use"
       ],
+      "dependencies": [],
+      "optional_dependencies": [],
       "folia_supported": false,
       "maven_libraries": []
     }
