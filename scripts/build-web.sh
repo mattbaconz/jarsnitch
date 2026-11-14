@@ -10,3 +10,5 @@ echo "built web/jarsnitch.wasm ($(wc -c < web/jarsnitch.wasm) bytes)"
 mkdir -p web/samples
 cp fixtures/jars/sample-v1.jar web/samples/SampleShop-1.4.0.jar
 cp fixtures/jars/sample-v2.jar web/samples/SampleShop-1.4.1.jar
+# The docs pages: docs/guide, docs/*.md and CHANGELOG.md -> web/docs/. Fails on a broken link.
+node scripts/build-docs.mjs

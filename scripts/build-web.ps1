@@ -10,3 +10,6 @@ Write-Host "built web/jarsnitch.wasm ($((Get-Item web/jarsnitch.wasm).Length) by
 New-Item -ItemType Directory -Force web/samples | Out-Null
 Copy-Item fixtures/jars/sample-v1.jar web/samples/SampleShop-1.4.0.jar
 Copy-Item fixtures/jars/sample-v2.jar web/samples/SampleShop-1.4.1.jar
+# The docs pages: docs/guide, docs/*.md and CHANGELOG.md -> web/docs/. Fails on a broken link.
+node scripts/build-docs.mjs
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

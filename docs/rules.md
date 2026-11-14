@@ -1,6 +1,6 @@
 # Rules
 
-Every rule jarsnitch v1 applies. Rule ids are stable: an id is never renamed or reused. The rule table in `crates/core` is the source of truth for titles and copy, and this page must match it.
+Every rule jarsnitch applies. Rule ids are stable: an id is never renamed or reused. The rule table in `crates/core` is the source of truth for titles and copy, and this page must match it.
 
 ## Severities
 
@@ -192,7 +192,7 @@ Value-carrying rules report one finding per value (one per host, IP, webhook, pa
 
 - **Why it matters:** Code stored as encoded text doesn't show up as a normal class file. jarsnitch decoded it and scanned it; its findings carry the location `<class>!embedded-<n>`.
 - **Legit uses:** Rare. Some license systems and obfuscators.
-- **Triggers:** Base64 (standard or URL-safe) or hex strings of 64 or more characters that decode to a class file (`CAFEBABE`) or a zip archive. Decoded archives are scanned like nested jars. The value is the SHA-256 of the decoded bytes.
+- **Triggers:** Base64 (standard or URL-safe) or hex strings of 64 or more characters that decode to a class file (`CAFEBABE`) or a zip archive. A text resource is also checked as one payload with its whitespace removed, so base64 wrapped across lines (as in MIME) counts. Decoded archives are scanned like nested jars. The value is the SHA-256 of the decoded bytes.
 - **Limit:** A payload split across several strings and joined at runtime is not reassembled.
 
 ### `res.type-mismatch` · notable
@@ -284,7 +284,7 @@ Computed over the top-level jar's own classes, not nested jars. The weights and 
 
 Each raises a High finding when all its parts are present. Scope **jar** means the whole scanned file, including nested jars and decoded code. Scope **class** means one class. Scope **class or call** adds one method together with the methods it calls directly, so a method that downloads through one class and loads code through another counts; the evidence is placed at that method and names where each part is. Evidence lists the parts that matched.
 
-The network correlations use class scope because large plugins bundle libraries (database drivers, dependency loaders) whose network and process code sits in unrelated classes; on the whole jar they fired on most popular plugins. A host or IP string counts as the network part so that `new URLClassLoader(new URL[] { new URL("http://...") })` is caught, including when the string is [hidden](#strhidden-text--notable). **Limit:** parts joined only through longer call chains, fields or callbacks don't correlate; their individual findings still appear.
+The network correlations use class (or call) scope, not the whole jar, because large plugins bundle libraries (database drivers, dependency loaders) whose network and process code sits in unrelated classes; on the whole jar they fired on most popular plugins. A host or IP string counts as the network part so that `new URLClassLoader(new URL[] { new URL("http://...") })` is caught, including when the string is [hidden](#strhidden-text--notable). **Limit:** parts joined only through longer call chains, fields or callbacks don't correlate; their individual findings still appear.
 
 ### `corr.download-and-run` · high
 
@@ -343,4 +343,4 @@ The network correlations use class scope because large plugins bundle libraries 
 
 ## Known-bad indicators
 
-v1 doesn't compare jars against a list of known file hashes or hosts. If one is added, every entry needs a public source URL next to it. jarsnitch never invents signatures. See [CONTRIBUTING.md](../CONTRIBUTING.md#known-bad-indicators).
+jarsnitch doesn't compare jars against a list of known file hashes or hosts. If one is added, every entry needs a public source URL next to it. jarsnitch never invents signatures. See [CONTRIBUTING.md](../CONTRIBUTING.md#known-bad-indicators).

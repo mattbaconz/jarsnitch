@@ -11,16 +11,24 @@ jarsnitch/
     core/               jarsnitch-core: bytes in, Report out
     cli/                jarsnitch: builds the `jarsnitch` binary
     wasm/               jarsnitch-wasm: exports scan and diff to JavaScript
-  web/                  static site: index.html, style.css, app.js, worker.js, engine.js, jarsnitch.wasm and samples/ (built)
+  web/                  static site: index.html, style.css, site.js, app.js, worker.js, engine.js, the logo files,
+                        and jarsnitch.wasm, samples/ and docs/ (built)
   fixtures/
     stubs/              minimal API stubs (org.bukkit..., net.md_5..., com.velocitypowered...)
     src/<fixture>/      Java sources, one folder per fixture
     jars/               built fixture jars (committed)
     build.ps1, build.sh
   scripts/
-    build-web.ps1, build-web.sh
+    build-web.ps1, build-web.sh   build the wasm, copy the samples, then run build-docs.mjs
+    build-docs.mjs      docs/guide, docs/*.md and CHANGELOG.md -> web/docs/
+    check-web.mjs       smoke test of the built wasm through web/engine.js
+    logo.mjs            draws the logo SVGs and logo.txt
+    bench/              bench.py, corpus.json, wasm.mjs: the numbers in benchmarks.md
     fp-bench/           plugins.txt, run scripts, cache/ (gitignored)
-  docs/
+  docs/                 rules.md, architecture.md, benchmarks.md
+    guide/              sources of the website's guide pages
+    diagrams/, media/   SVG diagrams and images the guide pages use
+    site/docs.css       the docs pages' stylesheet
 ```
 
 ## Core
@@ -39,6 +47,8 @@ pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Lim
 `Limits::default()` is what the CLI and the web page use. Tests pass small limits so zip-bomb and depth tests stay fast.
 
 ### Pipeline
+
+<!-- diagram: pipeline -->
 
 1. Hash the file (SHA-256) and open the zip from its central directory, as the JVM's `JarFile` does.
 2. Walk entries in central-directory order, enforcing [limits](#limits-and-robustness) and cleaning names.
@@ -79,7 +89,7 @@ The network correlations use the same graph: a method's own parts and those of t
 ```json
 {
   "schema_version": 1,
-  "tool_version": "0.2.0",
+  "tool_version": "0.2.1",
   "file": { "name": "ExamplePlugin.jar", "size": 48213, "sha256": "9f2c..." },
   "partial": false,
   "plugins": [
@@ -156,7 +166,9 @@ The zip reader (`crates/core/src/archive.rs`) reads the central directory the wa
 
 ## Diff
 
-`diff` scans both jars and compares the results. It takes bytes, not reports, because it also needs every class name, which the report doesn't carry. Findings are matched by a key, not by evidence, so moved code isn't reported as a change.
+`diff` scans both jars and compares the results. It takes bytes, not reports, because it also needs every class name, which the report doesn't carry. Findings are matched by a key, not by evidence, so a finding whose code moved isn't reported as a change. Classes are matched by location, so a class with notable or high evidence that exists on one side only is listed as added or removed, including code moved into a renamed class.
+
+### Matching
 
 | What | Key |
 |---|---|
@@ -170,6 +182,8 @@ The zip reader (`crates/core/src/archive.rs`) reads the central directory the wa
 | Commands, permissions, dependencies, optional dependencies | the value |
 | Classes | location (`a/B`, `lib.jar!/a/B`) |
 
+### Sections
+
 Sections, in this order:
 
 1. **Adds:** new findings, new commands, permissions and dependencies, new libraries, and new classes that carry notable or high evidence. Sorted by severity, then findings before classes before the rest.
@@ -177,35 +191,40 @@ Sections, in this order:
 3. **Changes:** library versions, nested jar hashes, and the plugin's name, version, main class, authors or website. When the authors or website differ, the CLI and the web page add that this can mean the plugin has a new owner.
 4. **Unchanged:** findings present in both, by rule id (and value).
 
-The header shows both file names, versions, short hashes and the obfuscation score old -> new. If either file isn't a readable zip, the CLI prints an error and exits 1 instead of a diff.
+The CLI header shows both file names, versions, short hashes and the obfuscation score old -> new; the web page shows the names, versions and scores. If either file isn't a readable zip, the CLI prints an error and exits 1 instead of a diff.
 
 If fewer than half of the old class names exist in the new jar and either side scores 25+ for obfuscation, the diff adds the warning `diff.classes-renamed`: the jar was probably re-obfuscated, so new and removed classes are left out for this pair. Findings are still compared. A partial scan on either side adds `diff.partial`.
 
-A capability that already existed but now appears in many more places counts as unchanged in v1.
+A capability that already existed but now appears in many more places counts as unchanged.
+
+### Diff JSON
+
+Abridged from `jarsnitch diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json` (the web page's sample update):
 
 ```json
 {
   "schema_version": 1,
-  "old": { "file": { "name": "Example-1.0.jar", "size": 1304, "sha256": "..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
-  "new": { "file": { "name": "Example-1.1.jar", "size": 1610, "sha256": "..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
-  "obfuscation": { "old": 4, "new": 5 },
-  "added":   [ { "kind": "finding", "finding": { "rule": "code.load", "...": "..." } },
-               { "kind": "class", "value": "com/example/Loader", "rules": ["code.load"] } ],
-  "removed": [ { "kind": "finding", "finding": { "rule": "str.url", "value": "old-api.example.invalid", "...": "..." } } ],
-  "changed": [ { "kind": "library", "key": "com.google.code.gson:gson", "old": "2.10.1", "new": "2.11.0" },
-               { "kind": "plugin-field", "key": "plugin.yml version", "old": "1.0", "new": "1.1" } ],
-  "unchanged": [ { "rule": "net.http", "value": null } ],
+  "tool_version": "0.2.1",
+  "old": { "file": { "name": "SampleShop-1.4.0.jar", "size": 3267, "sha256": "62903a86..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
+  "new": { "file": { "name": "SampleShop-1.4.1.jar", "size": 5316, "sha256": "699600d2..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
+  "obfuscation": { "old": 0, "new": 0 },
+  "added":   [ { "kind": "finding", "finding": { "rule": "corr.download-and-run", "severity": "high", "...": "..." } },
+               { "kind": "class", "value": "example/sampleshop/AddonLoader", "rules": ["code.load", "corr.download-and-run", "fs.write-archive"], "severity": "high" } ],
+  "removed": [ { "kind": "finding", "finding": { "rule": "str.url", "value": "sampleshop.example.com", "...": "..." } } ],
+  "changed": [ { "kind": "plugin-field", "key": "plugin.yml authors", "old": "ExampleDev", "new": "ExampleNewOwner" },
+               { "kind": "plugin-field", "key": "plugin.yml version", "old": "1.4.0", "new": "1.4.1" } ],
+  "unchanged": [ { "rule": "net.http", "value": null }, { "rule": "str.url", "value": "api.example.invalid" } ],
   "warnings": [],
   "disclaimer": "..."
 }
 ```
 
-In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry), `library` (bundled, from `pom.properties`), `dependency` and `optional-dependency`; every kind except `finding` and `class` carries its `value`. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version`, `main`, `authors` or `website` of one descriptor; authors are sorted and joined with ", ", so a new order isn't a change), and `old` / `new` are `null` when a side doesn't have it.
+In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry), `library` (bundled, from `pom.properties`), `dependency` and `optional-dependency`; every kind except `finding` carries its `value`, and `class` also carries the `rules` its evidence triggered and the highest `severity` among them. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version`, `main`, `authors` or `website` of one descriptor; authors are sorted and joined with ", ", so a new order isn't a change), and `old` / `new` are `null` when a side doesn't have it.
 
 ## CLI
 
 - Argument parsing with `std::env::args`; two subcommands and one flag don't need a framework.
-- Default output is plain text: a header per jar (name, version, platform, short hash, obfuscation score, call-graph size), then one block per finding with severity, title, rule id, the "why" line and up to 3 locations plus "+N more", then severity counts and the disclaimer. Findings in code the entry points don't call come last and say so. Partial reports say so at the top.
+- Default output is plain text: a header per jar (name, version, platform, short hash, obfuscation score, call-graph size), then one block per finding with severity, title, rule id, the "why" line and up to 3 locations plus "+N more", then warnings and severity counts. The disclaimer is printed once, after all the reports. In `scan`, findings in code the entry points don't call come after all other findings and say so; `diff` keeps the severity order and marks them. Partial reports say so at the top. The CLI leaves out the legitimate-uses line; the web page and the JSON have it.
 - `--json` prints the serde output: an array of reports for `scan`, one object for `diff`.
 - Exit codes are listed in the [README](../README.md#command-line-reference).
 - Folder scans read every `.jar` directly in the folder, sorted by name, one at a time.
@@ -232,7 +251,7 @@ Flow:
 2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`; the Scan one takes several files). One jar is scanned. Two jars whose names share a stem before the version (`Foo-1.9.jar`, `foo_2.0.jar`), or any two dropped while the Compare tab is open, are compared, older name first (`Foo-1.9.jar` before `Foo-1.10.jar`), with a Swap button. Anything else, including a dropped folder (the `.jar` files directly in it, like the CLI), is scanned jar by jar into one row per jar, most High then most Notable findings first, each opening to its full report. The sample buttons load the sample jars into the same flow.
 3. `app.js` reads `file.arrayBuffer()` and posts it to the worker as a transferable (no copy).
 4. The worker runs `scan` or `diff` through `engine.js` and posts the parsed result back. If the wasm traps, the worker starts a fresh instance for the next request.
-5. `app.js` renders the report in the same order as the CLI and offers "Download JSON", built locally from a `Blob`. Findings that share a rule (hosts, say) share one card; info findings start collapsed. Findings in code the entry points don't call come last in each section and say so; "About this jar" shows the call-graph size and entry points. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
+5. `app.js` renders the report and offers "Download JSON", built locally from a `Blob`: one report object for one jar, an array for several, one object for a diff. Findings are in the core's order, except that info findings start collapsed in their own fold and findings that share a rule (hosts, say) share one card. Findings in code the entry points don't call come last in the high and notable list and in the info fold (the CLI puts them after all other findings), and say so; "About this jar" shows the call-graph size and entry points. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
 
 Privacy rules:
 
@@ -243,12 +262,12 @@ Privacy rules:
   default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'
   ```
 
-  A `<meta>` CSP doesn't cover the worker. Hosts that support response headers (for example a `_headers` file) should send the same policy as a header.
+  A `<meta>` CSP doesn't cover the worker and can't carry `frame-ancestors`. `web/_headers` sends the same policy as a response header, plus `frame-ancestors 'none'`, for hosts that read that file (Cloudflare, Netlify). The docs pages under `web/docs/` carry the same `<meta>` policy and load no scripts.
 - Check: open DevTools > Network, load the page, clear the log, run a scan and a diff. The log must stay empty. Then go offline and repeat; both must still work.
 
 Accessibility and layout basics: a status line in an `aria-live` region announces each result in one sentence and focus moves to the result heading (reading a whole report aloud on every scan would be too much), severity is shown as text and not only as color, light and dark themes follow `prefers-color-scheme`, tabs follow the ARIA tabs pattern with arrow keys, and the page works at phone width without sideways scrolling.
 
-Speed: on a laptop, a 52 MB plugin (Geyser) scans in about 1.5 s in Chromium, 1.6 to 1.8 s in Firefox 159 and 2 to 3 s in WebKit. Measure Firefox with the browser Mozilla ships: Playwright's Firefox build runs all WebAssembly several times slower and took 10 s for the same jar. The worker keeps the tab responsive either way.
+Speed: the WebAssembly build scans the largest of the top 100 plugins (52 MB) in 1.69 s in V8, the JavaScript engine in Chrome; see [Benchmarks](benchmarks.md#speed). Measure Firefox with the browser Mozilla ships: Playwright's Firefox build runs all WebAssembly several times slower. The worker keeps the tab responsive either way.
 
 ## Limits and robustness
 
@@ -287,7 +306,7 @@ rustup target add wasm32-unknown-unknown
 ./scripts/build-web.sh
 ```
 
-On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 0.5 MB). Release builds use `lto = true`, `codegen-units = 1`.
+On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 650 KB; the deployed 0.2.0 build is 213 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
 
 ```bash
 node scripts/check-web.mjs

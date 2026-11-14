@@ -4,6 +4,7 @@
 *.snap.new
 /web/jarsnitch.wasm
 /web/samples
+/web/docs
 
 # Cloudflare deploy cache
 .wrangler

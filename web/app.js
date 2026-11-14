@@ -1,8 +1,11 @@
 // Page logic: file picking, talking to the worker, rendering reports.
 // Report text comes from the scanned jar, so it is only ever inserted as text.
 
+import { selectTab } from "./site.js";
+
 const status = document.getElementById("status");
 const results = document.getElementById("results");
+const SEVS = ["high", "notable", "info"];
 const LABEL = { high: "High", notable: "Notable", info: "Info" };
 
 /** Builds an element. Strings become text nodes, never HTML. */
@@ -63,29 +66,9 @@ async function analyze(op, files) {
   return { id, ...(await answer) };
 }
 
-// Tabs.
+// Mode tabs. site.js handles clicks, arrow keys and the 1 / 2 shortcuts.
 
-const tabs = [...document.querySelectorAll('[role="tab"]')];
-
-function selectTab(tab) {
-  for (const t of tabs) {
-    const on = t === tab;
-    t.setAttribute("aria-selected", String(on));
-    t.tabIndex = on ? 0 : -1;
-    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
-  }
-}
-
-for (const tab of tabs) {
-  tab.addEventListener("click", () => selectTab(tab));
-  tab.addEventListener("keydown", (e) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-    if (!step) return;
-    const next = tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
-    selectTab(next);
-    next.focus();
-  });
-}
+const tabs = [document.getElementById("tab-scan"), document.getElementById("tab-compare")];
 
 // Files.
 
@@ -122,6 +105,7 @@ document.getElementById("swap").addEventListener("click", () => {
   showFile("old", pair.old);
   showFile("new", pair.new);
   if (pair.old && pair.new) compare();
+  else if (pair.old || pair.new) setStatus(`Now choose the ${pair.old ? "new" : "old"} version.`);
 });
 
 const hasFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes("Files");
@@ -202,9 +186,11 @@ for (const button of document.querySelectorAll("[data-sample]")) {
     const [old, update] = await Promise.all(samples);
     if (!old || !update) return setStatus("The sample couldn't be loaded. Reload the page and try again.", true);
     if (button.dataset.sample === "scan") {
+      selectTab(tabs[0]);
       showFile("scan", update);
       return scan(update, SAMPLE_NOTE);
     }
+    selectTab(tabs[1]);
     [pair.old, pair.new] = [old, update];
     showFile("old", old);
     showFile("new", update);
@@ -221,7 +207,7 @@ async function scan(file, note) {
     const c = counts(result.findings);
     if (unreadable(result.warnings)) setStatus(`${file.name} isn't a readable jar or zip.`, true);
     else setStatus(`Scanned ${file.name} in ${seconds(ms)}: ${c.high} high, ${c.notable} notable, ${c.info} info.`);
-    show(withNote(renderReport(result), note));
+    show(withNote(renderReport(result, { ms, sample: !!note }), note));
   } catch (e) {
     if (gen === generation) setStatus(e.message, true);
   }
@@ -243,14 +229,15 @@ async function scanMany(files) {
     }
     if (gen !== generation) return;
   }
+  const ms = performance.now() - start;
   const readable = scanned.filter((s) => s.report && !unreadable(s.report.warnings)).map((s) => counts(s.report.findings));
   const failed = scanned.length - readable.length;
   setStatus(
-    `Scanned ${plural(files.length, "jar")} in ${seconds(performance.now() - start)}: ` +
+    `Scanned ${plural(files.length, "jar")} in ${seconds(ms)}: ` +
       `${readable.filter((c) => c.high).length} with high findings, ${readable.filter((c) => c.notable).length} with notable ones` +
       `${failed ? `, ${failed} unreadable` : ""}.`,
   );
-  show(renderMany(scanned));
+  show(renderMany(scanned, ms));
 }
 
 async function compare(note) {
@@ -268,7 +255,7 @@ async function compare(note) {
     const findings = result.added.filter((i) => i.kind === "finding").map((i) => i.finding);
     const c = counts(findings);
     setStatus(`Compared in ${seconds(ms)}. The update adds ${c.high} high, ${c.notable} notable and ${c.info} info findings.`);
-    show(withNote(renderDiff(result), note));
+    show(withNote(renderDiff(result, { ms, sample: !!note }), note));
   } catch (e) {
     if (gen === generation) setStatus(e.message, true);
   }
@@ -286,7 +273,7 @@ const counts = (findings) => {
   for (const f of findings) c[f.severity]++;
   return c;
 };
-const size = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
+const size = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : n >= 1e3 ? `${Math.round(n / 1e3)} KB` : plural(n, "byte"));
 const seconds = (ms) => (ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(1)} s`);
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const where = (e) => {
@@ -296,15 +283,28 @@ const where = (e) => {
 const sevBadge = (severity) => h("span", { class: `sev sev-${severity}` }, LABEL[severity]);
 const unreadable = (warnings) => warnings.some((w) => w.code === "zip.unreadable" && !w.location);
 
+/** Text that may wrap after a / or a . (class and package names), not in the middle of a word. */
+const breakable = (text) => String(text).split(/(?<=[/.$])(?=.)/).flatMap((part, i) => (i ? [h("wbr"), part] : [part]));
+const code = (text, cls) => h("code", { class: cls }, breakable(text));
+
+/** Rule ids, each linking to its entry in the rule docs. */
+const ruleChip = (rules) =>
+  h("code", { class: "rule" }, [rules].flat().map((r, i) => [i ? ", " : null, h("a", { href: `docs/rules/#${encodeURIComponent(r)}` }, r)]));
+
+const units = (n) => "■".repeat(Math.min(n, 10)) + (n > 10 ? "+" : "");
+
 function countList(c, suffix = "") {
-  return h("ul", { class: "counts", "aria-label": "Findings by severity" },
-    ["high", "notable", "info"].map((s) => h("li", {}, h("span", { class: `sev sev-${s}` }, `${c[s]} ${LABEL[s]}${suffix}`))));
+  return h("ul", { class: "counts", "aria-label": `Findings${suffix} by severity` },
+    SEVS.map((s) => h("li", { class: `sev-${s}${c[s] ? "" : " zero"}` },
+      h("b", {}, String(c[s])),
+      h("span", { class: "c-label" }, `${s}${suffix}`),
+      h("span", { class: "units", "aria-hidden": "true" }, units(c[s])))));
 }
 
 function downloadButton(fileName, data) {
   return h("button", {
     type: "button",
-    class: "button",
+    class: "btn",
     onclick: () => {
       const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
       const a = h("a", { href: url, download: fileName });
@@ -316,23 +316,71 @@ function downloadButton(fileName, data) {
   }, "Download JSON");
 }
 
-function findingCard(f) {
-  const title = f.value ? [f.title, ": ", h("code", {}, f.value)] : f.title;
+const legend = () =>
+  h("div", { class: "legend" },
+    h("p", { class: "label" }, "Reading this report"),
+    h("dl", {}, [["high", "gives a jar a lot of control"], ["notable", "a powerful capability"], ["info", "common"]]
+      .map(([s, text]) => h("div", {}, h("dt", {}, sevBadge(s)), h("dd", {}, text)))),
+    h("p", { class: "legend-ask" }, "Ask whether each finding fits what the plugin says it does."));
+
+const caveat = () => h("p", { class: "caveat" }, "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.");
+
+const prov = (version, ms, sample) =>
+  [version ? `jarsnitch ${version}` : "jarsnitch", "WebAssembly in this tab", ms != null ? seconds(ms) : null, sample ? "sample jars" : null].filter(Boolean).join(" · ");
+
+/**
+ * A report: a rail with the title, counts, download, contents and legend, then the sections.
+ * A report nested in the multi-jar list gets a plain header instead of the rail.
+ */
+function frame(o, main) {
+  const head = h("header", { class: "report-head" },
+    o.label ? h("p", { class: "label" }, o.label) : null,
+    h(o.nested ? "h4" : "h2", { tabindex: "-1", class: "report-title" }, o.title),
+    h("p", { class: Array.isArray(o.meta) ? "meta seps" : "meta" }, Array.isArray(o.meta) ? h("span", {}, o.meta.map((m) => h("span", {}, m))) : o.meta),
+    h("div", { class: "head-row" }, o.counts, o.download));
+  const toc = o.nested ? null : o.toc?.filter(Boolean);
+  const rail = h(o.nested ? "div" : "aside", { class: "rail", "aria-label": o.nested ? null : "Report summary" },
+    head,
+    toc?.length
+      ? h("nav", { class: "toc", "aria-label": "In this report", onclick: openTarget },
+          h("p", { class: "label" }, "In this report"),
+          h("ul", {}, toc.map(([id, text, n]) => h("li", {}, h("a", { href: `#${id}` }, text, n != null ? h("span", {}, String(n)) : null)))))
+      : null,
+    o.nested || o.bad ? null : legend(),
+    o.prov ? h("p", { class: "prov" }, o.prov) : null);
+  return h("article", { class: o.nested ? "report nested" : "report" },
+    rail,
+    h("div", { class: "report-main" }, main, o.nested ? null : caveat()));
+}
+
+/** A contents link to a closed fold opens it. */
+function openTarget(e) {
+  const id = e.target.closest("a")?.hash.slice(1);
+  const target = id && document.getElementById(id);
+  if (target?.tagName === "DETAILS") target.open = true;
+}
+
+/** Heading tags: a report nested in the jar list sits two levels lower. */
+const hx = (n, nested) => `h${n + (nested ? 2 : 0)}`;
+
+function findingCard(f, nested) {
+  const title = f.value ? [f.title, ": ", code(f.value)] : f.title;
   return h("article", { class: `finding sev-${f.severity}` },
-    h("div", { class: "finding-head" }, sevBadge(f.severity), h("h4", {}, title), h("code", { class: "rule" }, f.rule)),
+    h("div", { class: "finding-head" }, sevBadge(f.severity), h(hx(4, nested), {}, title), ruleChip(f.rule)),
     h("p", { class: "why" }, f.why),
-    h("p", { class: "legit" }, "Common legitimate uses: ", f.legit_uses),
+    legit(f),
     evidence(f),
     f.reached === false ? notCalled() : null);
 }
 
+const legit = (f) => h("p", { class: "legit" }, h("span", { class: "k" }, "Common legitimate uses"), h("span", { class: "vh" }, ": "), f.legit_uses);
 const notCalled = () => h("p", { class: "unreached" }, "Not called from the plugin's entry points.");
 
 /**
  * Cards for findings in report order, with code the entry points don't call last;
  * findings that share a rule (hosts, say) share a card.
  */
-function findingCards(findings) {
+function findingCards(findings, nested) {
   const groups = [];
   const called = findings.filter((f) => f.reached !== false);
   for (const f of [...called, ...findings.filter((f) => f.reached === false)]) {
@@ -340,17 +388,17 @@ function findingCards(findings) {
     if (last?.[0].rule === f.rule && (last[0].reached === false) === (f.reached === false)) last.push(f);
     else groups.push([f]);
   }
-  return groups.map((g) => (g.length === 1 ? findingCard(g[0]) : groupCard(g)));
+  return groups.map((g) => (g.length === 1 ? findingCard(g[0], nested) : groupCard(g, nested)));
 }
 
-function groupCard(group) {
+function groupCard(group, nested) {
   const f = group[0];
-  const row = (x) => h("li", {}, h("code", {}, x.value ?? "(no value)"), x.evidence[0] ? h("span", { class: "detail" }, "in ", where(x.evidence[0]), x.evidence_total > 1 ? ` and ${plural(x.evidence_total - 1, "more place")}` : "") : null);
+  const row = (x) => h("li", {}, code(x.value ?? "(no value)"), x.evidence[0] ? h("span", { class: "detail" }, "in ", breakable(where(x.evidence[0])), x.evidence_total > 1 ? ` and ${plural(x.evidence_total - 1, "more place")}` : "") : null);
   const shown = 8;
   return h("article", { class: `finding sev-${f.severity}` },
-    h("div", { class: "finding-head" }, sevBadge(f.severity), h("h4", {}, `${f.title} (${group.length})`), h("code", { class: "rule" }, f.rule)),
+    h("div", { class: "finding-head" }, sevBadge(f.severity), h(hx(4, nested), {}, `${f.title} (${group.length})`), ruleChip(f.rule)),
     h("p", { class: "why" }, f.why),
-    h("p", { class: "legit" }, "Common legitimate uses: ", f.legit_uses),
+    legit(f),
     h("ul", { class: "values" }, group.slice(0, shown).map(row)),
     group.length > shown
       ? h("details", { class: "where" }, h("summary", {}, `Show ${group.length - shown} more`), h("ul", { class: "values" }, group.slice(shown).map(row)))
@@ -361,18 +409,18 @@ function groupCard(group) {
 function evidence(f) {
   const [first] = f.evidence;
   if (!first) return null;
-  const line = (e) => [h("code", {}, where(e)), e.detail ? h("span", { class: "detail" }, e.detail) : null];
-  if (f.evidence_total === 1) return h("p", { class: "where" }, "Found in ", line(first));
+  const line = (e) => [code(where(e)), e.detail ? h("span", { class: "detail" }, breakable(e.detail)) : null];
+  if (f.evidence_total === 1) return h("p", { class: "where" }, h("span", { class: "k" }, "Found in "), line(first));
   const hidden = f.evidence_total - f.evidence.length;
   return h("details", { class: "where" },
-    h("summary", {}, "Found in ", h("code", {}, where(first)), ` and ${plural(f.evidence_total - 1, "more place")}`),
+    h("summary", {}, "Found in ", code(where(first)), ` and ${plural(f.evidence_total - 1, "more place")}`),
     h("ul", {}, f.evidence.map((e) => h("li", {}, line(e)))),
     hidden > 0 ? h("p", { class: "muted" }, `${hidden} more not listed.`) : null);
 }
 
 /** A collapsed section whose content is only built when it's opened. */
-function fold(summary, build, open = false, cls = "fold") {
-  const d = h("details", { class: cls, open }, h("summary", {}, summary));
+function fold(summary, build, { open = false, cls = "fold", id, heading } = {}) {
+  const d = h("details", { class: cls, open, id }, h("summary", {}, heading ? h(heading, { class: "fold-h" }, summary) : summary));
   const fill = () => {
     if (d.dataset.filled) return;
     d.dataset.filled = "1";
@@ -383,31 +431,35 @@ function fold(summary, build, open = false, cls = "fold") {
   return d;
 }
 
-function findingsSection(findings, reach) {
+/** A report section; `n` is shown next to the title without being part of it. */
+const section = (cls, id, title, n, body, nested) =>
+  h("section", { class: `section ${cls}`.trim(), id }, h(hx(3, nested), { "data-n": n }, title), body);
+
+function findingsSection(findings, reach, id, nested) {
   const important = findings.filter((f) => f.severity !== "info");
   const info = findings.filter((f) => f.severity === "info");
   const notCalledCount = findings.filter((f) => f.reached === false).length;
-  return h("section", { class: "section", "aria-label": "Findings" },
+  return section("findings", id, "Findings", findings.length ? plural(findings.length, "finding") : null,
     findings.length === 0
-      ? h("p", {}, "jarsnitch found nothing from its rule list in this jar.")
+      ? h("p", { class: "empty" }, "jarsnitch found nothing from its rule list in this jar.")
       : [
           notCalledCount && reach?.dynamic
             ? h("p", { class: "muted" }, `${plural(notCalledCount, "finding is", "findings are")} in code the plugin's entry points don't call, but the plugin also loads code at runtime, so that code may still run.`)
             : null,
-          important.length ? h("div", { class: "list" }, findingCards(important)) : h("p", { class: "muted" }, "No high or notable findings."),
-          info.length ? fold(`Info findings (${info.length})`, () => h("div", { class: "list" }, findingCards(info))) : null,
-        ]);
+          important.length ? h("div", { class: "list" }, findingCards(important, nested)) : h("p", { class: "empty" }, "No high or notable findings."),
+          info.length ? fold(`Info findings (${info.length})`, () => h("div", { class: "list" }, findingCards(info, nested)), { cls: "fold info" }) : null,
+        ], nested);
 }
 
 function facts(rows) {
-  return h("dl", { class: "facts" }, rows.filter(([, v]) => v != null && v !== "").map(([k, v]) => [h("dt", {}, k), h("dd", {}, v)]));
+  return h("dl", { class: "facts" }, rows.filter(([, v]) => v != null && v !== "").map(([k, v]) => h("div", {}, h("dt", {}, k), h("dd", {}, v))));
 }
 
 function plainList(items) {
-  return h("ul", { class: "plain" }, items.map((i) => h("li", {}, h("code", {}, i))));
+  return h("ul", { class: "plain" }, items.map((i) => h("li", {}, code(i))));
 }
 
-function jarDetails(r) {
+function jarDetails(r, id, nested) {
   return fold("About this jar", () => {
     const o = r.obfuscation;
     const reach = r.reachability;
@@ -420,122 +472,144 @@ function jarDetails(r) {
         ["Entries", String(r.stats.entries)],
         ["Obfuscation", `${o.score}/100 (short or garbled names ${Math.round(o.short_names * 100)}%, default package ${Math.round(o.default_package * 100)}%, encoded strings ${Math.round(o.encoded_strings * 100)}%)`],
         ["Call graph", reach ? `${reach.reached_methods} of ${reach.methods} methods reached from ${plural(reach.entry_points.length, "entry point")}` : null],
-        ["Entry points", reach ? reach.entry_points.slice(0, 3).join(", ") + (reach.entry_points.length > 3 ? ` and ${reach.entry_points.length - 3} more` : "") : null],
+        ["Entry points", reach ? breakable(reach.entry_points.slice(0, 3).join(", ") + (reach.entry_points.length > 3 ? ` and ${reach.entry_points.length - 3} more` : "")) : null],
       ]),
     ];
     for (const p of r.plugins) {
-      parts.push(h("h4", {}, `${p.descriptor} (${p.platform})`));
+      parts.push(h(hx(4, nested), {}, `${p.descriptor} (${p.platform})`));
       parts.push(facts([
         ["Name", p.name],
         ["Version", p.version],
         ["Authors", p.authors.length ? p.authors.join(", ") : null],
         ["Website", p.website],
-        ["Main class", p.main],
-        ["Bootstrapper", p.bootstrapper],
-        ["Loader", p.loader],
+        ["Main class", p.main ? breakable(p.main) : null],
+        ["Bootstrapper", p.bootstrapper ? breakable(p.bootstrapper) : null],
+        ["Loader", p.loader ? breakable(p.loader) : null],
         ["Folia", p.folia_supported ? "Declares Folia support" : null],
         ["Commands", p.commands.length ? p.commands.map((c) => `/${c}`).join(", ") : null],
-        ["Permissions", p.permissions.length ? p.permissions.join(", ") : null],
+        ["Permissions", p.permissions.length ? breakable(p.permissions.join(", ")) : null],
         ["Dependencies", p.dependencies.length ? p.dependencies.join(", ") : null],
         ["Optional dependencies", p.optional_dependencies.length ? p.optional_dependencies.join(", ") : null],
       ]));
       if (p.maven_libraries.length) {
-        parts.push(h("h4", {}, "Libraries the server downloads at startup"), plainList(p.maven_libraries));
+        parts.push(h(hx(4, nested), {}, "Libraries the server downloads at startup"), plainList(p.maven_libraries));
       }
     }
     if (r.libraries.length) {
-      parts.push(h("h4", {}, "Bundled libraries"), plainList(r.libraries.map((l) => `${l.group}:${l.artifact}:${l.version}`)));
+      parts.push(h(hx(4, nested), {}, "Bundled libraries"), plainList(r.libraries.map((l) => `${l.group}:${l.artifact}:${l.version}`)));
     }
     if (r.nested.length) {
-      parts.push(h("h4", {}, "Nested jars"), plainList(r.nested.map((n) => `${n.path} (${size(n.size)})`)));
+      parts.push(h(hx(4, nested), {}, "Nested jars"), plainList(r.nested.map((n) => `${n.path} (${size(n.size)})`)));
     }
     return parts;
-  });
+  }, { id, heading: hx(3, nested) });
 }
 
-function warningsSection(warnings) {
+function warningsSection(warnings, id, nested) {
   if (!warnings.length) return null;
   return fold(`Warnings (${warnings.length})`, () =>
-    h("ul", { class: "plain" }, warnings.map((w) => h("li", {}, h("code", {}, w.code), " ", w.location ? [h("code", {}, w.location), ": "] : null, w.message))));
+    h("ul", { class: "plain" }, warnings.map((w) => h("li", {}, h("code", {}, w.code), " ", w.location ? [code(w.location), ": "] : null, w.message))), { id, heading: hx(3, nested) });
 }
 
-function renderReport(r, heading = "h2") {
+const pluginName = (r) => {
   const p = r.plugins[0];
-  const name = p?.name ? `${p.name} ${p.version ?? ""}`.trim() : r.file.name;
+  return p?.name ? `${p.name} ${p.version ?? ""}`.trim() : r.file.name;
+};
+
+function renderReport(r, { nested = false, ms, sample = false } = {}) {
+  const p = r.plugins[0];
+  const bad = unreadable(r.warnings);
+  // An unreadable file gets no class count, score or counts: nothing in it was analyzed.
   const meta = [
     p?.name ? r.file.name : null,
     p ? `${p.platform} plugin` : null,
     size(r.file.size),
     `SHA-256 ${r.file.sha256.slice(0, 12)}`,
-    plural(r.stats.classes, "class", "classes"),
-    `obfuscation ${r.obfuscation.score}/100`,
-  ].filter(Boolean).join(" · ");
-  return h("article", { class: "report" },
-    h("header", { class: "report-head" },
-      h(heading, { tabindex: "-1" }, name),
-      h("p", { class: "meta" }, meta),
-      h("div", { class: "head-row" }, countList(counts(r.findings)), downloadButton(`${r.file.name}.jarsnitch.json`, r))),
-    unreadable(r.warnings) ? h("p", { class: "banner error" }, "This file isn't a readable jar or zip, so nothing in it was checked.") : null,
+    bad ? null : plural(r.stats.classes, "class", "classes"),
+    bad ? null : `obfuscation ${r.obfuscation.score}/100`,
+  ].filter(Boolean);
+  const id = (x) => (nested ? null : x);
+  return frame({
+    nested,
+    label: nested ? null : sample ? "scan · sample" : "scan",
+    bad,
+    title: pluginName(r),
+    meta,
+    counts: bad ? null : countList(counts(r.findings)),
+    download: downloadButton(`${r.file.name}.jarsnitch.json`, r),
+    toc: [
+      bad ? null : ["r-findings", "Findings", r.findings.length],
+      ["r-about", "About this jar"],
+      r.warnings.length ? ["r-warnings", "Warnings", r.warnings.length] : null,
+    ],
+    prov: nested ? null : prov(r.tool_version, ms, sample),
+  }, [
+    bad ? h("p", { class: "banner error" }, "This file isn't a readable jar or zip, so nothing in it was checked.") : null,
     r.partial ? h("p", { class: "banner warn" }, "Partial report: a scan limit was hit, so part of the jar wasn't checked. A partial report is not a clean one.") : null,
-    unreadable(r.warnings) ? null : findingsSection(r.findings, r.reachability),
-    jarDetails(r),
-    warningsSection(r.warnings));
+    bad ? null : findingsSection(r.findings, r.reachability, id("r-findings"), nested),
+    jarDetails(r, id("r-about"), nested),
+    warningsSection(r.warnings, id("r-warnings"), nested),
+  ]);
 }
 
-/** Puts a note under a report's header. */
+/** Puts a note at the top of a report's main column. */
 function withNote(report, note) {
-  if (note) report.querySelector(".report-head").after(h("p", { class: "banner note" }, note));
+  if (note) report.querySelector(".report-main").prepend(h("p", { class: "banner note" }, note));
   return report;
 }
 
 /** Severity counts for a summary line, leaving out zeros. */
 function badges(c) {
-  const shown = ["high", "notable", "info"].filter((s) => c[s]);
+  const shown = SEVS.filter((s) => c[s]);
   if (!shown.length) return h("span", { class: "muted" }, "No findings");
-  return h("span", { class: "counts" }, shown.map((s) => h("span", { class: `sev sev-${s}` }, `${c[s]} ${LABEL[s]}`)));
+  return h("span", { class: "badges" }, shown.map((s) => h("span", { class: `sev sev-${s}` }, `${c[s]} ${LABEL[s]}`)));
 }
 
 /** Several jars: one row each, most High then most Notable findings first, full report on open. */
-function renderMany(scanned) {
+function renderMany(scanned, ms) {
   const rank = ({ report: r }) => (r && !unreadable(r.warnings) ? counts(r.findings) : { high: -1, notable: -1 });
   const order = [...scanned].sort((a, b) => {
     const [x, y] = [rank(a), rank(b)];
     return y.high - x.high || y.notable - x.notable || a.file.name.localeCompare(b.file.name, undefined, { numeric: true });
   });
   const reports = scanned.filter((s) => s.report).map((s) => s.report);
-  return h("article", { class: "report" },
-    h("header", { class: "report-head" },
-      h("h2", { tabindex: "-1" }, plural(scanned.length, "jar")),
-      h("p", { class: "meta" }, "Open a plugin for its full report."),
-      h("div", { class: "head-row" }, countList(counts(reports.flatMap((r) => r.findings))), downloadButton("plugins.jarsnitch.json", reports))),
-    h("div", { class: "list" }, order.map(jarRow)));
+  return frame({
+    label: "scan · several jars",
+    title: plural(scanned.length, "jar"),
+    meta: "Most high, then most notable findings first. Open a plugin for its full report.",
+    counts: countList(counts(reports.flatMap((r) => r.findings))),
+    download: downloadButton("plugins.jarsnitch.json", reports),
+    prov: prov(reports[0]?.tool_version, ms),
+  }, section("jars", "r-jars", "Plugins", plural(scanned.length, "jar"), h("div", { class: "list" }, order.map(jarRow))));
 }
 
 function jarRow({ file, report: r, error }) {
-  if (!r) return h("div", { class: "row" }, h("span", { class: "text" }, h("code", {}, file.name)), h("span", { class: "muted" }, error));
+  if (!r) return h("div", { class: "row jar-error" }, h("span", { class: "text" }, code(file.name)), h("span", { class: "muted" }, error));
   const p = r.plugins[0];
   const summary = h("span", { class: "jar-sum" },
-    h("span", { class: "jar-name" }, p?.name ? [`${p.name} ${p.version ?? ""}`.trim(), h("span", { class: "detail" }, file.name)] : file.name),
+    h("span", { class: "jar-name" }, p?.name ? [`${p.name} ${p.version ?? ""}`.trim(), h("span", { class: "jar-file" }, breakable(file.name))] : breakable(file.name)),
     unreadable(r.warnings) ? h("span", { class: "muted" }, "Not a readable jar or zip") : badges(counts(r.findings)));
-  return fold(summary, () => renderReport(r, "h3"), false, "fold jar");
+  const c = counts(r.findings);
+  const top = unreadable(r.warnings) ? "none" : SEVS.find((s) => c[s]) ?? "none";
+  return fold(summary, () => renderReport(r, { nested: true }), { cls: `fold jar sev-${top}` });
 }
 
 // Diff.
 
 const KIND = {
   command: (v) => ["command ", h("code", {}, `/${v}`)],
-  permission: (v) => ["permission ", h("code", {}, v)],
-  "maven-library": (v) => ["library downloaded at startup ", h("code", {}, v)],
-  library: (v) => ["bundled library ", h("code", {}, v)],
-  dependency: (v) => ["dependency ", h("code", {}, v)],
-  "optional-dependency": (v) => ["optional dependency ", h("code", {}, v)],
+  permission: (v) => ["permission ", code(v)],
+  "maven-library": (v) => ["library downloaded at startup ", code(v)],
+  library: (v) => ["bundled library ", code(v)],
+  dependency: (v) => ["dependency ", code(v)],
+  "optional-dependency": (v) => ["optional dependency ", code(v)],
 };
 
 function itemRow(item, verb) {
   if (item.kind === "class") {
     return h("div", { class: `row sev-${item.severity}` },
-      sevBadge(item.severity), h("span", { class: "text" }, `${verb} class `, h("code", {}, item.value)),
-      h("code", { class: "rule" }, item.rules.join(", ")));
+      sevBadge(item.severity), h("span", { class: "text" }, `${verb} class `, code(item.value)),
+      ruleChip(item.rules));
   }
   return h("div", { class: "row sev-info" }, sevBadge("info"), h("span", { class: "text" }, `${verb} `, KIND[item.kind](item.value)));
 }
@@ -544,7 +618,7 @@ function removedRow(item) {
   if (item.kind !== "finding") return itemRow(item, "Removed");
   const f = item.finding;
   return h("div", { class: `row sev-${f.severity}` },
-    sevBadge(f.severity), h("span", { class: "text" }, f.title, f.value ? [": ", h("code", {}, f.value)] : null), h("code", { class: "rule" }, f.rule));
+    sevBadge(f.severity), h("span", { class: "text" }, f.title, f.value ? [": ", code(f.value)] : null), ruleChip(f.rule));
 }
 
 function changeRow(c) {
@@ -554,7 +628,9 @@ function changeRow(c) {
     "maven-library": `Library downloaded at startup ${c.key}`,
     nested: `Nested jar ${c.key} (SHA-256)`,
   }[c.kind] ?? c.key;
-  return h("div", { class: "row" }, h("span", { class: "text" }, what, ": ", h("code", {}, show(c.old)), " → ", h("code", {}, show(c.new))));
+  return h("div", { class: "row change" },
+    h("span", { class: "k" }, breakable(what), h("span", { class: "vh" }, ": ")),
+    h("span", { class: "v" }, code(show(c.old), "old"), h("span", { class: "to" }, " → "), code(show(c.new))));
 }
 
 /** Added items in diff order, with runs of findings grouped like in a report. */
@@ -576,14 +652,15 @@ function addedList(items) {
   return out;
 }
 
-function renderDiff(d) {
+function renderDiff(d, { ms, sample = false } = {}) {
   const label = (side) => {
     const p = side.plugins[0];
     return p?.name ? `${p.name} ${p.version ?? ""}`.trim() : side.file.name;
   };
   const [a, b] = [label(d.old), label(d.new)];
   const sameName = d.old.plugins[0]?.name && d.old.plugins[0].name === d.new.plugins[0]?.name;
-  const title = sameName ? `${a} → ${d.new.plugins[0].version ?? "?"}` : `${a} → ${b}`;
+  const to = h("span", { class: "to" }, " → ");
+  const title = sameName ? [a, to, d.new.plugins[0].version ?? "?"] : [a, to, b];
   const addedFindings = d.added.filter((i) => i.kind === "finding").map((i) => i.finding);
 
   const unchanged = [];
@@ -592,31 +669,40 @@ function renderDiff(d) {
     if (last?.rule === k.rule) last.n++;
     else unchanged.push({ rule: k.rule, n: 1 });
   }
+  const items = (n, one = "item") => (n ? plural(n, one) : null);
 
-  return h("article", { class: "report" },
-    h("header", { class: "report-head" },
-      h("h2", { tabindex: "-1" }, title),
-      h("p", { class: "meta" }, `${d.old.file.name} → ${d.new.file.name} · obfuscation ${d.obfuscation.old} → ${d.obfuscation.new}`),
-      h("div", { class: "head-row" }, countList(counts(addedFindings), " added"),
-        downloadButton(`${d.old.file.name}-vs-${d.new.file.name}.jarsnitch.json`, d))),
+  return frame({
+    label: sample ? "compare · sample" : "compare",
+    title,
+    meta: [[h("span", { class: "nw" }, d.old.file.name), " → ", h("span", { class: "nw" }, d.new.file.name)], `obfuscation ${d.obfuscation.old} → ${d.obfuscation.new}`],
+    counts: countList(counts(addedFindings), " added"),
+    download: downloadButton(`${d.old.file.name}-vs-${d.new.file.name}.jarsnitch.json`, d),
+    toc: [
+      ["r-adds", "This update adds", d.added.length],
+      ["r-removes", "This update removes", d.removed.length],
+      d.changed.length ? ["r-changes", "Changes", d.changed.length] : null,
+      unchanged.length ? ["r-unchanged", "Unchanged", unchanged.length] : null,
+    ],
+    prov: prov(d.tool_version, ms, sample),
+  }, [
     d.warnings.map((w) => h("p", { class: "banner warn" }, w.message)),
-    h("section", { class: "section" },
-      h("h3", {}, "This update adds"),
+    section("adds", "r-adds", "This update adds", items(d.added.length),
       d.added.length
         ? h("div", { class: "list" }, addedList(d.added))
-        : h("p", {}, "Nothing new from the rule list.")),
-    h("section", { class: "section" },
-      h("h3", {}, "This update removes"),
-      d.removed.length ? h("div", { class: "list" }, d.removed.map(removedRow)) : h("p", { class: "muted" }, "Nothing.")),
+        : h("p", { class: "empty" }, "Nothing new from the rule list.")),
+    section("removes", "r-removes", "This update removes", items(d.removed.length),
+      d.removed.length ? h("div", { class: "list" }, d.removed.map(removedRow)) : h("p", { class: "empty" }, "Nothing.")),
     d.changed.length
-      ? h("section", { class: "section" }, h("h3", {}, "Changes"), h("div", { class: "list" }, d.changed.map(changeRow)),
+      ? section("changes", "r-changes", "Changes", items(d.changed.length, "field"), [
+          h("div", { class: "list" }, d.changed.map(changeRow)),
           d.changed.some((c) => c.kind === "plugin-field" && / (authors|website)$/.test(c.key))
-            ? h("p", { class: "muted" }, "A different author or website can mean the plugin has a new owner.")
-            : null)
+            ? h("p", { class: "after" }, "A different author or website can mean the plugin has a new owner.")
+            : null,
+        ])
       : null,
     unchanged.length
-      ? h("section", { class: "section" },
-          h("h3", {}, "Unchanged"),
-          h("ul", { class: "chips" }, unchanged.map((u) => h("li", {}, h("code", {}, u.rule), u.n > 1 ? ` ×${u.n}` : null))))
-      : null);
+      ? section("unchanged", "r-unchanged", "Unchanged", items(unchanged.length, "rule"),
+          h("ul", { class: "chips" }, unchanged.map((u) => h("li", {}, ruleChip(u.rule), u.n > 1 ? ` ×${u.n}` : null))))
+      : null,
+  ]);
 }

@@ -1,0 +1,55 @@
+$ jarsnitch scan SampleShop-1.4.1.jar
+== SampleShop-1.4.1.jar ==
+SampleShop 1.4.1 · bukkit (plugin.yml)
+sha256 699600d2ac6a · 6 classes · obfuscation 0/100
+call graph from example/sampleshop/SampleShop: 10 of 12 methods reached
+  the plugin also loads code at runtime, so code it doesn't reach may still run
+
+HIGH     Can download and run code from the internet   [corr.download-and-run]
+         The jar can fetch code that isn't in this file and run it, so this report can't tell you what that code does.
+         at example/sampleshop/AddonLoader.load
+
+HIGH     Possible hidden command   [corr.hidden-command]
+         Typing a specific word in chat could give someone operator or run console commands, without that command appearing in the plugin's command list.
+         at example/sampleshop/ChatListener
+
+NOTABLE  Can load new code while running   [code.load]
+         Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.
+         at example/sampleshop/AddonLoader.load
+
+NOTABLE  Can write .jar or .class files   [fs.write-archive]
+         Writing jar or class files is how code installs or changes plugins, including other plugins.
+         at example/sampleshop/AddonLoader.load
+
+NOTABLE  Can give players operator   [mc.set-op]
+         An operator can run every command on the server.
+         at example/sampleshop/ChatListener.onChat
+
+INFO     Can run server commands   [mc.console-command]
+         Commands run as the console have full operator power.
+         at example/sampleshop/ShopCommand.onCommand
+
+INFO     Can connect to websites   [net.http]
+         The plugin can send and receive data over the internet. The hosts found in the jar are listed under str.url.
+         at example/sampleshop/UpdateChecker.check
+
+INFO     Contains web addresses: api.example.invalid   [str.url]
+         These are hosts the plugin may contact. Unfamiliar ones are worth a look.
+         at example/sampleshop/UpdateChecker.check
+
+INFO     Contains web addresses: cdn.example.invalid   [str.url]
+         These are hosts the plugin may contact. Unfamiliar ones are worth a look.
+         at example/sampleshop/AddonLoader.load
+
+INFO     Contains web addresses: shop-plugins.example.net   [str.url]
+         These are hosts the plugin may contact. Unfamiliar ones are worth a look.
+         at plugin.yml
+
+NOTABLE  Can open raw network connections   [net.socket]
+         A raw socket can talk any protocol to any host, or listen for incoming connections on your server.
+         at example/sampleshop/libs/net/TcpClient.connect
+         not called from the plugin's entry points
+
+2 high · 4 notable · 5 info · 1 not called from entry points
+
+This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.

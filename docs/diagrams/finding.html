@@ -1,0 +1,8 @@
+<!-- The net.socket finding from the SampleShop 1.4.1 sample, built with the same markup and styles as the website's report, with its seven parts numbered. -->
+<article class="finding sev-notable">
+  <div class="finding-head"><span class="sev sev-notable" data-pin="1">Notable</span><p class="h4" data-pin="2">Can open raw network connections</p><code class="rule" data-pin="3"><a href="../rules/#net.socket">net.socket</a></code></div>
+  <p class="why" data-pin="4">A raw socket can talk any protocol to any host, or listen for incoming connections on your server.</p>
+  <p class="legit" data-pin="5"><span class="k">Common legitimate uses</span><span class="vh">: </span>Vote listeners, query and RCON tools, proxies, database drivers, bundled HTTP clients.</p>
+  <p class="where" data-pin="6"><span class="k">Found in </span><code>example/<wbr>sampleshop/<wbr>libs/<wbr>net/<wbr>TcpClient.<wbr>connect</code><span class="detail">java/<wbr>net/<wbr>Socket.<wbr>&lt;init&gt;</span></p>
+  <p class="unreached" data-pin="7">Not called from the plugin's entry points.</p>
+</article>

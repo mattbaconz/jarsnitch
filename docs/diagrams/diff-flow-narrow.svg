@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 456" width="360" height="456">
+  <rect class="box" x="20" y="10" width="150" height="50" rx="4"/>
+  <text class="t" x="32" y="32">old.jar</text>
+  <text class="s" x="32" y="50">scanned alone</text>
+  <rect class="box" x="190" y="10" width="150" height="50" rx="4"/>
+  <text class="t" x="202" y="32">new.jar</text>
+  <text class="s" x="202" y="50">scanned alone</text>
+  <path class="ln" d="M95 60 V80 H265 V60"/>
+  <path class="ln" d="M180 80 V96"/><polygon class="ah" points="176,96 184,96 180,102"/>
+
+  <rect class="box" x="20" y="102" width="320" height="58" rx="4"/>
+  <text class="t" x="32" y="125">match by key</text>
+  <text class="s" x="32" y="145">rule id + value: host, webhook id, path</text>
+
+  <path class="ln" d="M180 160 V176 H34 V393"/>
+  <path class="ln" d="M34 219 H56"/><polygon class="ah" points="56,215 56,223 62,219"/>
+  <path class="ln" d="M34 277 H56"/><polygon class="ah" points="56,273 56,281 62,277"/>
+  <path class="ln" d="M34 335 H56"/><polygon class="ah" points="56,331 56,339 62,335"/>
+  <path class="ln" d="M34 393 H56"/><polygon class="ah" points="56,389 56,397 62,393"/>
+
+  <rect class="box-a" x="62" y="196" width="278" height="46" rx="4"/>
+  <text class="t" x="74" y="215"><tspan class="acc">+</tspan> Adds</text>
+  <text class="s" x="74" y="233">only in the new jar</text>
+  <rect class="box" x="62" y="254" width="278" height="46" rx="4"/>
+  <text class="t" x="74" y="273">− Removes</text>
+  <text class="s" x="74" y="291">only in the old jar</text>
+  <rect class="box" x="62" y="312" width="278" height="46" rx="4"/>
+  <text class="t" x="74" y="331">~ Changes</text>
+  <text class="s" x="74" y="349">same key, new value</text>
+  <rect class="box" x="62" y="370" width="278" height="46" rx="4"/>
+  <text class="t" x="74" y="389">= Unchanged</text>
+  <text class="s" x="74" y="407">in both, even if the code moved</text>
+
+  <text class="m" x="180" y="444" text-anchor="middle">exit 2 if Adds has a High</text>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 572" width="360" height="572">
+  <rect class="box" x="20" y="10" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="30">plugin.jar</text>
+  <text class="s" x="32" y="48">hashed (SHA-256), read as data</text>
+  <rect class="box" x="20" y="78" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="98">zip directory</text>
+  <text class="s" x="32" y="116">read the way the JVM reads it</text>
+  <rect class="box" x="20" y="146" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="166">entries</text>
+  <text class="s" x="32" y="184">class · archive · descriptor · text</text>
+  <rect class="box" x="20" y="214" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="234">class files</text>
+  <text class="s" x="32" y="252">constant pool, methods, Code</text>
+  <rect class="box" x="20" y="282" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="302">bytecode</text>
+  <text class="s" x="32" y="320">calls, strings, call-graph edges</text>
+  <rect class="box" x="20" y="350" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="370">rules</text>
+  <text class="s" x="32" y="388">33 rules, then correlations</text>
+  <rect class="box" x="20" y="418" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="438">call graph</text>
+  <text class="s" x="32" y="456">walked from the entry points</text>
+  <rect class="box-a" x="20" y="486" width="270" height="48" rx="4"/>
+  <text class="t" x="32" y="506">report</text>
+  <text class="s" x="32" y="524">sorted · CLI text, JSON, web page</text>
+
+  <path class="ln" d="M155 58 V72"/><polygon class="ah" points="151,72 159,72 155,78"/>
+  <path class="ln" d="M155 126 V140"/><polygon class="ah" points="151,140 159,140 155,146"/>
+  <path class="ln" d="M155 194 V208"/><polygon class="ah" points="151,208 159,208 155,214"/>
+  <path class="ln" d="M155 262 V276"/><polygon class="ah" points="151,276 159,276 155,282"/>
+  <path class="ln" d="M155 330 V344"/><polygon class="ah" points="151,344 159,344 155,350"/>
+  <path class="ln" d="M155 398 V412"/><polygon class="ah" points="151,412 159,412 155,418"/>
+  <path class="ln" d="M155 466 V480"/><polygon class="ah" points="151,480 159,480 155,486"/>
+
+  <path class="ln-d" d="M290 170 H316 V102 H296"/>
+  <polygon class="ah" points="296,98 296,106 290,102"/>
+  <text class="m" x="338" y="136" text-anchor="middle" transform="rotate(-90 338 136)">≤ 3 deep</text>
+
+  <text class="m" x="155" y="560" text-anchor="middle">the plugin is never loaded or run</text>
+</svg>

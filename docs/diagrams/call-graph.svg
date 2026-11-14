@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 560" width="360" height="560">
+  <desc>How calls are followed, drawn for the SampleShop 1.4.1 sample. The edges are illustrative: the real graph has one node per method. The walk starts at the entry points (here the main class from plugin.yml), and a class the code creates also makes the methods the server calls on it reachable, such as a command executor's onCommand and an @EventHandler. 10 of 12 methods are reached. TcpClient, in a bundled helper package, is never called, so its net.socket finding is marked not called. Its severity stays notable.</desc>
+  <text class="m" x="20" y="14">ENTRY POINTS</text>
+  <rect class="box-a" x="20" y="22" width="98" height="30" rx="4"/>
+  <text x="69" y="42" text-anchor="middle">main class</text>
+  <rect class="box" x="126" y="22" width="118" height="30" rx="4"/>
+  <text class="s" x="185" y="42" text-anchor="middle">service files</text>
+  <rect class="box" x="252" y="22" width="88" height="30" rx="4"/>
+  <text class="s" x="296" y="42" text-anchor="middle">manifest</text>
+  <path class="ln" d="M69 52 V72"/><polygon class="ah" points="65,72 73,72 69,78"/>
+
+  <rect class="box" x="20" y="78" width="320" height="40" rx="4"/>
+  <text class="t" x="32" y="103">SampleShop.onEnable</text>
+  <text class="m" x="328" y="103" text-anchor="end">plugin.yml main</text>
+
+  <path class="ln" d="M40 118 V367"/>
+  <path class="ln" d="M40 160 H54"/><polygon class="ah" points="54,156 54,164 60,160"/>
+  <path class="ln" d="M40 229 H54"/><polygon class="ah" points="54,225 54,233 60,229"/>
+  <path class="ln" d="M40 298 H54"/><polygon class="ah" points="54,294 54,302 60,298"/>
+  <path class="ln" d="M40 367 H54"/><polygon class="ah" points="54,363 54,371 60,367"/>
+
+  <rect class="box" x="60" y="134" width="280" height="57" rx="4"/>
+  <text class="t" x="72" y="154">ShopCommand.onCommand</text>
+  <text class="m" x="328" y="154" text-anchor="end">command</text>
+  <rect class="chip" x="72" y="162" width="144" height="20" rx="3"/><text class="c in" x="78" y="176">mc.console-command</text>
+
+  <rect class="box" x="60" y="203" width="280" height="57" rx="4"/>
+  <text class="t" x="72" y="223">UpdateChecker.check</text>
+  <text class="m" x="328" y="223" text-anchor="end">call</text>
+  <rect class="chip" x="72" y="231" width="71" height="20" rx="3"/><text class="c in" x="78" y="245">net.http</text>
+  <rect class="chip" x="149" y="231" width="64" height="20" rx="3"/><text class="c in" x="155" y="245">str.url</text>
+
+  <rect class="box" x="60" y="272" width="280" height="57" rx="4"/>
+  <text class="t" x="72" y="292">ChatListener.onChat</text>
+  <text class="m" x="328" y="292" text-anchor="end">event</text>
+  <rect class="chip" x="72" y="300" width="78" height="20" rx="3"/><text class="c no" x="78" y="314">mc.set-op</text>
+  <rect class="chip" x="156" y="300" width="152" height="20" rx="3"/><text class="c hi" x="162" y="314">corr.hidden-command</text>
+
+  <rect class="box" x="60" y="341" width="280" height="82" rx="4"/>
+  <text class="t" x="72" y="361">AddonLoader.load</text>
+  <text class="m" x="328" y="361" text-anchor="end">call</text>
+  <rect class="chip" x="72" y="369" width="78" height="20" rx="3"/><text class="c no" x="78" y="383">code.load</text>
+  <rect class="chip" x="156" y="369" width="130" height="20" rx="3"/><text class="c no" x="162" y="383">fs.write-archive</text>
+  <rect class="chip" x="72" y="394" width="166" height="20" rx="3"/><text class="c hi" x="78" y="408">corr.download-and-run</text>
+
+  <text class="m" x="20" y="455">NOT CALLED</text>
+  <rect class="box-off" x="20" y="463" width="320" height="60" rx="4"/>
+  <text class="t" x="32" y="486">libs/net/TcpClient.connect</text>
+  <rect class="chip" x="32" y="494" width="86" height="20" rx="3"/><text class="c no" x="38" y="508">net.socket</text>
+  <text class="s" x="128" y="508">no entry point reaches it</text>
+
+  <text class="m" x="20" y="550">10 of 12 methods reached</text>
+</svg>

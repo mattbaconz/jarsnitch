@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 234" width="640" height="234">
+  <desc>From jar to report: jarsnitch hashes the file, reads the zip's central directory the way the JVM does, classifies every entry, parses class files and their bytecode, matches the facts against its rules, walks the call graph from the plugin's entry points, and builds a sorted report. Nested and decoded archives go round again, up to 3 levels deep. The plugin is never loaded or run.</desc>
+  <path class="ln-d" d="M402 30 V20 H237 V24"/>
+  <polygon class="ah" points="233,24 241,24 237,30"/>
+  <text class="m" x="320" y="13" text-anchor="middle">nested and decoded archives, up to 3 deep</text>
+
+  <rect class="box" x="1" y="30" width="144" height="66" rx="4"/>
+  <text class="t" x="12" y="54">plugin.jar</text>
+  <text class="s" x="12" y="72">hashed (SHA-256),</text>
+  <text class="s" x="12" y="87">read as data</text>
+  <rect class="box" x="165" y="30" width="145" height="66" rx="4"/>
+  <text class="t" x="176" y="54">zip directory</text>
+  <text class="s" x="176" y="72">central record,</text>
+  <text class="s" x="176" y="87">read like the JVM</text>
+  <rect class="box" x="330" y="30" width="145" height="66" rx="4"/>
+  <text class="t" x="341" y="54">entries</text>
+  <text class="s" x="341" y="72">classified by</text>
+  <text class="s" x="341" y="87">bytes, then name</text>
+  <rect class="box" x="495" y="30" width="144" height="66" rx="4"/>
+  <text class="t" x="506" y="54">class files</text>
+  <text class="s" x="506" y="72">constant pool,</text>
+  <text class="s" x="506" y="87">methods, Code</text>
+  <path class="ln" d="M145 63 H159"/><polygon class="ah" points="159,59 159,67 165,63"/>
+  <path class="ln" d="M310 63 H324"/><polygon class="ah" points="324,59 324,67 330,63"/>
+  <path class="ln" d="M475 63 H489"/><polygon class="ah" points="489,59 489,67 495,63"/>
+
+  <path class="ln" d="M567 96 V112 H73 V124"/>
+  <polygon class="ah" points="69,124 77,124 73,130"/>
+
+  <rect class="box" x="1" y="130" width="144" height="66" rx="4"/>
+  <text class="t" x="12" y="154">bytecode</text>
+  <text class="s" x="12" y="172">calls, strings,</text>
+  <text class="s" x="12" y="187">call-graph edges</text>
+  <rect class="box" x="165" y="130" width="145" height="66" rx="4"/>
+  <text class="t" x="176" y="154">rules</text>
+  <text class="s" x="176" y="172">33 rules, then</text>
+  <text class="s" x="176" y="187">correlations</text>
+  <rect class="box" x="330" y="130" width="145" height="66" rx="4"/>
+  <text class="t" x="341" y="154">call graph</text>
+  <text class="s" x="341" y="172">walked from the</text>
+  <text class="s" x="341" y="187">entry points</text>
+  <rect class="box-a" x="495" y="130" width="144" height="66" rx="4"/>
+  <text class="t" x="506" y="154">report</text>
+  <text class="s" x="506" y="172">sorted, then CLI</text>
+  <text class="s" x="506" y="187">text, JSON or web</text>
+  <path class="ln" d="M145 163 H159"/><polygon class="ah" points="159,159 159,167 165,163"/>
+  <path class="ln" d="M310 163 H324"/><polygon class="ah" points="324,159 324,167 330,163"/>
+  <path class="ln" d="M475 163 H489"/><polygon class="ah" points="489,159 489,167 495,163"/>
+
+  <text class="m" x="320" y="224" text-anchor="middle">the plugin is never loaded or run</text>
+</svg>
