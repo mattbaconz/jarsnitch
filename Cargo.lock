@@ -151,7 +151,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jarsnitch"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "jarsnitch-core",
  "serde_json",
@@ -159,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "jarsnitch-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "insta",
  "miniz_oxide",
@@ -170,7 +170,7 @@ dependencies = [
 
 [[package]]
 name = "jarsnitch-wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "jarsnitch-core",
  "serde_json",

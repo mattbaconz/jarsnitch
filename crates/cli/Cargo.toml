@@ -17,5 +17,5 @@ name = "jarsnitch"
 path = "src/main.rs"
 
 [dependencies]
-jarsnitch-core = { path = "../core", version = "0.2.0" }
+jarsnitch-core = { path = "../core", version = "0.2.1" }
 serde_json = "1"

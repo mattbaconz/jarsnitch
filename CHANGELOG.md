@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - 2026-11-14
+
+- [fixed] Descriptors written as JSON, which YAML allows (some build tools write `paper-plugin.yml` that way), are read properly. 0.2.0 read their values with the quotes and commas left in, so it reported a missing main class and built no call graph.
+- [changed] A new website design, with a logo, a sample report and CLI output on the first screen, and a "Reading this report" legend beside every report.
+- [added] Docs pages on the website at `/docs/`: getting started, scanning, comparing, reading a report, the call graph, every rule, the command line, the JSON format, limits, privacy and a FAQ, with diagrams and GIFs. The sources are in `docs/guide/`.
+- [added] Benchmarks on Modrinth's 100 most-downloaded plugins, in [docs/benchmarks.md](docs/benchmarks.md), with the scripts in `scripts/bench/`.
+
 ## 0.2.0 - 2026-11-12
 
 - [added] Reachability: each finding says whether the plugin's entry points can call the code it was found in (`reached` in the JSON, with a `reachability` summary). The CLI and the web page list findings in code nothing calls last and mark them. Severity and exit codes don't change.
