@@ -1,0 +1,2043 @@
+{
+ "pinned": "2026-11-13",
+ "source": "Modrinth search, project_type:plugin, sorted by downloads",
+ "plugins": [
+  {
+   "slug": "veinminer",
+   "title": "VeinMiner",
+   "downloads": 102921129,
+   "files": [
+    {
+     "version": "2.13.1",
+     "published": "2026-11-12",
+     "url": "https://cdn.modrinth.com/data/OhduvhIc/versions/tQjQpPtu/veinminer-paper-2.13.1.jar",
+     "size": 936459,
+     "sha512": "24431cb7305eb9316d5e10adc79ec47bc31ccbe2eeb5443907218a229d62258421dfda8783de868adba0ea529f9c25997622fa629fdea8d580fd451f1d025413"
+    },
+    {
+     "version": "2.13.0",
+     "published": "2026-10-20",
+     "url": "https://cdn.modrinth.com/data/OhduvhIc/versions/k2CdezQi/veinminer-paper-2.13.0.jar",
+     "size": 936459,
+     "sha512": "e030125b1870ce05c3ed8c1841109f3d465f729e3d539f5a281caffe15b4dd0ec8df4237a68108eb08075a1d224127d1d53d3788f4a21a7842ecf995aaa28908"
+    }
+   ]
+  },
+  {
+   "slug": "simple-voice-chat",
+   "title": "Simple Voice Chat",
+   "downloads": 76549535,
+   "files": [
+    {
+     "version": "bukkit-2.6.25",
+     "published": "2026-10-22",
+     "url": "https://cdn.modrinth.com/data/9eGKb6K1/versions/5OqsnSs7/voicechat-bukkit-2.6.25.jar",
+     "size": 939410,
+     "sha512": "2d756e38825428e5bcb00b4dd87773bff6d07ffb4c54d33b9f34de46bf517cc1951ffa0ef3732611753f9b1f9e17add3bec1cec5c113a4e903a0fbd10be2fcd6"
+    },
+    {
+     "version": "bukkit-2.6.24",
+     "published": "2026-09-20",
+     "url": "https://cdn.modrinth.com/data/9eGKb6K1/versions/EJth3OAr/voicechat-bukkit-2.6.24.jar",
+     "size": 939426,
+     "sha512": "7f1d5765e79cd42616f14f40322d1171a8505e1116dfff71c7bd0e59af9d255c06f70a68a5b622015c0407d40c80e70298c172992007ff339cedcef0116fec42"
+    }
+   ]
+  },
+  {
+   "slug": "lmd",
+   "title": "Let Me Despawn",
+   "downloads": 25542618,
+   "files": [
+    {
+     "version": "1.26.10.3",
+     "published": "2026-10-17",
+     "url": "https://cdn.modrinth.com/data/vE2FN5qn/versions/TQCJjueW/LetMeDespawn-1.26.10.3.jar",
+     "size": 58746,
+     "sha512": "d227591fdb199216041158656c6cf36f9ad070b38e6192c188c24f9d3ee1b7997f1d6acb64d889861aca6ea5047ba42b76fa8b7327e5730385c93caad3da5adc"
+    },
+    {
+     "version": "1.26.10.2",
+     "published": "2026-10-17",
+     "url": "https://cdn.modrinth.com/data/vE2FN5qn/versions/pdYBfTRE/LetMeDespawn-1.26.10.2.jar",
+     "size": 56547,
+     "sha512": "0fa67a821ffdded3b8366192cb5de49f8c65898850d49983c055a0cb89932965f16d57fe2074a51da16d6c407d1b1ee1fd207fc3db40e71b4293e1e9d5e4ecc3"
+    }
+   ]
+  },
+  {
+   "slug": "chunky",
+   "title": "Chunky",
+   "downloads": 20216856,
+   "files": [
+    {
+     "version": "1.5.66",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/fALzjamp/versions/RBuKjN4k/Chunky-Paper-1.5.66.jar",
+     "size": 396960,
+     "sha512": "c67b14569b8624d8d4ca550f0a064703e144d388073b4c34a913c3bd34ea39351bef504542101d7f85b499b4de95c24d027a62ee64aad3f9a7051ae4bec80c52"
+    },
+    {
+     "version": "1.5.66",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/fALzjamp/versions/selGpja4/Chunky-Bukkit-1.5.66.jar",
+     "size": 399522,
+     "sha512": "2e4c6de0ed5f29d7578b7fe5de4b5aed650db77835d489839b50cbe6e9cb5b115592fd8a26ba4626881ba050baac443bfc0f37e7b5153066c22e798afd87cc8e"
+    }
+   ]
+  },
+  {
+   "slug": "veinminer-enchantment",
+   "title": "VeinMiner Enchantment",
+   "downloads": 18260180,
+   "files": [
+    {
+     "version": "2.13.0",
+     "published": "2026-10-20",
+     "url": "https://cdn.modrinth.com/data/4sP0LXxp/versions/2Y8IKaDH/veinminer-enchant-2.13.0.jar",
+     "size": 21580,
+     "sha512": "aa7da8f6f55260cd63c6736212c9638bf4bfd14962b1f7cc507854e6cae147bed945c71912561b15abd76b933f3fe12242eb1c441cf54d2f8761b23ba8805712"
+    },
+    {
+     "version": "2.11.2",
+     "published": "2026-07-26",
+     "url": "https://cdn.modrinth.com/data/4sP0LXxp/versions/ybkUAVuf/veinminer-enchant-2.11.2%2B1.21.1.jar",
+     "size": 27451,
+     "sha512": "9ad4d972b23a2ca48e2c2e58b1f794fd3d42b98cc8ff3416a78ecb0741e82379456a5b7ceae6a912f6292c71ea20e11fedc0f0e2c2e2570ce2d3e0eacd189afb"
+    }
+   ]
+  },
+  {
+   "slug": "journeymap",
+   "title": "JourneyMap",
+   "downloads": 15496840,
+   "files": [
+    {
+     "version": "26.3-6.0.10+paper",
+     "published": "2026-10-03",
+     "url": "https://cdn.modrinth.com/data/lfHFW1mp/versions/nWFxhjT4/journeymap-paper-26.3-6.0.10.jar",
+     "size": 2724022,
+     "sha512": "e221758b768c231344c473a6d1adff84e566520636618221ed518d7104e8d3e66003df7c8e052ed149f2d8429fe0d256118bd25fbdf7859a8dfd083010f89306"
+    },
+    {
+     "version": "26.1.2-6.0.10+paper",
+     "published": "2026-10-03",
+     "url": "https://cdn.modrinth.com/data/lfHFW1mp/versions/FLtqUVH9/journeymap-paper-26.1.2-6.0.10.jar",
+     "size": 2742586,
+     "sha512": "a7a55ed2c72fe16eb7de4c3a11d07eda9cf3426bd3272db7db6f1b0e641e174c3e53050a808e3c2b8be7b93d26ab4f47bb170629515489cdedbfed23fe19fc8b"
+    }
+   ]
+  },
+  {
+   "slug": "worldedit",
+   "title": "WorldEdit",
+   "downloads": 11869357,
+   "files": [
+    {
+     "version": "7.4.6",
+     "published": "2026-10-15",
+     "url": "https://cdn.modrinth.com/data/1u6JkXh5/versions/YFnqiUlL/worldedit-bukkit-7.4.6.jar",
+     "size": 7870216,
+     "sha512": "1fe3975132857093f971fed9efc601299bfa76fa7885f52a542fee41e7a0165ca9cb3cbcf5ae244474887d774d650b0db6f8f79aa80f98b245dea44f1c1b4152"
+    },
+    {
+     "version": "7.4.5",
+     "published": "2026-08-09",
+     "url": "https://cdn.modrinth.com/data/1u6JkXh5/versions/F5ea2ov3/worldedit-bukkit-7.4.5.jar",
+     "size": 7708742,
+     "sha512": "a383492fac6bfb4d43a257dfa7b5fc076aae503a71151b463de4fe80e6f3d5fc11209eaf4097baa115f3febf0adc40ca0a1ecda227b8439b429d0a4ba3a63a4f"
+    }
+   ]
+  },
+  {
+   "slug": "emotecraft",
+   "title": "Emotecraft",
+   "downloads": 8007903,
+   "files": [
+    {
+     "version": "2.5.8+1.21.4-paper",
+     "published": "2025-08-29",
+     "url": "https://cdn.modrinth.com/data/pZ2wrerK/versions/nyMO0fCO/emotecraft-paper-for-MC1.21.4-2.5.8.jar",
+     "size": 1718300,
+     "sha512": "f5e64932bb5ab026ae3bae4e1f1a1b6ca34eb0bca3eeb2ed073ac0074d52bd1be29d04c4bfaa1d5d36da56926be415aaf31bfe5c97470e1017ed471ef227894c"
+    },
+    {
+     "version": "2.6.2+1.21.5-paper",
+     "published": "2025-08-29",
+     "url": "https://cdn.modrinth.com/data/pZ2wrerK/versions/ny9tWdHq/emotecraft-paper-for-MC1.21.5-2.6.2.jar",
+     "size": 4176930,
+     "sha512": "a904792e5a634600e827d3e07ac1f100d3f413a1f9127c342276051e12e4f74b4d29a56ba388f61bc5c5c8018a2d168d1acc380d2dba8c0c403a2ec01e34e0a7"
+    }
+   ]
+  },
+  {
+   "slug": "common-network",
+   "title": "Common Network",
+   "downloads": 4522736,
+   "files": [
+    {
+     "version": "26.2-1.1.1",
+     "published": "2026-10-30",
+     "url": "https://cdn.modrinth.com/data/HIuqnQpi/versions/V2DeKs4i/common-networking-paper-26.2-1.1.1.jar",
+     "size": 23994,
+     "sha512": "de8d4ff75df3545ed333d50be9509cf60e80ce74a1a6adae90fd57da34ea55316c67e4436a1e127f852acfc8d78389a6c9e4fa3aaa343e70a69fcbc988e8fb9c"
+    },
+    {
+     "version": "26.3-1.1.1",
+     "published": "2026-09-19",
+     "url": "https://cdn.modrinth.com/data/HIuqnQpi/versions/3nWKEqV9/common-networking-paper-26.3-1.1.1.jar",
+     "size": 23997,
+     "sha512": "08ab1f09470679c05d47d45a88952fa7dc3947959e4ba5ce9091f05bf5d1cc8ec6c612ca318f73e57c745d8bbb28f10a3a213974aecb07db0e5909926ea43aea"
+    }
+   ]
+  },
+  {
+   "slug": "plasmo-voice",
+   "title": "Plasmo Voice",
+   "downloads": 4159909,
+   "files": [
+    {
+     "version": "spigot-2.1.17",
+     "published": "2026-09-15",
+     "url": "https://cdn.modrinth.com/data/1bZhdhsH/versions/DySKquus/PlasmoVoice-Paper-2.1.17.jar",
+     "size": 9117397,
+     "sha512": "d9e21e86e52454833f6c22e7f20268c585f5ddde3e8d78ed6480668aed478e021d4e9726baf1d56e755c425885403e011f1db434b3ae1049f9daed7c0da34014"
+    },
+    {
+     "version": "spigot-2.1.16",
+     "published": "2026-08-25",
+     "url": "https://cdn.modrinth.com/data/1bZhdhsH/versions/YnC4RoiW/PlasmoVoice-Paper-2.1.16.jar",
+     "size": 9113660,
+     "sha512": "5736c5cc4c1f870640537311261163529af58a2ab7fca971836bea77212df12dca8a6f9aadeebf36ce410abba2506337858d31c3cb0e76a1c9e24da16c6e3cc8"
+    }
+   ]
+  },
+  {
+   "slug": "calcmod",
+   "title": "CalcMod",
+   "downloads": 3577203,
+   "files": [
+    {
+     "version": "1.6.0+paper.26.3",
+     "published": "2026-11-11",
+     "url": "https://cdn.modrinth.com/data/XoHTb2Ap/versions/ZaI1Ynaa/calcmod-1.6.0%2Bpaper.26.3.jar",
+     "size": 423063,
+     "sha512": "94b2f4c341fdd47c9acbe5938e099a2d064bcec9ccfd9ce3bcd91ac8518be2658a4422ee55af925f74cafd5c26a8a3cc5144b36d950a7f0b8c06708b84839807"
+    },
+    {
+     "version": "1.5.2+paper.26.2",
+     "published": "2026-07-29",
+     "url": "https://cdn.modrinth.com/data/XoHTb2Ap/versions/WPlXiQuA/calcmod-1.5.2%2Bpaper.26.2.jar",
+     "size": 422898,
+     "sha512": "e3c25355d2769f337e14037fa4ca1d6894c290403c4bdb47238bfef746e033b4120e477263a4ea29720feb275c88cb759d37097417c66dde82c18bb2e4250acb"
+    }
+   ]
+  },
+  {
+   "slug": "viaversion",
+   "title": "ViaVersion",
+   "downloads": 3485125,
+   "files": [
+    {
+     "version": "5.12.2",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/P1OZGk5p/versions/Fkfcr89K/ViaVersion-5.12.2.jar",
+     "size": 6508809,
+     "sha512": "c6af11f50e14bc1ba239f5a90be653cce85feee30c473a4b53336b4d5527d790369cf43843f7cb06d3ac3a34fc207e7203436737ca719070644101472453401b"
+    },
+    {
+     "version": "5.12.1",
+     "published": "2026-10-08",
+     "url": "https://cdn.modrinth.com/data/P1OZGk5p/versions/5WgnasGG/ViaVersion-5.12.1.jar",
+     "size": 6503217,
+     "sha512": "b2e5c03689e2265410613a928640076cfcd576e7a3dc7ca1276a76dbe624f2f5467348c3b3eaf8b5987ed7662afb93cc5cb9373035f4c5512884116e4bb6add9"
+    }
+   ]
+  },
+  {
+   "slug": "patpat",
+   "title": "PatPat [Mod & Plugin]",
+   "downloads": 3247116,
+   "files": [
+    {
+     "version": "1.2.5",
+     "published": "2026-02-17",
+     "url": "https://cdn.modrinth.com/data/dw7LChq9/versions/5GCMlK4e/patpat-plugin-1.2.5.jar",
+     "size": 1117042,
+     "sha512": "29b178179e5749f68bb6e77f9d6e23d3af8aa8d1c7fbba6939bb20b44da5a554cd174d2ba82a7e87df2d08d397e6b204ad0a82feacf0dce091e2eafdbe533c1b"
+    },
+    {
+     "version": "1.2.1",
+     "published": "2025-10-29",
+     "url": "https://cdn.modrinth.com/data/dw7LChq9/versions/OXqO8Pl7/PatPat%20Plugin-1.2.1.jar",
+     "size": 1041205,
+     "sha512": "e20e3ec3e9cb616f4a813eca172f8236e18867f47c456479435f7b1ee76019aafca9c6f781dee1a4827284b2b41d76e1acb22da710893f330fa9bb2eb808662d"
+    }
+   ]
+  },
+  {
+   "slug": "custom-player-models",
+   "title": "Customizable Player Models",
+   "downloads": 3190988,
+   "files": [
+    {
+     "version": "Paperv0.6.27a-paper",
+     "published": "2026-07-05",
+     "url": "https://cdn.modrinth.com/data/h1E7sQNL/versions/Bg4V7A8i/CustomPlayerModels-Paper-0.6.27a.jar",
+     "size": 2872106,
+     "sha512": "420ba94eff5b1fa77a2f286357c273551ba4b1b278e1132fb63b82d2458f32ea23d2d7fb5cc1674067505151fd8f8af4ff04c7162f816d1502eda5a2754e96fb"
+    },
+    {
+     "version": "Bukkitv0.6.27a-bukkit",
+     "published": "2026-07-05",
+     "url": "https://cdn.modrinth.com/data/h1E7sQNL/versions/35JZGBue/CustomPlayerModels-Bukkit-0.6.27a.jar",
+     "size": 2885878,
+     "sha512": "a1a9c6c7f662aca7a6382dbc3ce2a7223472158f0cf7effc8a41c5377bdaf7370993e23d7f4d7fb44dd83fbd0245820b56f03d930d2137815eb2c6da616fc80d"
+    }
+   ]
+  },
+  {
+   "slug": "luckperms",
+   "title": "LuckPerms",
+   "downloads": 3058418,
+   "files": [
+    {
+     "version": "v5.5.71-bukkit",
+     "published": "2026-08-06",
+     "url": "https://cdn.modrinth.com/data/Vebnzrzj/versions/b0mk8uS6/LuckPerms-Bukkit-5.5.71.jar",
+     "size": 1501521,
+     "sha512": "188a91f0a543d23bfda32385fca6db63d61e49c8a422bd452a260bd9cbc6a7d7fe45071199e9fca8f3ce43c2b41ee84fd315bd15464577028ff3951a7d4fab27"
+    },
+    {
+     "version": "v5.5.53-bukkit",
+     "published": "2026-05-27",
+     "url": "https://cdn.modrinth.com/data/Vebnzrzj/versions/MBSY8toc/LuckPerms-Bukkit-5.5.53.jar",
+     "size": 1490252,
+     "sha512": "a0e087adfc1c7b9fab8fdb5a430a3331a2ca30bfc72818bb7e65ce9baff051a1490834be8cbb9cbeda292f2e92c44cf03fb829ebeb233ade9d666ed908e49ad5"
+    }
+   ]
+  },
+  {
+   "slug": "viabackwards",
+   "title": "ViaBackwards",
+   "downloads": 2330423,
+   "files": [
+    {
+     "version": "5.12.2",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/NpvuJQoq/versions/WFO37e8T/ViaBackwards-5.12.2.jar",
+     "size": 1439641,
+     "sha512": "78bc7e5fd33ecf13aee31c62e1de46a854e066a1936f294347c6798371357497fe2cc6f23f1d42003ad3050f94ac5382db95e60ffa90d765fada0322b59b0ef9"
+    },
+    {
+     "version": "5.12.1",
+     "published": "2026-10-08",
+     "url": "https://cdn.modrinth.com/data/NpvuJQoq/versions/dWw67APC/ViaBackwards-5.12.1.jar",
+     "size": 1436080,
+     "sha512": "65752dd113bf1266ef2c3b25a748e79e9808bb67682a3f5fbcf3e2b097d76182786d0871562175af8d491bde7ec6addfeaf97fdb23987cb11b829b0c22f6e5ff"
+    }
+   ]
+  },
+  {
+   "slug": "armor-stand-arms",
+   "title": "Armor Stand Arms",
+   "downloads": 2175210,
+   "files": [
+    {
+     "version": "v2.7.1+plugin",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/GWFnD2zx/versions/jufs6Yet/armor-stand-arms-v2.7.1-paper.jar",
+     "size": 66892,
+     "sha512": "f20d2fe81c206a870724011b354f702e550446e8eb36f7aae64a526083f7d160cd8e1b0beba15e3ac2240748c760683f3091ee78e045f69061f0d13e4f75aeb2"
+    }
+   ]
+  },
+  {
+   "slug": "itemswapper",
+   "title": "ItemSwapper",
+   "downloads": 2111268,
+   "files": [
+    {
+     "version": "0.2.1",
+     "published": "2023-08-17",
+     "url": "https://cdn.modrinth.com/data/RPOSBQgq/versions/E7jCNr0p/itemswapperplugin-0.2.1-SNAPSHOT.jar",
+     "size": 7168,
+     "sha512": "aa563ccb4fd927429c2956376b65bc6ec8200d4f3f00592d2a737e071b25cc1159980b7e6777d88bb693970f99ae45a66416d2da222cd8991f09653b6b8c23ab"
+    },
+    {
+     "version": "plugin-0.1.0",
+     "published": "2022-12-09",
+     "url": "https://cdn.modrinth.com/data/RPOSBQgq/versions/ydbCLkJa/itemswapperplugin-0.0.1-SNAPSHOT.jar",
+     "size": 4787,
+     "sha512": "d41d3de2a8df1eb319f70b93755306563f17172d6af7295264121a39295383949cd8bcd83f3d2004c0ad176eda9edcf39c16c9c85dcb3085faa66a78d99da2e8"
+    }
+   ]
+  },
+  {
+   "slug": "skinsrestorer",
+   "title": "SkinsRestorer",
+   "downloads": 1806387,
+   "files": [
+    {
+     "version": "15.12.6",
+     "published": "2026-09-20",
+     "url": "https://cdn.modrinth.com/data/TsLS8Py5/versions/ziIzW16f/SkinsRestorer.jar",
+     "size": 8016648,
+     "sha512": "0ec5070bff7db5098d3fe04b53e6bcd59d74806184b3599ada48ce5576ff4346eece020a3106ba84bdfb703bd138da6d232b7cabf625394291f7728b8dc04497"
+    },
+    {
+     "version": "15.12.5",
+     "published": "2026-07-21",
+     "url": "https://cdn.modrinth.com/data/TsLS8Py5/versions/wXS6bHiC/SkinsRestorer.jar",
+     "size": 8010298,
+     "sha512": "7819f6b1e8f8ddb2e86d3d3e54352dd040f381e9a094f8a9c80c7d3273ffd7b1cef6eca7369dcee4b0f5290e7837ef51cee1baeca906b3784f30d7ba2f58b7b4"
+    }
+   ]
+  },
+  {
+   "slug": "geyser",
+   "title": "Geyser",
+   "downloads": 1529800,
+   "files": [
+    {
+     "version": "2.12.1-b1302",
+     "published": "2026-11-12",
+     "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/jD1ymn6s/Geyser-Spigot.jar",
+     "size": 52216329,
+     "sha512": "4283fda925e513f50a6763d0f51c284e1298a929e93838640ae7a2b566a9336d1b72493bc6273e86665da95eb1d1fbb42cebbe23e22f13cef520387e93c4cf32"
+    },
+    {
+     "version": "2.12.1-b1301",
+     "published": "2026-11-12",
+     "url": "https://cdn.modrinth.com/data/wKkoqHrH/versions/N3lq9CZH/Geyser-Spigot.jar",
+     "size": 52216329,
+     "sha512": "d67c4ffd5c8f3ca3a572879402753b20fb1221af0518a1a1f75586ebebc1bc11f855a45d9758538613cb3cad0523c41809150c20be957b33da94362bf8f71858"
+    }
+   ]
+  },
+  {
+   "slug": "voxelmap-updated",
+   "title": "VoxelMap-Updated",
+   "downloads": 1379835,
+   "files": [
+    {
+     "version": "26.2-1.16.9",
+     "published": "2026-08-26",
+     "url": "https://cdn.modrinth.com/data/wkzK5379/versions/JRajURYy/voxelmap-paper-26.2-1.16.9.jar",
+     "size": 17772,
+     "sha512": "60b3159d9b82faf7e1935bc83c11f48d0738d83528f995fe5320cffbb3ffdac9b5436076a728c488e1d1aebbec872ff109f8ebe2b0baf3eadfc687d7bc560724"
+    },
+    {
+     "version": "26.2-1.16.7",
+     "published": "2026-06-16",
+     "url": "https://cdn.modrinth.com/data/wkzK5379/versions/Ot6CiEaV/voxelmap-paper-26.2-1.16.7.jar",
+     "size": 17445,
+     "sha512": "f7b93c02a541c8aca6174c6d18bb8da75a790f040de4b426f57d01a4a32369ff10f30a92e00deb0b7278aea6cc1e58b84faeef8220c6f1b90809690b28fb2c0b"
+    }
+   ]
+  },
+  {
+   "slug": "tab-was-taken",
+   "title": "TAB",
+   "downloads": 1354061,
+   "files": [
+    {
+     "version": "6.2.1",
+     "published": "2026-10-18",
+     "url": "https://cdn.modrinth.com/data/gG7VFbG0/versions/HlsRTW5F/TAB%20v6.2.1.jar",
+     "size": 8483627,
+     "sha512": "146fff1d94506459b32532d707f11e544da448b7dbfcb16c7a9a4fb91db7be8be272b275f3315e4c2122529a3ac30ccc344654fc013303615679d6a90207b41c"
+    },
+    {
+     "version": "6.2.1",
+     "published": "2026-10-18",
+     "url": "https://cdn.modrinth.com/data/gG7VFbG0/versions/Bu3K2CAM/TAB%20v6.2.1.jar",
+     "size": 8483627,
+     "sha512": "146fff1d94506459b32532d707f11e544da448b7dbfcb16c7a9a4fb91db7be8be272b275f3315e4c2122529a3ac30ccc344654fc013303615679d6a90207b41c"
+    }
+   ]
+  },
+  {
+   "slug": "worldguard",
+   "title": "WorldGuard",
+   "downloads": 1005565,
+   "files": [
+    {
+     "version": "7.0.21",
+     "published": "2026-11-03",
+     "url": "https://cdn.modrinth.com/data/DKY9btbd/versions/fiHLM6oY/worldguard-bukkit-7.0.21.jar",
+     "size": 1200393,
+     "sha512": "4253b97627f93ea007d91e977c15f5f4a3219865589083fa3b523d8b15a2cfe26d71076c8eb98c0122e7fde618ad3fc44cb986dbd40a222f09678b91a98245c2"
+    },
+    {
+     "version": "7.0.20",
+     "published": "2026-10-17",
+     "url": "https://cdn.modrinth.com/data/DKY9btbd/versions/9YdeGXiK/worldguard-bukkit-7.0.20.jar",
+     "size": 1200197,
+     "sha512": "d7ad3f8b14c57deceb409dc8997fe3d7f0a98dd4158c52648111bfbe6934ca9be53fa42ece4d60d9c2d9da33f7d6ecf597117991bd3b8e7afbf308cd925e409c"
+    }
+   ]
+  },
+  {
+   "slug": "essentialsx",
+   "title": "EssentialsX",
+   "downloads": 929554,
+   "files": [
+    {
+     "version": "2.22.0",
+     "published": "2026-05-31",
+     "url": "https://cdn.modrinth.com/data/hXiIvTyT/versions/nY6VN1XH/EssentialsX-2.22.0.jar",
+     "size": 4861125,
+     "sha512": "472ecf71924801723643ca6e1f9931297de5aa0874a544f8a719e2e2f7c81af81ef7bcbd38b6e43f0260a9dae6abe42c97907e70e2430e326ff8cff12ebd61cf"
+    },
+    {
+     "version": "2.21.2",
+     "published": "2025-08-03",
+     "url": "https://cdn.modrinth.com/data/hXiIvTyT/versions/Oa9ZDzZq/EssentialsX-2.21.2.jar",
+     "size": 4734714,
+     "sha512": "0571b015dce84cf03e906c2d498e8bc3827d86debafafb89851517a76c3eec0391b9bb90f6ec4a5f0dbf4c18bee84ead5e354fc0a5be0cc567fdaa9fc8d96c15"
+    }
+   ]
+  },
+  {
+   "slug": "packetevents",
+   "title": "PacketEvents",
+   "downloads": 926090,
+   "files": [
+    {
+     "version": "2.14.0+spigot",
+     "published": "2026-09-23",
+     "url": "https://cdn.modrinth.com/data/HYKaKraK/versions/m78nFxYg/packetevents-spigot-2.14.0.jar",
+     "size": 5723413,
+     "sha512": "18a942cb55f64783a63b28deea2cebbbe782e5d6a1089f6700430e183bfbce0a45398a640ed0dff4361b55190dcf47017f2ca7788f4a5c8c9efad1f549a63fe3"
+    },
+    {
+     "version": "2.13.0+spigot",
+     "published": "2026-06-22",
+     "url": "https://cdn.modrinth.com/data/HYKaKraK/versions/h0ncTpUP/packetevents-spigot-2.13.0.jar",
+     "size": 5333748,
+     "sha512": "f0f85e601855a5849418df807e116a369bfb70aa8b4c25b8904bdd04cf6a483ef5d2679a345e9d690dd2221f9daff6a25be17d8b3e63cf665e12a31b0124dd27"
+    }
+   ]
+  },
+  {
+   "slug": "multiverse-core",
+   "title": "Multiverse-Core",
+   "downloads": 898432,
+   "files": [
+    {
+     "version": "5.8.2",
+     "published": "2026-10-26",
+     "url": "https://cdn.modrinth.com/data/3wmN97b8/versions/de7TbcZG/multiverse-core-5.8.2.jar",
+     "size": 4631727,
+     "sha512": "1165c96755229583477d120485b49ddf731f44a97e17b99f955892e8e90d1f6b24d2e06bd15b6fc4240197c32970592a2af2febe31044afed949dc2d722d17a8"
+    },
+    {
+     "version": "5.8.1",
+     "published": "2026-08-28",
+     "url": "https://cdn.modrinth.com/data/3wmN97b8/versions/YZ2Ji4IS/multiverse-core-5.8.1.jar",
+     "size": 4627993,
+     "sha512": "322c1f4dc1abcd30e0f55aa9f378c7031846d1e59a5156480f9199050dc104c19468c9891c47be35e4dde68742ec4420ea974ec8850db6a259f97ffa1b1c51ea"
+    }
+   ]
+  },
+  {
+   "slug": "grimac",
+   "title": "Grim Anticheat",
+   "downloads": 808994,
+   "files": [
+    {
+     "version": "2.3.74",
+     "published": "2026-10-21",
+     "url": "https://cdn.modrinth.com/data/LJNGWSvH/versions/baDrVvfo/grimac-bukkit-2.3.74.jar",
+     "size": 13190550,
+     "sha512": "3ac8793dccccc05b6ed671cdaea0fdc3309240ceb9fd6d6dee1c35a6aa8ea58be95e0e929278e56a604a6ce3dd1db4ac882510d473b09a91e9635fdb934b424a"
+    },
+    {
+     "version": "2.3.73",
+     "published": "2026-03-09",
+     "url": "https://cdn.modrinth.com/data/LJNGWSvH/versions/1FIGlM6Q/grimac-bukkit-2.3.73.jar",
+     "size": 10578230,
+     "sha512": "bf9be1194eb45afe1dec6bd8e98d078dacf41539025c8aabe24d31337cbea86625774e30842568b47f34ca174472c724c7876cc30793945e7408b03609672655"
+    }
+   ]
+  },
+  {
+   "slug": "osc-dp",
+   "title": "Orbital Strike Cannon",
+   "downloads": 791669,
+   "files": [
+    {
+     "version": "V7.0+plugin",
+     "published": "2026-06-23",
+     "url": "https://cdn.modrinth.com/data/Y1ZEvtor/versions/pDM578r0/OrbitalStrikeCannon-7.0.jar",
+     "size": 36035,
+     "sha512": "1f90a2db8b72287b25a70f7afa103b4ad3384ccb0216028ad8cbee783028e2bb00980a18eff649c033abd014b7c22a1c649d113a64c73e5daf51928b4817c5b7"
+    },
+    {
+     "version": "V6.3+plugin",
+     "published": "2026-02-16",
+     "url": "https://cdn.modrinth.com/data/Y1ZEvtor/versions/DtQa3QMN/orbital-6.3.jar",
+     "size": 28081,
+     "sha512": "18b0233291d5c218896cef8b2a5e7cf582e6b5e7378c19b1f3f49d373984c0239797fb446434744591a3e785eb0fe4a3e62d7f1fdc0da781376f1c9a49a95f38"
+    }
+   ]
+  },
+  {
+   "slug": "clickvillagers",
+   "title": "Click Villagers",
+   "downloads": 738032,
+   "files": [
+    {
+     "version": "paper-1.6.4",
+     "published": "2026-11-02",
+     "url": "https://cdn.modrinth.com/data/BITzwT7B/versions/doOhiqAV/ClickVillagers-paper-1.6.4.jar",
+     "size": 262828,
+     "sha512": "281e8bb744ccf0fd1b55f47e90220b03d2591d4f4593b3fc1341308890113d9bfe53e3d9abc74fa0b9251cdadab4713c61ecc7fbe80ee3c25d731e3332f34b0f"
+    },
+    {
+     "version": "paper-1.6.3",
+     "published": "2026-06-12",
+     "url": "https://cdn.modrinth.com/data/BITzwT7B/versions/iMS3EoIW/ClickVillagers-paper-1.6.3.jar",
+     "size": 262632,
+     "sha512": "e28a57e76b5731c82775d888252b77dd7f579b6926a2778b5ed5f9f19094991d4492398bd4d47c04ce3ed247aa20e87a6332bd9240160886e46293b93146e681"
+    }
+   ]
+  },
+  {
+   "slug": "viarewind",
+   "title": "ViaRewind",
+   "downloads": 713259,
+   "files": [
+    {
+     "version": "4.2.0",
+     "published": "2026-09-18",
+     "url": "https://cdn.modrinth.com/data/TbHIxhx5/versions/EPLCoxMK/ViaRewind-4.2.0.jar",
+     "size": 408809,
+     "sha512": "7f3a2a972a3fe45f9c16b48a2e2b08fca6aa70da77eb8e47644726f19a43dc24116c2f7e126434f9f9388fa1b987a014efe287e3980f773b6e261313e7e939b2"
+    },
+    {
+     "version": "4.1.3",
+     "published": "2026-07-12",
+     "url": "https://cdn.modrinth.com/data/TbHIxhx5/versions/r9d7WsYA/ViaRewind-4.1.3.jar",
+     "size": 389535,
+     "sha512": "cb4224166479fa2abb4c6f96090cfa2f7f9c918110d420743111dc7b79fdb28e100e8ec7e7a9b5e78b0971f1bd9ef5fde4f0782a8f3c9048d6b348c1e4483354"
+    }
+   ]
+  },
+  {
+   "slug": "server-redirect",
+   "title": "Server Redirect",
+   "downloads": 705756,
+   "files": [
+    {
+     "version": "1.4.3",
+     "published": "2023-08-05",
+     "url": "https://cdn.modrinth.com/data/YqkxTQEh/versions/wDlCOOjG/ServerRedirect-Plugin-1.4.3.jar",
+     "size": 76840,
+     "sha512": "f84d2279c9df42e25885bf0303cd45ae4c6bcbc17a7afda72ae748804e7cf9147f468e82777fd442b2ff53c8d5a19427acf6dc579ef64e879fd303403c56ce58"
+    }
+   ]
+  },
+  {
+   "slug": "raknetify",
+   "title": "Raknetify",
+   "downloads": 653972,
+   "files": [
+    {
+     "version": "0.1.0+alpha.5.196+bungeecord",
+     "published": "2026-02-25",
+     "url": "https://cdn.modrinth.com/data/5IovSY3u/versions/WsdHTLfj/raknetify-bungee-0.1.0%2Balpha.5.196-all.jar",
+     "size": 2339705,
+     "sha512": "8dae2f1e80791bed8ef527a74e3e33cdf805b28e949c2cb1dda42bc9d61aa22786933f5585f6b1736b8de82ac10c3b30cc34193f9ef4c2908bfa0cf08596519b"
+    },
+    {
+     "version": "0.1.0+alpha.5.196+velocity",
+     "published": "2026-02-25",
+     "url": "https://cdn.modrinth.com/data/5IovSY3u/versions/u3LRuC7t/raknetify-velocity-0.1.0%2Balpha.5.196-all.jar",
+     "size": 2290367,
+     "sha512": "c6156e791310b23ca6d5380c97947e7b4e1189c88f65759f9137cc5a9c554d2113a55a979c34623db47d006a0a690e7fd756f33b62ab1013790200554f585e62"
+    }
+   ]
+  },
+  {
+   "slug": "fastasyncworldedit",
+   "title": "FastAsyncWorldEdit",
+   "downloads": 613491,
+   "files": [
+    {
+     "version": "2.16.2",
+     "published": "2026-11-01",
+     "url": "https://cdn.modrinth.com/data/z4HZZnLr/versions/JOyEqKdC/FastAsyncWorldEdit-Paper-2.16.2.jar",
+     "size": 15278048,
+     "sha512": "319f6c961b01206dc7d9cf03e8105d87d4bb7698fe82c4405afd346689b948541c05355dca62bbd9cc45ff3de6ae9b481082c9fc5f4e02e2b1fbc33a9e56e404"
+    },
+    {
+     "version": "2.16.1",
+     "published": "2026-10-09",
+     "url": "https://cdn.modrinth.com/data/z4HZZnLr/versions/b9Fl6Ct5/FastAsyncWorldEdit-Bukkit-2.16.1.jar",
+     "size": 15177884,
+     "sha512": "239344f1e906aac37ffed4939ea30a5ba1a1a3935dd4930067e25b8f9864b081ce3ad72473f4a93af8235a70824900649c4450983b2b3dda57d2df655ea3cb4b"
+    }
+   ]
+  },
+  {
+   "slug": "coreprotect",
+   "title": "CoreProtect",
+   "downloads": 593686,
+   "files": [
+    {
+     "version": "24.1",
+     "published": "2026-09-24",
+     "url": "https://cdn.modrinth.com/data/Lu3KuzdV/versions/3sehX6Sg/CoreProtect-CE-24.1.jar",
+     "size": 1113283,
+     "sha512": "76aad727528ddb990bbee5069f8ef3fcd018ae0bcdea89b965be2485e828633eb068672e841be64e550c8474f901a24d8c15c7bd44c2bd6c96244e1e58de0c95"
+    },
+    {
+     "version": "24.0",
+     "published": "2026-07-07",
+     "url": "https://cdn.modrinth.com/data/Lu3KuzdV/versions/Kma0kBsY/CoreProtect-CE-24.0.jar",
+     "size": 1102175,
+     "sha512": "f95476394d0ec11ad857e0b1b3e53b23b65192ec09a7a7faaecb6b8f970419e7310c9077868c24a87228ffed5fa22db5fb3c946e2c30c450bcfa92360e700d9b"
+    }
+   ]
+  },
+  {
+   "slug": "bluemap",
+   "title": "BlueMap",
+   "downloads": 568735,
+   "files": [
+    {
+     "version": "5.29-spigot",
+     "published": "2026-10-10",
+     "url": "https://cdn.modrinth.com/data/swbUV1cr/versions/wIycjaQ7/bluemap-5.29-spigot.jar",
+     "size": 7141104,
+     "sha512": "920bf14fd5de4cab7dcc2feda6b0580d6ba1f052399aea33ce67f31dce00cb78b9de4ecd12b7f135c563ebd577496d3789bf2366f56bd31445de20c7d81072c9"
+    },
+    {
+     "version": "5.29-paper",
+     "published": "2026-10-10",
+     "url": "https://cdn.modrinth.com/data/swbUV1cr/versions/uHQIrUdf/bluemap-5.29-paper.jar",
+     "size": 6336407,
+     "sha512": "e936198eaf7ea83429e1d08b8e2a5447dd359c0252e3410cb3cc101860c933abcc055462a11b034a4dd77b699da54017412ac73728860fd8b68a672c32d9926c"
+    }
+   ]
+  },
+  {
+   "slug": "discordsrv",
+   "title": "DiscordSRV",
+   "downloads": 547354,
+   "files": [
+    {
+     "version": "1.30.5",
+     "published": "2026-04-24",
+     "url": "https://cdn.modrinth.com/data/UmLGoGij/versions/ATlquwiT/DiscordSRV-Build-1.30.5.jar",
+     "size": 10653915,
+     "sha512": "ef31c7dd8962c7f907bc37b6d762c0ebd1b52f20ff72bb2dd35edb0e354010c03d3eb4cafa8f7acec42aa5e91988814bd0c338a5bced06095c07a6b9b366505c"
+    },
+    {
+     "version": "1.30.4",
+     "published": "2026-01-16",
+     "url": "https://cdn.modrinth.com/data/UmLGoGij/versions/IQAVr1YC/DiscordSRV-Build-1.30.4.jar",
+     "size": 10553632,
+     "sha512": "44f441ade845b1522e14d288e7286cb571b82a11096fed89d0c155f4eb8d66b771ceafee6bce3ed4a37ddb3fb9bbfc91080f848655568b7adae546cd0738f594"
+    }
+   ]
+  },
+  {
+   "slug": "villager-in-a-bucket",
+   "title": "Villager In A Bucket",
+   "downloads": 529679,
+   "files": [
+    {
+     "version": "1.6.4",
+     "published": "2026-10-11",
+     "url": "https://cdn.modrinth.com/data/IAvnm8Mq/versions/dxwZ7agW/VillagerInABukkit-paper-1.6.4.jar",
+     "size": 64440,
+     "sha512": "560dfd30e0666662cc8e2346fc4760af6676b7599d2c0fbeb60a0e9e98fa4cfbee8b793c84b907249ae867af0aa72304b54599ef1ad5a3ebfe6e29918af501e2"
+    },
+    {
+     "version": "1.6.3",
+     "published": "2026-10-10",
+     "url": "https://cdn.modrinth.com/data/IAvnm8Mq/versions/P1KVX6wr/VillagerInABukkit-paper-1.6.3.jar",
+     "size": 63429,
+     "sha512": "9a521452db1d7ec27b7105b53e05574b7b82d67e9bccfcd802f3660fe64d8e24646b73ba4641fd60880c79a8169ac4c6839abc871c0fdbd07c85874547ee6a12"
+    }
+   ]
+  },
+  {
+   "slug": "terra",
+   "title": "Terra",
+   "downloads": 527901,
+   "files": [
+    {
+     "version": "6.6.6-BETA-bukkit",
+     "published": "2025-10-03",
+     "url": "https://cdn.modrinth.com/data/FIlZB9L0/versions/Ufl71nST/Terra-bukkit-6.6.6-BETA%2B451683aff-shaded.jar",
+     "size": 11891809,
+     "sha512": "3c3e46065ae01d16d238520efd57a231c9360d341eeb02650ab163df0e6f11618037d6efdcd353d4b9ab266e4f1ed3b9d4472597aae70a6970f13628ed22476c"
+    },
+    {
+     "version": "6.6.5-BETA-bukkit",
+     "published": "2025-06-19",
+     "url": "https://cdn.modrinth.com/data/FIlZB9L0/versions/ZmBl9whx/Terra-bukkit-6.6.5-BETA%2B8cfa2e146-shaded.jar",
+     "size": 11884847,
+     "sha512": "0c82c2a0aff6e1fbb81f96eb74bf517b9668e4d81d6bb220ebb9ac988c2d03b79c5686d9cade62ff29386b3585cb955a6b742a520f6cfc204526d96e0d005229"
+    }
+   ]
+  },
+  {
+   "slug": "tps-hud",
+   "title": "TPS HUD",
+   "downloads": 516064,
+   "files": [
+    {
+     "version": "2.0.0+26.2",
+     "published": "2026-08-31",
+     "url": "https://cdn.modrinth.com/data/2UeET9aA/versions/LzmGBWcf/tps-hud-2.0.0%2B26.2.jar",
+     "size": 692667,
+     "sha512": "ab6ae8121406411ecb9cf1a2153f31782653b99149b54332bb16793954e26015337dceb9d2351632d6c346aade505753ab5c9e4e8e8689a433976438f4e94df0"
+    },
+    {
+     "version": "1.9.0+1.21.9",
+     "published": "2025-10-04",
+     "url": "https://cdn.modrinth.com/data/2UeET9aA/versions/l7IgDKmK/tps-hud-1.9.0%2B1.21.9.jar",
+     "size": 725790,
+     "sha512": "c4d3b2fb55e286f036aaa2e4e0e0fb2257e87e86d10905fa944786476d0dbdbca013d60e5d7577db7cf9a042d649e2b0a7a26c29dee1f494689143ad8fc28d88"
+    }
+   ]
+  },
+  {
+   "slug": "dynmap",
+   "title": "Dynmap\u00ae",
+   "downloads": 502347,
+   "files": [
+    {
+     "version": "3.5-spigot",
+     "published": "2023-04-30",
+     "url": "https://cdn.modrinth.com/data/fRQREgAc/versions/YsFoYsPV/Dynmap-3.5-spigot.jar",
+     "size": 10158429,
+     "sha512": "1161ed4ac1b29f3776cf9f46c4548f8f92c57dbde0163516e3c3d6b6337cf4e9413c51ad8dfc036547d7c2897e1e4bc1c52f180da8d323fcfba041464b6f79f4"
+    }
+   ]
+  },
+  {
+   "slug": "fancynpcs",
+   "title": "FancyNpcs",
+   "downloads": 494344,
+   "files": [
+    {
+     "version": "2.12.1",
+     "published": "2026-09-21",
+     "url": "https://cdn.modrinth.com/data/EeyAn23L/versions/LigxTtVw/FancyNpcs-2.12.1.jar",
+     "size": 6754124,
+     "sha512": "a370600889f7c08058fc0a7ead3549382efa6e17d3f95f7224822921e3899260d51ad6fe0fb3fe36fa4f61903698de27d1e4ce9804e9ee716733b55f5251ea07"
+    },
+    {
+     "version": "2.12.0",
+     "published": "2026-09-15",
+     "url": "https://cdn.modrinth.com/data/EeyAn23L/versions/53lykMXY/FancyNpcs-2.12.0.jar",
+     "size": 6754091,
+     "sha512": "f7a52c7e44d004e4235c12bf8d6936b25188ae7259b375d8b310b56538e724452805173e3781f9326c8fa794802f329c18416cbafccf5b5fab5016a628027399"
+    }
+   ]
+  },
+  {
+   "slug": "mclogs",
+   "title": "mclo.gs",
+   "downloads": 469707,
+   "files": [
+    {
+     "version": "3.3.4",
+     "published": "2026-09-22",
+     "url": "https://cdn.modrinth.com/data/6DdCzpTL/versions/qcEfO2oc/mclogs-bukkit-26.1-3.3.4-all.jar",
+     "size": 1586302,
+     "sha512": "f9f4bd805e56570152ded5e754198cbf30cb9ae2fe537e972a32206dd690ba871465d1e41cbfd3c93b6d0504c5d1fc205d08991f75289a3dc231f9e9f028cb42"
+    },
+    {
+     "version": "3.3.3",
+     "published": "2026-08-14",
+     "url": "https://cdn.modrinth.com/data/6DdCzpTL/versions/MTXb4kzA/mclogs-bukkit-26.1-3.3.3-all.jar",
+     "size": 1586300,
+     "sha512": "8fd4655047ce42867fc06e12e9fb52a99ee8cb26e57a2c3d2bb2855722f6d106d1b3887919375910a824125200f8755788603fd0c0de352aa6920b379d245b88"
+    }
+   ]
+  },
+  {
+   "slug": "skippy-pearls",
+   "title": "Skippy Pearls",
+   "downloads": 460645,
+   "files": [
+    {
+     "version": "v1.3+plugin",
+     "published": "2026-11-07",
+     "url": "https://cdn.modrinth.com/data/KM7gMSY1/versions/VnVKmHdg/SkippyPearls-1.1.0.0.jar",
+     "size": 7261,
+     "sha512": "9ee192f9f9b8e60fc462ef0ef9e08a08e050d830274b9a4559d9aa257a30063aa1a1c5e8edb85e7dbe4f37d9dea87745e8121cef0ab5d127691d529a12e81e3f"
+    },
+    {
+     "version": "v1.1-plugin",
+     "published": "2026-11-07",
+     "url": "https://cdn.modrinth.com/data/KM7gMSY1/versions/jbJ3RbVL/SkippyPearls-1.0.0.1.jar",
+     "size": 7133,
+     "sha512": "9e453223cf7f0ea7203eea37cd18ea9dfae41e60bc86ae19d1fdf0f48a9f664c884eb15864c6c5a96ff9b41ad34a7561a2721801de695c83bd09cd38250c1eca"
+    }
+   ]
+  },
+  {
+   "slug": "placeholderapi",
+   "title": "PlaceholderAPI",
+   "downloads": 455811,
+   "files": [
+    {
+     "version": "2.12.3",
+     "published": "2026-07-03",
+     "url": "https://cdn.modrinth.com/data/lKEzGugV/versions/pIvQcXW8/PlaceholderAPI-2.12.3.jar",
+     "size": 1160690,
+     "sha512": "f048d55b633fd816c08e2e4472bd54a75fc4d13534682e6e7745408253d2f393706efdc389d12ca2cf28d4dc035a9afdda3eed9ecde51c7e332831391d9b6479"
+    },
+    {
+     "version": "2.12.2",
+     "published": "2026-02-08",
+     "url": "https://cdn.modrinth.com/data/lKEzGugV/versions/UmbIiI5H/PlaceholderAPI-2.12.2.jar",
+     "size": 1154620,
+     "sha512": "94addf996ba45e16dbded3fcaf05e8b442212ce0d577f7edc42b743ad9532c1e24115263976126d36f27c0868ab1c03c40c2d13947985124b92dabca4527dddb"
+    }
+   ]
+  },
+  {
+   "slug": "lifestealz",
+   "title": "LifeStealZ",
+   "downloads": 436421,
+   "files": [
+    {
+     "version": "2.21.1",
+     "published": "2026-05-14",
+     "url": "https://cdn.modrinth.com/data/l8Uv7FzS/versions/DqixaESV/lifestealz-2.21.1.jar",
+     "size": 1555504,
+     "sha512": "89c5986faf16b1fe4a5fb85c20c5af4533d86974fed6762a369502627c0070129735e1a286e11ec59bd73b6651bae9a4fc6ba1cb559fe6c63c7ce6af219d41c8"
+    },
+    {
+     "version": "2.21.0",
+     "published": "2026-05-09",
+     "url": "https://cdn.modrinth.com/data/l8Uv7FzS/versions/5aST3Bv8/lifestealz-2.21.0.jar",
+     "size": 1551942,
+     "sha512": "f123b9d1954905ea33f82f01220e5ca8a53c10b307c981d196d98cc679199d58381b84adc7a3ea87d94971e4e73c604de0aba5b977bbfc002486ab477d7a17aa"
+    }
+   ]
+  },
+  {
+   "slug": "advanced-backups",
+   "title": "Advanced Backups",
+   "downloads": 426768,
+   "files": [
+    {
+     "version": "3.7.1",
+     "published": "2025-02-02",
+     "url": "https://cdn.modrinth.com/data/Jrmoreqs/versions/kLUZZ2KH/AdvancedBackups-spigot-1.21-3.7.1.jar",
+     "size": 328561,
+     "sha512": "9f3b4de8312bd90063a0bb12a52e16b921f54fe257a711a3177cd9897142ba0e7f7c7ea6e7901f24213d18bdbf393927751194a9844b6ee8423862b4edd62893"
+    },
+    {
+     "version": "3.6.5",
+     "published": "2025-01-12",
+     "url": "https://cdn.modrinth.com/data/Jrmoreqs/versions/e9TFZXDJ/AdvancedBackups-spigot-1.21-3.6.5.jar",
+     "size": 327502,
+     "sha512": "a70a8fb5ebef11ff66613fed970f32b79b6b05ba3a90a77a840408e9d3c06274ffed3fbd94340df7d3cb3bf8cf3b49cad612261980fc4e64b8929bd7aee8647d"
+    }
+   ]
+  },
+  {
+   "slug": "string-dupers-return",
+   "title": "String Dupers Return",
+   "downloads": 410721,
+   "files": [
+    {
+     "version": "1.0.12",
+     "published": "2026-02-23",
+     "url": "https://cdn.modrinth.com/data/U6d1TJQm/versions/padTtIq6/StringDupersReturn-1.0.12.jar",
+     "size": 32725,
+     "sha512": "a25e6a2c4b56b975062ca6b7ac1beb9fb0b95e4409464981df9c036085498da51640cf927f776b7780f3090976d25c456a224f15c4f129bc06d417f4f228d762"
+    },
+    {
+     "version": "1.0.11",
+     "published": "2025-12-01",
+     "url": "https://cdn.modrinth.com/data/U6d1TJQm/versions/xTeVKr1m/StringDupersReturn-1.0.11.jar",
+     "size": 5441,
+     "sha512": "96da61290ac05bb97cb6c95bbab314f80c32dec6bfdc92c94026dcbd3f2847602accdd7d2688bb1a23aaffd4dd50ce4bca0194fcedf47488556ff07883599ef8"
+    }
+   ]
+  },
+  {
+   "slug": "no-enderman-grief",
+   "title": "No Enderman Grief",
+   "downloads": 409013,
+   "files": [
+    {
+     "version": "v3.1.1+plugin",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/ss02V75k/versions/mij2NHyC/no-enderman-grief-v3.1.1-paper.jar",
+     "size": 48114,
+     "sha512": "ec68c914a8c2f376faafffca96fac516cc48aa7cd727f5bc6aa04f1726f5241de9f9f6c310e9b6f933581c946bec2fe34cb8f50c82d2da068547c9a33ed9e1ae"
+    }
+   ]
+  },
+  {
+   "slug": "infinite-villager-trading",
+   "title": "Infinite Villager Trading",
+   "downloads": 395558,
+   "files": [
+    {
+     "version": "2.6.7",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/7pdfxYHV/versions/wHWkSAS3/instantrestock_2.6.7.jar",
+     "size": 1512108,
+     "sha512": "98d24d286ac02e919018a39cec0403fcce220989de7264762fb6b6fe2d759a59a7bf11443726600a828d691abd66196ff7c8e23e414f378cfb5a0e4316a63f04"
+    },
+    {
+     "version": "2.6.6",
+     "published": "2026-10-12",
+     "url": "https://cdn.modrinth.com/data/7pdfxYHV/versions/gkcgowcp/instantrestock_2.6.6.jar",
+     "size": 1512148,
+     "sha512": "7bd8202e7de23652c046205a979e175049b5ff4c5f2ce3dbdc43a1cc1b40d4c99b49496cea7c04b734930bd02c0d446cf25ccee509365eab18a1dd939dcaf112"
+    }
+   ]
+  },
+  {
+   "slug": "chunkyborder",
+   "title": "Chunky Border",
+   "downloads": 393121,
+   "files": [
+    {
+     "version": "1.2.75",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/s86X568j/versions/tLk074dt/ChunkyBorder-Paper-1.2.75.jar",
+     "size": 123650,
+     "sha512": "5904063cfbccddb058bcb115dca6b1713807b4b409df0dd2d1b24bc91dbe931d126d6eea1fa904395e1a4e45c904ae7f496f82f8bdf7f745e651f3fd51ebae96"
+    },
+    {
+     "version": "1.2.75",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/s86X568j/versions/sDz2iIOx/ChunkyBorder-Bukkit-1.2.75.jar",
+     "size": 121244,
+     "sha512": "2a96d09c73f6ab24228bd0a631a461361f4e84a98eccc4761cd16de220be86550b12636927ec3e7bb7bed31bc37ffe8b71bb185d1a8ffa374eb93ffcaa541d8d"
+    }
+   ]
+  },
+  {
+   "slug": "mob-heads",
+   "title": "Mob Heads",
+   "downloads": 390569,
+   "files": [
+    {
+     "version": "v5.3.1+plugin",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/82uI0waE/versions/vVAfKZYO/mob-heads-v5.3.1-paper.jar",
+     "size": 6887704,
+     "sha512": "94024bc456bc7d6a97a33013d87e561179ed39db858047b7a337a3ba909eb37e1fc6be9cc8541a177f9feb771a7e761e464d964246b49a44be1d84cf9eac90de"
+    }
+   ]
+  },
+  {
+   "slug": "invsee-plus-plus",
+   "title": "InvSee++",
+   "downloads": 382381,
+   "files": [
+    {
+     "version": "0.31.22",
+     "published": "2026-10-15",
+     "url": "https://cdn.modrinth.com/data/bYazc7fd/versions/LmdQx1rG/InvSee%2B%2B.jar",
+     "size": 2355501,
+     "sha512": "e86454aeb5f5a21c6918974cbd3f838d7c21092ae701f1380f035f247f663c968480419e7b0e2833534d1be414454d22fe960393fe9aaa960650c30f62db9683"
+    },
+    {
+     "version": "0.31.20",
+     "published": "2026-10-14",
+     "url": "https://cdn.modrinth.com/data/bYazc7fd/versions/MjSifs5V/InvSee%2B%2B.jar",
+     "size": 2354065,
+     "sha512": "4f6315f6c9ce14e4df0ed5709122128c6356043356560d4983eb2d08db20c0972e3ef91932e4f859985af6900a11babd1e7506cbd4578e01dd4db42e760a3513"
+    }
+   ]
+  },
+  {
+   "slug": "buildpaste",
+   "title": "BuildPaste - Instant Structures",
+   "downloads": 367222,
+   "files": [
+    {
+     "version": "2.1.0",
+     "published": "2026-10-16",
+     "url": "https://cdn.modrinth.com/data/9kNC5Mrh/versions/nUEsW5fs/BuildPaste_Plugin-1.17.1-26.3v2.1.0.jar",
+     "size": 178546,
+     "sha512": "a4b736a83538f0779daa7abb8322b6990e77e343777ba3b7011472fd9d0817f263c2fe175d0a9abe347c3c4d24e15861023b5acafe595b81a87ba5e869bc021e"
+    },
+    {
+     "version": "2.02",
+     "published": "2025-12-17",
+     "url": "https://cdn.modrinth.com/data/9kNC5Mrh/versions/AbmlgpgV/BuildPastePlugin-1.16-1.21.10v2.02.jar",
+     "size": 80207,
+     "sha512": "d80f1468c51d43f8e1dc7fd51c3f223db4adb71e73d250dd0ce4838189401f25a19757be9e84b7873575905063c298dbfb923c52faead1df99627039a53f28a9"
+    }
+   ]
+  },
+  {
+   "slug": "voxy-server-side",
+   "title": "Voxy Server Side",
+   "downloads": 364291,
+   "files": [
+    {
+     "version": "0.21.0",
+     "published": "2026-11-13",
+     "url": "https://cdn.modrinth.com/data/84zcagOb/versions/zFBY1qjJ/voxy-server-side-paper.jar",
+     "size": 8403224,
+     "sha512": "28fd7fc0c0cbf471924020e13b05c3fd763df5d7e77bc853fe3655df66a1eb3caf4cd408a12f38865579320704a9f51cebf8d179a32c06f9c17e64a4eddaece0"
+    },
+    {
+     "version": "0.21.0",
+     "published": "2026-11-13",
+     "url": "https://cdn.modrinth.com/data/84zcagOb/versions/HUmF2nGt/voxy-server-side-paper.jar",
+     "size": 8402793,
+     "sha512": "401d36f2aebc88ec25c5181155c99dd6641a4a173672c22f52170e8b87b7d41e79027367a2dd8775213231441703acf6c785c629d0f5d262ecdec0665ad34d8a"
+    }
+   ]
+  },
+  {
+   "slug": "nbtapi",
+   "title": "NBT-API",
+   "downloads": 357461,
+   "files": [
+    {
+     "version": "2.16.1",
+     "published": "2026-09-17",
+     "url": "https://cdn.modrinth.com/data/nfGCP9fk/versions/h7feK39u/item-nbt-api-plugin-2.16.1.jar",
+     "size": 268496,
+     "sha512": "1957deb03d07109b0cbf78a54f1030546e6fb3147c400b28d24ef585f527bb503965f4f777b2bc18b06bc682a164a2ffd42ba0468659b2f4bed6729df3e52be0"
+    },
+    {
+     "version": "2.16.0",
+     "published": "2026-07-27",
+     "url": "https://cdn.modrinth.com/data/nfGCP9fk/versions/GYdTPugT/item-nbt-api-plugin-2.16.0.jar",
+     "size": 268285,
+     "sha512": "af296417171191388e41c99a639d75bbd839651875afc41f89317d1fb1595e77c6176e7d3b36ee2de52e2c435c467c5092dda3e23a608bca38e13ec1166ce9ef"
+    }
+   ]
+  },
+  {
+   "slug": "voicemessages",
+   "title": "Voice Messages",
+   "downloads": 350665,
+   "files": [
+    {
+     "version": "paper-1.0.14",
+     "published": "2026-11-12",
+     "url": "https://cdn.modrinth.com/data/WWLeFuHa/versions/ih88DLMd/voicemessages-paper-1.0.14.jar",
+     "size": 41641,
+     "sha512": "e8914c7334956dc0cca6bdde66e0b1541258ef9e1a0ced7327bfa51818a259eff3ba0dedc1a2a7625cd47a23c08a53636e7ddd3ca200010d6ef573ede242872e"
+    },
+    {
+     "version": "paper-1.0.12",
+     "published": "2025-11-24",
+     "url": "https://cdn.modrinth.com/data/WWLeFuHa/versions/mBsQhubX/voicemessages-paper-1.0.12.jar",
+     "size": 40915,
+     "sha512": "b9cba3ce273ec71be8e1052334fbdda996a7921ca111459172632ab4d74792d9afc5c0f8c370dbe93434e0d38f73775d1ee1413cb31a8fbed347700a7706119e"
+    }
+   ]
+  },
+  {
+   "slug": "tabtps",
+   "title": "TabTPS",
+   "downloads": 348852,
+   "files": [
+    {
+     "version": "1.4.3",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/cUhi3iB2/versions/y2pMABDy/tabtps-paper-1.4.3.jar",
+     "size": 3330101,
+     "sha512": "6760d2bc9e6f905963b34ad55138e451d144990b0bdd3ca1c954c2b255dc617bc5d11cf7ab7b381e2b9923647d5e32fc733e2c9e13e8be9a437ac5d7bb2cb30f"
+    },
+    {
+     "version": "1.4.2",
+     "published": "2026-09-18",
+     "url": "https://cdn.modrinth.com/data/cUhi3iB2/versions/pQwKG81j/tabtps-paper-1.4.2.jar",
+     "size": 3330053,
+     "sha512": "7c99545a2ab7476b00889afc95e98f5e71b4f4d8fbf7b0b8827401d0fbc89d25ba715cf01cf0cb3d40cd9c1cca03033c74c47a9b0e1406f21ab58c591db4f647"
+    }
+   ]
+  },
+  {
+   "slug": "fancyholograms",
+   "title": "FancyHolograms",
+   "downloads": 347451,
+   "files": [
+    {
+     "version": "2.12.0",
+     "published": "2026-09-15",
+     "url": "https://cdn.modrinth.com/data/5QNgOj66/versions/dBBdi95S/FancyHolograms-2.12.0.jar",
+     "size": 1219423,
+     "sha512": "93ea248525fa2bf8efcd13456e35833c069a0bea2bdddc1cc6a61b68f00681b91f928443dbe82a974041253a9393eca8203743382063cda56c6fb39259ed4a21"
+    },
+    {
+     "version": "2.11.0",
+     "published": "2026-06-16",
+     "url": "https://cdn.modrinth.com/data/5QNgOj66/versions/VgbsP5NO/FancyHolograms-2.11.0.jar",
+     "size": 1168379,
+     "sha512": "ef2817552f96ea2ebb5635df5b6049cd9f66b00761ae2ccd1deb721feff2470a9131b12e52d43862f6fb2663ae54d87cee063ec6aad5d09d1df283133641fbc9"
+    }
+   ]
+  },
+  {
+   "slug": "lagfixer",
+   "title": "LagFixer",
+   "downloads": 344968,
+   "files": [
+    {
+     "version": "1.7.2-folia",
+     "published": "2026-10-20",
+     "url": "https://cdn.modrinth.com/data/fD1X4Kwd/versions/1E3uHH5Z/LagFixer-1.7.2-folia.jar",
+     "size": 617823,
+     "sha512": "9a6095ef351231c0051b23ee7afa2813d22499f0b7d7e3f9a49f042ff31bdd87f7d099541597afb76afe8efe6000526067950e05cedd00a42f1e14d26a7e0528"
+    },
+    {
+     "version": "1.7.2",
+     "published": "2026-10-20",
+     "url": "https://cdn.modrinth.com/data/fD1X4Kwd/versions/HgUPBmbu/LagFixer-1.7.2.jar",
+     "size": 2003154,
+     "sha512": "19635151f187d54bdd571447d6cd6aca0f429518e14ca47940f58232880bab0d23e31681a64fe72aa4c7f388c8e6830747add475029efc6faf11f2ede8644828"
+    }
+   ]
+  },
+  {
+   "slug": "legacyfreecam",
+   "title": "Freecam (Fair Play)",
+   "downloads": 343943,
+   "files": [
+    {
+     "version": "2.0.0",
+     "published": "2026-10-09",
+     "url": "https://cdn.modrinth.com/data/tWqI1yhH/versions/t9FLWxKJ/legacyfreecam-paper-2.0.0.jar",
+     "size": 61176,
+     "sha512": "f85588c46e1384a82cf866dbe3f75a907be642d446113b9f932199f5f70b79fad765aac0e62238a09b4c36b1c77eee9ab1c49bd3af45a0f9be059074b6cf5fb3"
+    },
+    {
+     "version": "2.0.0",
+     "published": "2026-10-09",
+     "url": "https://cdn.modrinth.com/data/tWqI1yhH/versions/8NoBT1kR/legacyfreecam-spigot-2.0.0.jar",
+     "size": 61137,
+     "sha512": "d50648d91f85eb19c428013bce978f76bde380cd749c1ef4839e024805906449bc7fb1975a47e7021534dfda5034d559dba8a3ea8c333ec770600e3303af76e0"
+    }
+   ]
+  },
+  {
+   "slug": "sethome",
+   "title": "SetHome",
+   "downloads": 342171,
+   "files": [
+    {
+     "version": "6.3",
+     "published": "2026-07-15",
+     "url": "https://cdn.modrinth.com/data/1apsbntF/versions/O0IwFbmQ/sethome-6.3-SNAPSHOT.jar",
+     "size": 26113,
+     "sha512": "9c3dded42e68be8ca1a2de06bd5dc47c4e8bbab168d108cd3ce7331a309e9e212a626dac891c5281ef8b7d4c3e26889965fa9c61e170a6aaf5f542736c355d38"
+    },
+    {
+     "version": "6.2",
+     "published": "2026-05-18",
+     "url": "https://cdn.modrinth.com/data/1apsbntF/versions/j33t7krR/SetHome-6.2.jar",
+     "size": 972022,
+     "sha512": "9a9b6f064ca7e7454e38eb6367ed222549ef9853ccf13c3bdcd26480d9e57234ec6e4205c74020ef5d316c5c27818fb56d3f1bf9ed370058a033f847f73d52dd"
+    }
+   ]
+  },
+  {
+   "slug": "playerkits-2",
+   "title": "PlayerKits 2",
+   "downloads": 340288,
+   "files": [
+    {
+     "version": "1.24.3",
+     "published": "2026-11-12",
+     "url": "https://cdn.modrinth.com/data/VuKoQN3Q/versions/VOqo0zNP/PlayerKits2-1.24.3.jar",
+     "size": 493770,
+     "sha512": "712b770d1f29063d15f279d7378cad3304b928ec463b2a877aea1a53eca2ec4dce90dfeb5204cf4567b6d94fc4ce0a5346ba9885fc0b72b8c4e15966b10ae3a3"
+    },
+    {
+     "version": "1.24.2",
+     "published": "2026-10-23",
+     "url": "https://cdn.modrinth.com/data/VuKoQN3Q/versions/6XVXzK5x/PlayerKits2-1.24.2.jar",
+     "size": 493678,
+     "sha512": "c16e3db4cdcb915c82472e89c4f9396db4af345989cff77ce53b643e3806c866d8d00a42a05fc37d823ef9870b6cada69745f85b7b005095965e278c426e3d44"
+    }
+   ]
+  },
+  {
+   "slug": "crazycrates",
+   "title": "CrazyCrates",
+   "downloads": 332079,
+   "files": [
+    {
+     "version": "5.2.0",
+     "published": "2026-07-18",
+     "url": "https://cdn.modrinth.com/data/r3BBZyf3/versions/KIO68I3K/CrazyCrates-5.2.0.jar",
+     "size": 2272128,
+     "sha512": "98dbb2bd159ed13a5cfaa751f1158694f97064573722dba4dbf3dcaa20f6da5acf3712933e6e5658e77ff08646d9dfe7ca83775a29b101cf6a739c6dea4e1371"
+    },
+    {
+     "version": "5.1.0",
+     "published": "2026-06-23",
+     "url": "https://cdn.modrinth.com/data/r3BBZyf3/versions/4ZnGU9oe/CrazyCrates-5.1.0.jar",
+     "size": 2539570,
+     "sha512": "1ad1a2f5a7d015122480049ae14fcc7dbc7d7fa0a71bb648c8d36a27996710b7b3e3cd92b3c6f9d9cc5d3320642c9b00b069020fcb274be7bfe1061cde9fe920"
+    }
+   ]
+  },
+  {
+   "slug": "simple-voice-chat-discord-bridge",
+   "title": "Simple Voice Chat Discord Bridge",
+   "downloads": 330547,
+   "files": [
+    {
+     "version": "paper-3.2.2",
+     "published": "2026-10-20",
+     "url": "https://cdn.modrinth.com/data/S1jG5YV5/versions/SUialMd7/voicechat-discord-paper-3.2.2.jar",
+     "size": 24227360,
+     "sha512": "ae20768eb91ad54b241e8a06792228a72d22a88557a9057d1b7cf571792ee63634d920d839ad5de880d9b6c3534006fe3331fde2bed2ebdc796302934fbc01bd"
+    },
+    {
+     "version": "paper-3.2.1",
+     "published": "2026-09-07",
+     "url": "https://cdn.modrinth.com/data/S1jG5YV5/versions/nvCC9kPp/voicechat-discord-paper-3.2.1.jar",
+     "size": 24242493,
+     "sha512": "8ddc599d6fe0879234a5136561da14f6ae069656199655d5842d48683b9f13f75918c3adcd013be4ee8df38ef64ffaef7a17a6fbb48c577da3e4e4cb280f6e79"
+    }
+   ]
+  },
+  {
+   "slug": "zannaghs-armor-hider",
+   "title": "Armor Hider",
+   "downloads": 322468,
+   "files": [
+    {
+     "version": "ppr-0.14.6",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/GgG2my3y/versions/i55GttSU/armor-hider-paper-0.14.6%2Bpaper.jar",
+     "size": 500609,
+     "sha512": "ccfe45fb7c1e27e0c39cf03b35683bf5c416ad9fab9c0806b7df275c2a57712044de9b0da225f097e6b35f3338379195cb4a4eb43d7db05e676c19869d18811d"
+    },
+    {
+     "version": "ppr-0.14.5",
+     "published": "2026-10-19",
+     "url": "https://cdn.modrinth.com/data/GgG2my3y/versions/mthXHbMU/armor-hider-paper-0.14.5%2Bpaper.jar",
+     "size": 500606,
+     "sha512": "0bcf0c9d63abf83ee43851e7159866e3a2754fe5e284f4d55ae48f4f05bd2c9da25c4b921be7d652bd97dc41e1863b9189dfeba0ae61c66de7109bfd722e5c92"
+    }
+   ]
+  },
+  {
+   "slug": "decentholograms",
+   "title": "DecentHolograms",
+   "downloads": 307651,
+   "files": [
+    {
+     "version": "2.10.2",
+     "published": "2026-10-18",
+     "url": "https://cdn.modrinth.com/data/w02MKsTg/versions/fbE7wARc/DecentHolograms-2.10.2.jar",
+     "size": 4014227,
+     "sha512": "f2247802a175cf0c71f0e069ab4c3b2ff2aba683051e474ff54f2ad3ea08da5156de7e11f768087fadbf7bdeac491b5935b2ebb2f4d8fc9f48b3df41558936ce"
+    },
+    {
+     "version": "2.10.1",
+     "published": "2026-06-28",
+     "url": "https://cdn.modrinth.com/data/w02MKsTg/versions/Fva1FgWm/DecentHolograms-2.10.1.jar",
+     "size": 3938139,
+     "sha512": "4be371d0b2258eb6d255b14155a730f8bc5998eee826e5fed54d402a1b3e315e7c03941f3b654ef648d800f74911ef25355a0d370a85e3c062eba74aad1ed678"
+    }
+   ]
+  },
+  {
+   "slug": "multiverse-inventories",
+   "title": "Multiverse-Inventories",
+   "downloads": 291219,
+   "files": [
+    {
+     "version": "5.3.6",
+     "published": "2026-09-21",
+     "url": "https://cdn.modrinth.com/data/qvdtDX3s/versions/86s1EwyC/multiverse-inventories-5.3.6.jar",
+     "size": 1805118,
+     "sha512": "e587c873e1a01a48d79dabadc629113d68fe11240b85c970f481b62ebfcf5f8c3adffa9c5a5c601db0437b5c873312a02492a191ac8504a66ce4fed48a0d7438"
+    },
+    {
+     "version": "5.3.5",
+     "published": "2026-07-07",
+     "url": "https://cdn.modrinth.com/data/qvdtDX3s/versions/BuvLmql9/multiverse-inventories-5.3.5.jar",
+     "size": 1673897,
+     "sha512": "2c9354ef31128bdc86e52faa3f76c08730baa5661057ffa0b26f8bca55185e980f9344183e27219d2266950c16e6087336581c72184956a4da5d80d371bbddcd"
+    }
+   ]
+  },
+  {
+   "slug": "authmerereloaded",
+   "title": "AuthMe ReReloaded(Fork)",
+   "downloads": 287322,
+   "files": [
+    {
+     "version": "5.7.0-FORK-b53",
+     "published": "2024-08-22",
+     "url": "https://cdn.modrinth.com/data/3IEZ9vol/versions/oezVemzR/AuthMe-5.7.0-FORK-Universal.jar",
+     "size": 23107304,
+     "sha512": "3af6f1018e93d97d928c5141819dd2d17390280d76430303a14f01257eecc651a2b21243f86fdb13453d32c4f287345333b015001e918827df576589b6d4e390"
+    },
+    {
+     "version": "5.7.0-FORK-b52",
+     "published": "2024-07-14",
+     "url": "https://cdn.modrinth.com/data/3IEZ9vol/versions/tSRzJlf5/AuthMe-5.7.0-FORK-Universal.jar",
+     "size": 23101220,
+     "sha512": "be11a9e97285d22b0007e80a8aba364ad96d6461c2b818d3588e64bed282d889da0998c62cf8a3ff3a24df91ec6bd10940a5e56f12d8fb6c90882e3ceb2e879a"
+    }
+   ]
+  },
+  {
+   "slug": "skript",
+   "title": "Skript",
+   "downloads": 286531,
+   "files": [
+    {
+     "version": "2.17.1",
+     "published": "2026-10-21",
+     "url": "https://cdn.modrinth.com/data/xFNYAvMk/versions/md6XoYzV/Skript-2.17.1.jar",
+     "size": 5472448,
+     "sha512": "77f51fd4e639003956993b1d801b16d0e9e86572b453ce8aeeee436d1636a0779b013eeee0f22e23fb744c43f1d6bea1a829e676151bf808694161f579501e4f"
+    },
+    {
+     "version": "2.17.0",
+     "published": "2026-10-15",
+     "url": "https://cdn.modrinth.com/data/xFNYAvMk/versions/CgaPXksZ/Skript-2.17.0.jar",
+     "size": 5470797,
+     "sha512": "d761983b0271771964c8ee13c9d5c609d70e5af6529ec10550c74e78f4db507ccd7a8396b15a5321d7d80cc44472732cacd76bfa38119f347598af4ae53b9ea7"
+    }
+   ]
+  },
+  {
+   "slug": "dcintegration",
+   "title": "Discord Integration",
+   "downloads": 286253,
+   "files": [
+    {
+     "version": "3.0.7.1spigot1.20.4",
+     "published": "2024-05-03",
+     "url": "https://cdn.modrinth.com/data/rbJ7eS5V/versions/YjBjd4DI/dcintegration-spigot-3.0.7.1-1.20.4.jar",
+     "size": 16214922,
+     "sha512": "066d789841fa7bc5f2726f77a7c5e6aa88341aeb56a615439e6d28bdd953fce7a999a06f51ea35f686bd2b4ee2a91c34e0d3b2cc02b9ef5cb7fc5a1eaca311dc"
+    },
+    {
+     "version": "3.0.7spigot1.20.4",
+     "published": "2024-04-21",
+     "url": "https://cdn.modrinth.com/data/rbJ7eS5V/versions/wwq2XFWM/dcintegration-spigot-3.0.7-1.20.4.jar",
+     "size": 16216377,
+     "sha512": "899ded24298580bc81a204248e7f6f65c21884a190df2bfc1d9bfcb6edf10c4ae4045cb0fddd024cb37d7c17618adf89152d03d66b39ae8df89c95f98de365f3"
+    }
+   ]
+  },
+  {
+   "slug": "sleep",
+   "title": "Sleep",
+   "downloads": 283852,
+   "files": [
+    {
+     "version": "v4.4.0.0+plugin",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/WTzuSu8P/versions/V4pmMwhG/sleep-v4.4.0.0-paper.jar",
+     "size": 77585,
+     "sha512": "b46600b1312f582429ef0dccd9eb368cc9ef416d9ce794fd79a70bff9e6db62087b71f25c6b6bdbf9d6212343d0a05caae838f13398ee5e3244e37736ef35597"
+    }
+   ]
+  },
+  {
+   "slug": "clickmobs",
+   "title": "Click Mobs",
+   "downloads": 282972,
+   "files": [
+    {
+     "version": "paper-1.3.1",
+     "published": "2026-03-26",
+     "url": "https://cdn.modrinth.com/data/tRdRT5jS/versions/tte1UNeO/ClickMobs-paper-1.3.1.jar",
+     "size": 183798,
+     "sha512": "423a85b69390160846713ce39e6d22a1a4b510af493bd2e460322fde02c8cb79c2154fee2bedcdbfc0885cf8696c6d69e847cd2d830d95f26bc5ded79213a578"
+    },
+    {
+     "version": "paper-1.3",
+     "published": "2026-01-04",
+     "url": "https://cdn.modrinth.com/data/tRdRT5jS/versions/vZzoPx2R/ClickMobs-paper-1.3.jar",
+     "size": 182533,
+     "sha512": "5c55ef32e32c0d71e43d50a184d407776ab97f3c4a26d8e5f44458b924a766b0180eecf8d84bf73644c16194ab19ef738c661ca3c914358d5cbfc63d26bd78b8"
+    }
+   ]
+  },
+  {
+   "slug": "vexbot",
+   "title": "VexBot",
+   "downloads": 282133,
+   "files": [
+    {
+     "version": "3.1.0+paper-mc26.3",
+     "published": "2026-10-19",
+     "url": "https://cdn.modrinth.com/data/EPgNYyCG/versions/NAlNfMKm/vexbot-paper-3.1.0paper-mc26.3.jar",
+     "size": 1746877,
+     "sha512": "58dfaafdb7ef1c4c113a0c56a3b8ebfc50abb5a7f72126f82c1d097d1271e1b1f901d2f2a44ce0d357ae1cd6569d5231e89540fcf97daeff62f30fd9fdd54cb4"
+    },
+    {
+     "version": "3.1.0+paper-mc26.2",
+     "published": "2026-10-19",
+     "url": "https://cdn.modrinth.com/data/EPgNYyCG/versions/tEu2IQmZ/vexbot-paper-3.1.0paper-mc26.2.jar",
+     "size": 1746223,
+     "sha512": "510f5257c847b1e6d000055281b68f5fc7147b7d5030d7d7ea6ef03905ee7c12496e2dce7ecbc8416f3f507775fd5133bcb3e7bdbe1beae362eccbb0c8d08646"
+    }
+   ]
+  },
+  {
+   "slug": "minimotd",
+   "title": "MiniMOTD",
+   "downloads": 280105,
+   "files": [
+    {
+     "version": "2.2.5",
+     "published": "2026-09-18",
+     "url": "https://cdn.modrinth.com/data/16vhQOQN/versions/Ch5nDFAs/minimotd-paper-2.2.5.jar",
+     "size": 758777,
+     "sha512": "8516f9c92cb549984110d68270ebafee389fc25598a88431fb483677b675bf382f71f17bbef45f601f741a2333861472c96a3e8801a9c6c1dcb4e27af5923c19"
+    },
+    {
+     "version": "2.2.5",
+     "published": "2026-09-18",
+     "url": "https://cdn.modrinth.com/data/16vhQOQN/versions/rVxqIVVb/minimotd-bukkit-2.2.5.jar",
+     "size": 2109559,
+     "sha512": "8cdad40d1996db9bc881e30ed2173bd0def6b9911b0ee181d1918d205ab68919029048a0283c86bed0b3b2508c1309d6a78eeb783767fbdd5b490234332b8967"
+    }
+   ]
+  },
+  {
+   "slug": "skbee",
+   "title": "SkBee",
+   "downloads": 280096,
+   "files": [
+    {
+     "version": "3.26.0",
+     "published": "2026-09-26",
+     "url": "https://cdn.modrinth.com/data/a0tlbHZO/versions/FUHfTDWo/SkBee-3.26.0.jar",
+     "size": 2597819,
+     "sha512": "58d9cc25206c19e7762cfbb3b80b7464755797da11fbb214136d1c89c7296443220f6caf0503f5c6336fadb01fad0798a262fce0383a8451795660e15bbc3193"
+    },
+    {
+     "version": "3.25.4",
+     "published": "2026-08-29",
+     "url": "https://cdn.modrinth.com/data/a0tlbHZO/versions/bTBlzhGZ/SkBee-3.25.4.jar",
+     "size": 2596813,
+     "sha512": "7a2c0ff0de1045901da34f586a34ede350f631cf027ac9d40e094405dc515338c97c85e6338625dedafa909ecf82d8e7bdd94216fe2a09a35ff5d2f16cbb11a1"
+    }
+   ]
+  },
+  {
+   "slug": "axiom-paper-plugin",
+   "title": "Axiom Paper Plugin",
+   "downloads": 278744,
+   "files": [
+    {
+     "version": "6.0.1+26.3",
+     "published": "2026-09-21",
+     "url": "https://cdn.modrinth.com/data/evkiwA7V/versions/V2yAy4up/AxiomPaper-6.0.1-for-MC26.3.jar",
+     "size": 6278921,
+     "sha512": "e6a825bbeb78bc4ef159afa760c0835528f4c52dbdcd7753812194d3e1527d585b5ab61f82a3890fed67d9b4bec4df0e966803c6cf4f9fc1b7058d35edd1e66e"
+    },
+    {
+     "version": "6.0.1+26.2",
+     "published": "2026-09-03",
+     "url": "https://cdn.modrinth.com/data/evkiwA7V/versions/93qRRLuz/AxiomPaperPlugin-6.0.1-for-MC26.2.jar",
+     "size": 6276652,
+     "sha512": "78fd1fd29786b24385eb8f75a494079e0a9125703004a2b57f38a276d556d1f7d808129d0d818136d18a9607a8ec56b118686b75839dd3d4726aa3fb1ff45ce4"
+    }
+   ]
+  },
+  {
+   "slug": "nightcore",
+   "title": "NightCore",
+   "downloads": 277107,
+   "files": [
+    {
+     "version": "2.16.7",
+     "published": "2026-10-08",
+     "url": "https://cdn.modrinth.com/data/Y4NRwMW5/versions/HwbIRRCo/nightcore-2.16.7.jar",
+     "size": 1581781,
+     "sha512": "26a26cb3d472f3e571653f3a22b1e11b4f837ade17a603c97e55f3f469bd39c393a5d5ab8711ec0534276fb3a7f9062d83119f3a6d0f35751dfcb879eaeaf06d"
+    },
+    {
+     "version": "2.16.6",
+     "published": "2026-09-24",
+     "url": "https://cdn.modrinth.com/data/Y4NRwMW5/versions/AIeSQerQ/nightcore-2.16.6.jar",
+     "size": 1556923,
+     "sha512": "2d8d4717972fd949dd0cf53655562011d010a0ace77283882a7169260df096bf9c8e51e81afcc3dc0d5dbc2b7d059cabce9c532372901e150eb501bb52807c33"
+    }
+   ]
+  },
+  {
+   "slug": "leashable-players",
+   "title": "Leashable Players",
+   "downloads": 274338,
+   "files": [
+    {
+     "version": "1.3.0-bukkit",
+     "published": "2026-07-31",
+     "url": "https://cdn.modrinth.com/data/BKyMf6XK/versions/ir8urScS/leashmod-bukkit-1.3.0.jar",
+     "size": 7917,
+     "sha512": "9ff2c2ebcfb3c5453713bd8ae6df2897e887fbd10573f153a938533a020d461c37d387d1eae8e727a9c10da2b2b8092329f5db626f7d873110ade9e58e9c86d6"
+    }
+   ]
+  },
+  {
+   "slug": "imageframe",
+   "title": "ImageFrame",
+   "downloads": 270955,
+   "files": [
+    {
+     "version": "2026.1.5",
+     "published": "2026-09-18",
+     "url": "https://cdn.modrinth.com/data/lJFOpcEj/versions/dKkWOwRr/ImageFrame-2026.1.5.0.jar",
+     "size": 4762072,
+     "sha512": "e9ee5cea569946767c125397550c7ca5bbcbe0d504832af216ec9d8dea99f532f4af80e0e9a17ee917c7fd78c10292ba3bbe61457947f19d3edf68bbf5f2f4a8"
+    },
+    {
+     "version": "2026.1.4",
+     "published": "2026-06-29",
+     "url": "https://cdn.modrinth.com/data/lJFOpcEj/versions/nt0GWT1y/ImageFrame-2026.1.4.0.jar",
+     "size": 4749647,
+     "sha512": "2a510fa5906e26331351fb69da6b19ca08d82ffb3ea34781cde8de44eed25a18e43862e6144a3bcbc8bf2184ee3a975fe65ee10689ff07039d23076fda35f58a"
+    }
+   ]
+  },
+  {
+   "slug": "luckywheel",
+   "title": "Luckywheel",
+   "downloads": 268009,
+   "files": [
+    {
+     "version": "1.0.0",
+     "published": "2026-09-30",
+     "url": "https://cdn.modrinth.com/data/JrS7lPEi/versions/5CZPRESw/luckwheel-1.0.0.jar",
+     "size": 13753,
+     "sha512": "c9fd2d731884fb6d6a5de2ce38b86056f9be3834a588ac36d8e97f153e6ac6ab769fef69acc5b0fe651e55afcba275f69ea17814603afbfd35902b3a65235446"
+    }
+   ]
+  },
+  {
+   "slug": "powerranks",
+   "title": "PowerRanks",
+   "downloads": 267157,
+   "files": [
+    {
+     "version": "1.10.10",
+     "published": "2024-08-22",
+     "url": "https://cdn.modrinth.com/data/ecVvYtj3/versions/zjQoKxad/PowerRanks.jar",
+     "size": 4931540,
+     "sha512": "5aa752d1898190042edc8ae2b7114e729029caa711286bff62cd06b056bc29331f6c1dfe382a9247e317a32d5c2df0a44c9e9babc72a9d85d49220bf70430838"
+    },
+    {
+     "version": "1.10.9R2",
+     "published": "2023-12-15",
+     "url": "https://cdn.modrinth.com/data/ecVvYtj3/versions/Wx0oHWfS/PowerRanks.jar",
+     "size": 4924301,
+     "sha512": "9ad82ed835a51056610120037353bb07a174d9c345e44a2792ab1ab54ccf7e3e8e361bf3ecc5a11588df9f07c5dbf6b99eb9e0b0fcda4c5c3d97a3eb3d0e32eb"
+    }
+   ]
+  },
+  {
+   "slug": "quickshop-hikari",
+   "title": "QuickShop-Hikari",
+   "downloads": 264041,
+   "files": [
+    {
+     "version": "6.3.0.4",
+     "published": "2026-11-07",
+     "url": "https://cdn.modrinth.com/data/ijC5dDkD/versions/5QTdwNxF/QuickShop-Hikari-6.3.0.4.jar",
+     "size": 4660403,
+     "sha512": "b5a8c31209ab7987245a0568e4052b9644a5f3f85fc0616c97dcae92fa3776bc93c5918970e50a4cb42163f9bd5dbf7eb4bd5642092869acc9c800bfc62feb86"
+    },
+    {
+     "version": "6.3.0.3",
+     "published": "2026-09-23",
+     "url": "https://cdn.modrinth.com/data/ijC5dDkD/versions/OxlW1jL5/QuickShop-Hikari-6.3.0.3.jar",
+     "size": 4657612,
+     "sha512": "5259237aaac00d21ddd6f954c708bfc6bd57a3505960b8eaffd254ea7cca0d89991195a6ec4e78194bf67f306802a7e2dc5dc7821c4724a7b2e2e5a927de6c64"
+    }
+   ]
+  },
+  {
+   "slug": "oneblock_bukkit",
+   "title": "OneBlock",
+   "downloads": 253360,
+   "files": [
+    {
+     "version": "1.6.4",
+     "published": "2026-11-03",
+     "url": "https://cdn.modrinth.com/data/gMMDcC2d/versions/s0ziuK5C/OneBlock-1.6.4.jar",
+     "size": 7651439,
+     "sha512": "bb7360d6bcb13c68de634f43aecbb8c11283c4381ef9aa27b0e663918ff0df2042627afa6e7fc2e46eceee2f2899074dc606c2a649a52d1b1d359b650f7e6c81"
+    },
+    {
+     "version": "1.6.3",
+     "published": "2026-09-06",
+     "url": "https://cdn.modrinth.com/data/gMMDcC2d/versions/fO8gas7m/OneBlock-1.6.3.jar",
+     "size": 7649583,
+     "sha512": "9d3e2077a1ab550b0456f42ea8738e5ff15c5e37607277ac70df4ccb60fb8408fc7b3b40373ba159710e9dba7aa05616fe70748f70350e4e28f881ffe004f99a"
+    }
+   ]
+  },
+  {
+   "slug": "chunksmith",
+   "title": "Chunksmith",
+   "downloads": 251557,
+   "files": [
+    {
+     "version": "4.8.0+26.x-plugin",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/4BeAEBIb/versions/X3xpWAkq/chunksmith-4.8.0%2B26.x-plugin.jar",
+     "size": 573809,
+     "sha512": "0239d0c37e0524ac0ce201de8ccfb783a35eed6180a4269f4eac6911e322ee554bc934b2a280fe60f14ee9fdc21d87e79a311c1294a060de9893cc5006677ee4"
+    },
+    {
+     "version": "4.8.0+1.21.x-plugin",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/4BeAEBIb/versions/CqiiKrZl/chunksmith-4.8.0%2B1.21.x-plugin.jar",
+     "size": 573806,
+     "sha512": "960aa47775263f5b8948ecb2a88ad78fbb9e44853499ca23b753a5153ae285c7499aaf2e88787b1df8bc81c7d9a693b85801c7365b2f5a2bfadba79a23f48c33"
+    }
+   ]
+  },
+  {
+   "slug": "just-tpa",
+   "title": "Just TPA",
+   "downloads": 246270,
+   "files": [
+    {
+     "version": "20260625-0111",
+     "published": "2026-06-25",
+     "url": "https://cdn.modrinth.com/data/GM9AuKjX/versions/5hfMKnoW/just-tpa-20260625-0111.jar",
+     "size": 70649,
+     "sha512": "7451ee4dffb25c4ca6be886cc18524a42c14a7e39827223dfefb74214a8d2a3e8926d9864781a4e99a9f7f4906e5fe8d75d6b56f1d19dafd7e47a19e938af196"
+    },
+    {
+     "version": "20250220c",
+     "published": "2025-02-21",
+     "url": "https://cdn.modrinth.com/data/GM9AuKjX/versions/adbR7c5l/tpa-20250220c.jar",
+     "size": 62240,
+     "sha512": "f61ed2a6c79191455dfe932f4456ac2f6ce448aedaa2d5e6428df666c1fc654bbda7f0df4931d24e3a3cdae2488c865b324c5c23ecf68cfc7679bcfcaf165bca"
+    }
+   ]
+  },
+  {
+   "slug": "stairsit",
+   "title": "Sit",
+   "downloads": 243409,
+   "files": [
+    {
+     "version": "2.0",
+     "published": "2026-11-06",
+     "url": "https://cdn.modrinth.com/data/tFLdoQMh/versions/UlPgR7YT/sit-2.0.0.jar",
+     "size": 127744,
+     "sha512": "eb2fe0df4830cca115aaac601fadf06ab0dbdd4aa709981a5ff2cc28206ba486e45f0b0ab407afbd789cbaf4ee208c1103752691394082a006a3a5dd1e04fd9d"
+    },
+    {
+     "version": "1.7.3",
+     "published": "2026-04-09",
+     "url": "https://cdn.modrinth.com/data/tFLdoQMh/versions/WGo5rkE0/sit-1.7.3.jar",
+     "size": 72925,
+     "sha512": "475a5aa494aa12631a8d890451f9353582fcfb91621d91b081d2a0f1a55f28e5aeac520981218b779658afaade15310a75074d74cf1e015014c05a72938d1b06"
+    }
+   ]
+  },
+  {
+   "slug": "customcrafting",
+   "title": "CustomCrafting",
+   "downloads": 242106,
+   "files": [
+    {
+     "version": "4.19.1.0",
+     "published": "2025-09-21",
+     "url": "https://cdn.modrinth.com/data/qmTmOySQ/versions/6IfsAObT/customcrafting-spigot-4.19.1.0.jar",
+     "size": 1289399,
+     "sha512": "397c8839fd7d45637870e99a5be21f49e8790fc932367de96325a3b1e7573b491ccdd2d562e875d32099a67d70950052f4fad97bee2bdc0de37cf7b39f6bd2c7"
+    },
+    {
+     "version": "4.19.0.2",
+     "published": "2025-09-04",
+     "url": "https://cdn.modrinth.com/data/qmTmOySQ/versions/O6TcRztG/customcrafting-spigot-4.19.0.2.jar",
+     "size": 1287966,
+     "sha512": "b01dba027b17bc29399313a4ffcce7447219c99119c569e824ab0a622881ccdce925bf1b38e108c72c68641a239abaf86ff28dbb052996582afd62f8230a9e8c"
+    }
+   ]
+  },
+  {
+   "slug": "huskhomes",
+   "title": "HuskHomes",
+   "downloads": 237760,
+   "files": [
+    {
+     "version": "4.11.1",
+     "published": "2026-10-29",
+     "url": "https://cdn.modrinth.com/data/J6U9o3JG/versions/kY52YCNm/HuskHomes-Paper-4.11.1.jar",
+     "size": 2307738,
+     "sha512": "a2539088cd0647fee6f7380ce2eeae5bb43c614922b9bf7111f0e6855e62811eb367095451794b3561a7a94f21f89e361bd9dab14c06432ce5598f330fd64602"
+    },
+    {
+     "version": "4.11",
+     "published": "2026-08-14",
+     "url": "https://cdn.modrinth.com/data/J6U9o3JG/versions/MznzQDLE/HuskHomes-Paper-4.11.jar",
+     "size": 2307272,
+     "sha512": "c039b4235a7fc126d064b6b1853a88748de6148275d5622e9243b9e3be916266533040e99e42a5bc96adaea1a63ccc59f0653d4d95b5ee986860680998d63076"
+    }
+   ]
+  },
+  {
+   "slug": "griefprevention",
+   "title": "GriefPrevention",
+   "downloads": 235431,
+   "files": [
+    {
+     "version": "16.18.8",
+     "published": "2026-11-01",
+     "url": "https://cdn.modrinth.com/data/O4o4mKaq/versions/MtwPHMAS/GriefPrevention.jar",
+     "size": 384582,
+     "sha512": "248edc681e94fe333aa4262b4e8858e9e8f79e7e4872a76348ff6df213cc56e6069eea9916c5c4e6476b1513575f0d45db76c91526f5dc032e02b8806341b9e9"
+    },
+    {
+     "version": "16.18.7",
+     "published": "2026-03-05",
+     "url": "https://cdn.modrinth.com/data/O4o4mKaq/versions/dGfCZHqk/GriefPrevention.jar",
+     "size": 380232,
+     "sha512": "c9bc692253ba3860327e5c38767ce3dc66c798264fe650a08b4ae888337ff75bc16e9bd1db7b39a514a275bf2cc2a3f1f8cd95cf080b89ae42a0f684fc2bfc66"
+    }
+   ]
+  },
+  {
+   "slug": "smartspawner",
+   "title": "SmartSpawner",
+   "downloads": 232387,
+   "files": [
+    {
+     "version": "1.9.0",
+     "published": "2026-10-28",
+     "url": "https://cdn.modrinth.com/data/9tQwxSFr/versions/1DHK0j7H/SmartSpawner-1.9.0.jar",
+     "size": 1954120,
+     "sha512": "7c66405096acb5c08c3c1121a70f150bdbbade3a1dc1ad10ee9ea040d41e0110c55c64d17f67cd8702d26cf97539aaff072f50b5011dd2ceddf696b914230ab6"
+    },
+    {
+     "version": "1.8.3",
+     "published": "2026-10-05",
+     "url": "https://cdn.modrinth.com/data/9tQwxSFr/versions/47df3bzh/SmartSpawner-1.8.3.jar",
+     "size": 1908607,
+     "sha512": "446de485af4c98615c2f4d4f4f70bd066944245ded9080756e7c44bfd89c2f4d18bf51b0963b0aee965855f864ea25e1b6886d5a35db3d0c59db5a7b6b97da9b"
+    }
+   ]
+  },
+  {
+   "slug": "essentialsx-chat-module",
+   "title": "EssentialsX Chat",
+   "downloads": 230745,
+   "files": [
+    {
+     "version": "2.22.0",
+     "published": "2026-05-31",
+     "url": "https://cdn.modrinth.com/data/2qgyQbO1/versions/2k7YvKOk/EssentialsXChat-2.22.0.jar",
+     "size": 21800,
+     "sha512": "93d60889a463475f2a7ce204115f8f0cfb4be0347e6c060774cd4734ec0ba036c5789b0eef183cca735069063698ae99301056556f0511fb8e80eb0545366cd1"
+    },
+    {
+     "version": "2.21.2",
+     "published": "2025-08-03",
+     "url": "https://cdn.modrinth.com/data/2qgyQbO1/versions/BdLUtz0O/EssentialsXChat-2.21.2.jar",
+     "size": 21626,
+     "sha512": "810038dea2d3d70e83370b3a06285b9c39a54931fabeeead4fc154859cb6fe44e190f8c0ef50f17cfeb96221cb7b63699f55f2bc986a83ce077ab0e60f96742f"
+    }
+   ]
+  },
+  {
+   "slug": "auraskills",
+   "title": "AuraSkills",
+   "downloads": 230609,
+   "files": [
+    {
+     "version": "2.4.0",
+     "published": "2026-09-20",
+     "url": "https://cdn.modrinth.com/data/uDdZAVls/versions/9rSJ3THD/AuraSkills-2.4.0.jar",
+     "size": 3862638,
+     "sha512": "47b9cd79efcb244f93e839abd8f5f27dce6945ca8ee23590d3fca194326defada28fe3b95d210b1f7ae5923d6c9dee53db3f62236a6a463c0d9c5f270bd18e77"
+    },
+    {
+     "version": "2.3.12",
+     "published": "2026-04-06",
+     "url": "https://cdn.modrinth.com/data/uDdZAVls/versions/QOb8ZzmE/AuraSkills-2.3.12.jar",
+     "size": 4980433,
+     "sha512": "baceed31fca3817fbeee58e9de86bc7d2eff273ae4208aba7d7e5a95941fa5bbf0439eb3ece4a261135d669fc6575433ef8c40ac0830ff3138eba4cd64aeba27"
+    }
+   ]
+  },
+  {
+   "slug": "itemedit",
+   "title": "ItemEdit",
+   "downloads": 230255,
+   "files": [
+    {
+     "version": "4.0.0",
+     "published": "2026-10-27",
+     "url": "https://cdn.modrinth.com/data/yx81EHRu/versions/nuMvfWI2/ItemEdit-4.0.0.jar",
+     "size": 677623,
+     "sha512": "55cea685c65fbc3af3c686920a6f55616b9aa4f1f01cd6a7a3b850b0d608bab425e0ea8ad6b103cf97397f3a84c86794e452ca8a84040a069c24df1442d4e82b"
+    },
+    {
+     "version": "3.7.10",
+     "published": "2026-06-27",
+     "url": "https://cdn.modrinth.com/data/yx81EHRu/versions/ODZyheTG/ItemEdit-3.7.10.jar",
+     "size": 565120,
+     "sha512": "fe99b786afdafb2465164c3a5b91ee9307aad7bad5d95b4308e9aa550b26a11e03e2763a751793aef5ae08256cdbb18d4db7b9492198132365ce26de73af643e"
+    }
+   ]
+  },
+  {
+   "slug": "orebfuscator",
+   "title": "Orebfuscator",
+   "downloads": 225669,
+   "files": [
+    {
+     "version": "5.6.2",
+     "published": "2026-09-19",
+     "url": "https://cdn.modrinth.com/data/XY7PHeei/versions/ACrIxTN8/orebfuscator-bukkit-5.6.2.jar",
+     "size": 5570811,
+     "sha512": "8dfc351cd6111f56da15b9a3f12801affa8c0a6a2318d25b6ecbd17abd8e9fa7c575008c8e2722182a574617e501412543b0eedcc3d1147c77619a760936a00d"
+    },
+    {
+     "version": "5.6.1",
+     "published": "2026-06-16",
+     "url": "https://cdn.modrinth.com/data/XY7PHeei/versions/pIlLMUO7/orebfuscator-plugin-5.6.1.jar",
+     "size": 4667454,
+     "sha512": "fda045b8772b98e1c31b7bfb136b3a9fca90d21b33777d598d07cd2f1be3c7f15003ce359a0341d8c1956e47ab6648f87609d2e3b9691f13306effa42853d61a"
+    }
+   ]
+  },
+  {
+   "slug": "bigger-stack-size",
+   "title": "Bigger Stack Size",
+   "downloads": 220562,
+   "files": [
+    {
+     "version": "v.2.5.2+plugin",
+     "published": "2026-11-04",
+     "url": "https://cdn.modrinth.com/data/sypq9eA6/versions/EcTRnKA0/bigger-stack-size-v.2.5.2-paper.jar",
+     "size": 221137,
+     "sha512": "2186a66a7697b33b1fb4c5ecd6ccde706755930ca45dc95880a9564cfb9ad47e360752b30cc1b86a7f7ab155ba26c5b613ee16d4bf8f842c5dab8f13507b20f2"
+    }
+   ]
+  },
+  {
+   "slug": "otterlib",
+   "title": "OtterLib",
+   "downloads": 217747,
+   "files": [
+    {
+     "version": "0.4.0.1+26.2",
+     "published": "2026-08-24",
+     "url": "https://cdn.modrinth.com/data/zVVpzurY/versions/syzBi0rF/otterlib-0.4.0.1%2B26.2-spigot.jar",
+     "size": 60539,
+     "sha512": "569315ce623844c8c7b4712d44d9f320d82e7c97668928df1572de09c75e0b5461a09acb852626219cf9cfb30bdd65f9fd4cdb589dec3fb77fbd2d83e7f3841f"
+    },
+    {
+     "version": "0.4.0.1+26.2",
+     "published": "2026-08-24",
+     "url": "https://cdn.modrinth.com/data/zVVpzurY/versions/oxZLx3yz/otterlib-0.4.0.1%2B26.2-paper.jar",
+     "size": 61248,
+     "sha512": "dbcb48ee43323ad1d65b4ada22ebbda6cc5aeed6fb41db4c19240e83d3599345eecb2d3a4bac0d49eafa004c97ca91bf3f19f33298cbd151177133f6351a25cb"
+    }
+   ]
+  },
+  {
+   "slug": "essentialsx-spawn",
+   "title": "EssentialsX Spawn",
+   "downloads": 216401,
+   "files": [
+    {
+     "version": "2.22.0",
+     "published": "2026-05-31",
+     "url": "https://cdn.modrinth.com/data/sYpvDxGJ/versions/lc5JHiNJ/EssentialsXSpawn-2.22.0.jar",
+     "size": 18661,
+     "sha512": "7097478ec02bc46e1dce326520e7dd0cf38bcce0f7810c1c89cfcc2fef8a88a7dc27c5a946d1256abad589185c5015c615e2cb4eab181ea7362428fac581b964"
+    },
+    {
+     "version": "2.21.2",
+     "published": "2025-08-03",
+     "url": "https://cdn.modrinth.com/data/sYpvDxGJ/versions/RVbLg2Am/EssentialsXSpawn-2.21.2.jar",
+     "size": 18622,
+     "sha512": "9f397a20a15fdf96b9abebb226f530d5f4fc77bf92a3823749328d27ef9db7a348b6bfb6d46c819b4770e929177af147f962f07e660cc913d628d4d41f5708bd"
+    }
+   ]
+  },
+  {
+   "slug": "axgraves",
+   "title": "AxGraves",
+   "downloads": 215871,
+   "files": [
+    {
+     "version": "1.32.2",
+     "published": "2026-11-02",
+     "url": "https://cdn.modrinth.com/data/Cz6msz34/versions/MdUKntqn/AxGraves-1.32.2.jar",
+     "size": 3919412,
+     "sha512": "f2e528e558d027da18f9a442a80cc74b083d1c6c74b4a914b22385df8709c3e6bf8697fc032fa5cd8137e5b81c09e958bb7fdd8c34f1bac6558137736ce75f41"
+    },
+    {
+     "version": "1.32.1",
+     "published": "2026-09-26",
+     "url": "https://cdn.modrinth.com/data/Cz6msz34/versions/UlEYAsey/AxGraves-1.32.1.jar",
+     "size": 3917830,
+     "sha512": "84e9e9e3ead5a720a3608f8fca6a1e4ef137ad0036f6af3f50fbb37f17960dcc3014825d4625e01e9b24361f3e6d3aea76d2e442f6517dd77c85f8e66d1b1d73"
+    }
+   ]
+  },
+  {
+   "slug": "clearlag-plus-plus",
+   "title": "ClearLag++",
+   "downloads": 212432,
+   "files": [
+    {
+     "version": "2.0.1",
+     "published": "2026-11-11",
+     "url": "https://cdn.modrinth.com/data/7bhTp28M/versions/vJ1OCsT9/ClearLag-2.0.1-VER-1.18-26.3.jar",
+     "size": 318072,
+     "sha512": "25ef3239066fccbeda542ec4074ed36179d630be7f0b28199ed5ba2a11cb694b51c3ac920541e350c39a4805a6dbae7fdbec45622281477d4d27224cff1ada62"
+    },
+    {
+     "version": "2.0.0",
+     "published": "2026-11-05",
+     "url": "https://cdn.modrinth.com/data/7bhTp28M/versions/mcnr5BzA/ClearLag-2.0.0-VER-1.18-26.3.jar",
+     "size": 317810,
+     "sha512": "0742cb70dbdab13ef4a8df494718578c306acbcdd4035cdd1e5a1778da288c56cdcfe11510af31ad7867e37047d45d9f5cdd3adde26fa9d400174079b4e671b0"
+    }
+   ]
+  },
+  {
+   "slug": "journeymap-teams",
+   "title": "JourneyMap Teams",
+   "downloads": 211514,
+   "files": [
+    {
+     "version": "26.3-1.3.1+paper",
+     "published": "2026-09-19",
+     "url": "https://cdn.modrinth.com/data/EV5wjtvP/versions/lYP8N7ON/JourneyMap-Teams-paper-26.3-1.3.1.jar",
+     "size": 255374,
+     "sha512": "57bdd0e7d4fb5a5e7a6dd3d50adacfde773d17324f28e886ce6414059658780f3ce68e8c4fb2fcb4e75611ee589339ae30efcaf283430bcb7fb318cb096b4d00"
+    },
+    {
+     "version": "26.1.2-1.3.1+paper",
+     "published": "2026-07-09",
+     "url": "https://cdn.modrinth.com/data/EV5wjtvP/versions/mloTP9Gz/JourneyMap-Teams-paper-26.1.2-1.3.1.jar",
+     "size": 255282,
+     "sha512": "04c3b92b0bad88d18f5cb1c448faae45685935c26197462ecca0aecab0c7a4d9b45261e7c4a51d049e916942083519f9748309f4c7425bd0ee5e0a44f3aaec16"
+    }
+   ]
+  }
+ ]
+}
