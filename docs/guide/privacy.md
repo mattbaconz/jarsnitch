@@ -11,7 +11,7 @@ When you open the page, once:
 - `jarsnitch.wasm`, the analyzer itself.
 - The two sample jars, SampleShop 1.4.0 and 1.4.1, a few KB each, so the sample buttons work offline too.
 
-› jarsnitch.wasm 0.2.0: 213 KB over the network with brotli · docs/benchmarks.md, 13 Nov 2026
+› jarsnitch.wasm 0.2.1: about 216 KB over the network with brotli · measured on the live site, 14 Nov 2026
 
 After that, nothing. Scanning, comparing and **Download JSON** all happen in the tab: the JSON file is built from memory and handed to your browser's own download. These docs are ordinary separate pages with no scripts.
 

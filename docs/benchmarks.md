@@ -32,7 +32,7 @@ Native CLI, one thread, wall time including process start.
 | Customizable Player Models | 3 MB | 0.58 s |
 | DiscordSRV | 11 MB | 0.58 s |
 
-The website runs the same engine compiled to WebAssembly. In Node v26.10.0 (V8, the JavaScript engine in Chrome) it scans the same 100 jars in 14.14 s, Geyser in 1.69 s. The deployed 0.2.0 `jarsnitch.wasm` is 213 KB over the network (brotli). The Windows CLI is a single binary under 1 MB and needs no Java.
+The website runs the same engine compiled to WebAssembly. In Node v26.10.0 (V8, the JavaScript engine in Chrome) it scans the same 100 jars in 14.14 s, Geyser in 1.69 s. The deployed 0.2.1 `jarsnitch.wasm` is about 216 KB over the network (brotli, measured on the live site on 14 Nov 2026). The Windows CLI is a single binary under 1 MB and needs no Java.
 
 › jarsnitch 0.2.1 · native CLI on one thread, WebAssembly in Node v26.10.0 · median of 3 runs · Ryzen 7 7735HS · 13 Nov 2026
 

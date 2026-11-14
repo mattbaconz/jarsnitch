@@ -306,7 +306,7 @@ rustup target add wasm32-unknown-unknown
 ./scripts/build-web.sh
 ```
 
-On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 650 KB; the deployed 0.2.0 build is 213 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
+On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 660 KB; the deployed 0.2.1 build is about 216 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
 
 ```bash
 node scripts/check-web.mjs

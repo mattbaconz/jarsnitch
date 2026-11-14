@@ -12,7 +12,7 @@ jarsnitch runs in two places: a web page that reads the jar inside your browser 
 
 The page loads its own files once, including the analyzer compiled to WebAssembly, and makes no request after that. Your jar is read inside the tab and never uploaded. [Privacy](privacy.md) shows how to check that yourself.
 
-› analyzer download: jarsnitch.wasm 0.2.0, 213 KB with brotli · docs/benchmarks.md, 13 Nov 2026
+› analyzer download: jarsnitch.wasm 0.2.1, about 216 KB with brotli · measured on the live site, 14 Nov 2026
 
 The page is tested in the Chromium, Firefox and WebKit engines. Safari as Apple ships it hasn't been tested yet.
 
