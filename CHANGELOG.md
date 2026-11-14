@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 - 2026-11-14
+
+- [added] Call paths. Each finding the plugin's entry points reach carries one call path from an entry point to the code, with how each step leads to the next: entry, call, callback, static initializer or reflection. In the JSON it's `path` on each finding, and each evidence entry has its own `reached`. Severity, counts and exit codes don't change.
+- [added] On the website, each card for a single finding has a trail: the call path from an entry point to the call or text that matched, or, without one, the place in the jar, with a "no caller" break when nothing calls the code. Findings of one rule that differ only in value, such as hosts, share a card that lists the values instead. Each report also has a "Where in the jar" section with a call graph meter and a tree of the packages, classes and files with findings, one mark per rule: solid when reached, hollow when not called, a circle for what the call graph doesn't cover.
+- [fixed] A finding with reached code is now marked reached even when another of its places isn't code the call graph covers, such as a class in a nested jar. Before, it got `reached: null` and didn't move with the reached findings.
+- [fixed] Which methods a virtual call reaches no longer depends on whether the scan meets the call or the object's creation first. A call on a subclass now always reaches the superclass method it may land on, and a call through an interface reaches a method the created class inherits from a superclass, which 0.2.1 missed when the object was created before the call.
+- [changed] The website's main page is now just the tool. The longer sections that were on it, such as how a finding is made, the top 100 numbers and the command line, are in the docs.
+
 ## 0.2.1 - 2026-11-14
 
 - [fixed] Descriptors written as JSON, which YAML allows (some build tools write `paper-plugin.yml` that way), are read properly. 0.2.0 read their values with the quotes and commas left in, so it reported a missing main class and built no call graph.
