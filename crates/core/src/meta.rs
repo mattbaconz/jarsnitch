@@ -24,7 +24,11 @@ pub fn platform_for(path: &str) -> Option<&'static str> {
 pub fn descriptor(path: &str, text: &str) -> Option<PluginInfo> {
     let platform = platform_for(path)?;
     let mut info = match platform {
-        "bukkit" | "paper" | "bungee" => yaml_descriptor(text),
+        // YAML includes JSON, and some build tools write descriptors that way.
+        "bukkit" | "paper" | "bungee" => match serde_json::from_str::<serde_json::Value>(text) {
+            Ok(serde_json::Value::Object(map)) => json_descriptor(&map),
+            _ => yaml_descriptor(text),
+        },
         "velocity" => {
             let v: serde_json::Value = serde_json::from_str(text).ok()?;
             let deps = |optional: bool| -> Vec<String> {
@@ -211,7 +215,12 @@ pub fn yaml_descriptor(text: &str) -> PluginInfo {
         }
         path.push((indent, key));
     }
-    // A plugin listed in both `server` and `bootstrap` is required if either says so.
+    paper_dependencies(&mut d, paper);
+    d
+}
+
+/// A plugin listed in both `server` and `bootstrap` is required if either says so.
+fn paper_dependencies(d: &mut PluginInfo, paper: Vec<(String, bool)>) {
     for (name, _) in paper.iter().filter(|(_, required)| *required) {
         add(&mut d.dependencies, name.clone());
     }
@@ -220,6 +229,47 @@ pub fn yaml_descriptor(text: &str) -> PluginInfo {
             add(&mut d.optional_dependencies, name);
         }
     }
+}
+
+/// The same keys as [`yaml_descriptor`], from a descriptor written as JSON.
+fn json_descriptor(map: &serde_json::Map<String, serde_json::Value>) -> PluginInfo {
+    use serde_json::Value;
+    let text = |v: &Value| match v {
+        Value::String(s) => s.clone(),
+        Value::Number(n) => n.to_string(),
+        Value::Bool(b) => b.to_string(),
+        _ => String::new(),
+    };
+    let keys = |v: &Value| v.as_object().map(|m| m.keys().cloned().collect()).unwrap_or_default();
+    let mut d = PluginInfo::default();
+    let mut paper = Vec::new();
+    for (key, value) in map {
+        match key.as_str() {
+            "name" => d.name = some(text(value)),
+            "version" => d.version = some(text(value)),
+            "main" => d.main = some(text(value)),
+            "bootstrapper" => d.bootstrapper = some(text(value)),
+            "loader" => d.loader = some(text(value)),
+            "author" => add(&mut d.authors, text(value)),
+            "website" => d.website = some(text(value)),
+            "folia-supported" => d.folia_supported = text(value).eq_ignore_ascii_case("true"),
+            "commands" => d.commands = keys(value),
+            "permissions" => d.permissions = keys(value),
+            "dependencies" => {
+                for group in ["bootstrap", "server"] {
+                    for (name, dep) in value[group].as_object().into_iter().flatten() {
+                        paper.push((name.clone(), dep["required"].as_bool() != Some(false)));
+                    }
+                }
+            }
+            _ => {
+                if let Some(list) = list_field(&mut d, key) {
+                    value.as_array().into_iter().flatten().for_each(|item| add(list, text(item)));
+                }
+            }
+        }
+    }
+    paper_dependencies(&mut d, paper);
     d
 }
 
@@ -327,6 +377,11 @@ mod tests {
 
         let b = descriptor("bungee.yml", "name: X\nauthor: Ann\ndepends: [A]\nsoftDepends: [B]\n").unwrap();
         assert_eq!((b.authors, b.dependencies, b.optional_dependencies), (vec!["Ann".to_string()], vec!["A".to_string()], vec!["B".to_string()]));
+
+        let paper_json = "{\n  \"name\": \"x\",\n  \"main\": \"a.B\",\n  \"authors\": [\"Ann\"],\n  \"website\": \"https://x.example.com\",\n  \"dependencies\": {\"server\": {\"Vault\": {\"required\": false}, \"Core\": {}}}\n}\n";
+        let j = descriptor("paper-plugin.yml", paper_json).unwrap();
+        assert_eq!((j.name.as_deref(), j.main.as_deref(), j.website.as_deref()), (Some("x"), Some("a.B"), Some("https://x.example.com")));
+        assert_eq!((j.authors, j.dependencies, j.optional_dependencies), (vec!["Ann".to_string()], vec!["Core".to_string()], vec!["Vault".to_string()]));
 
         let json = r#"{"id":"x","authors":["Ann"],"url":"https://x.example.com","dependencies":[{"id":"luckperms"},{"id":"geyser","optional":true}]}"#;
         let v = descriptor("velocity-plugin.json", json).unwrap();
