@@ -4,7 +4,7 @@
 mod common;
 
 use common::*;
-use jarsnitch_core::{RULES, Severity};
+use jarsnitch_core::{RULES, Report, Severity};
 
 /// Fixture name, rules it must trigger, rules it must not trigger.
 const EXPECT: &[(&str, &[&str], &[&str])] = &[
@@ -40,6 +40,8 @@ const EXPECT: &[(&str, &[&str], &[&str])] = &[
     ("net-socket", &["net.socket"], &[]),
     ("obf-score", &["obf.score"], &[]),
     ("proc-exit", &["proc.exit"], &[]),
+    ("reach-dispatch", &["str.url"], &[]),
+    ("reach-order", &["str.url"], &[]),
     ("reach-paths", &["str.url"], &[]),
     ("reflect-indirect", &["reflect.indirect", "exec.process"], &[]),
     ("sample-v1", &["mc.console-command", "net.http", "str.url", "net.socket"], &["corr.download-and-run", "corr.hidden-command"]),
@@ -174,6 +176,53 @@ fn reachability() {
     assert_eq!(reached("corr.download-and-run"), Some(true));
     assert_eq!(reached("corr.hidden-command"), Some(true));
     assert_eq!(reached("net.socket"), Some(false));
+
+    // One call path per reached finding, entry point first, each step saying how the one
+    // before leads to it.
+    let path = |r: &Report, rule: &str, value: Option<&str>| -> Vec<String> {
+        let f = r.findings.iter().find(|f| f.rule == rule && f.value.as_deref() == value).unwrap();
+        f.path.iter().map(|s| format!("{}.{} {:?}", s.location, &s.method[..s.method.find('(').unwrap()], s.via)).collect()
+    };
+    assert_eq!(path(&r, "mc.set-op", None), ["example/sampleshop/SampleShop.onEnable Entry", "example/sampleshop/ChatListener.onChat Callback"]);
+    assert_eq!(path(&r, "corr.download-and-run", None), ["example/sampleshop/SampleShop.onEnable Entry", "example/sampleshop/AddonLoader.load Call"]);
+    // Class-wide evidence takes the class's shortest path that isn't a constructor.
+    assert_eq!(path(&r, "corr.hidden-command", None), ["example/sampleshop/SampleShop.onEnable Entry", "example/sampleshop/ChatListener.onChat Callback"]);
+    assert!(path(&r, "net.socket", None).is_empty());
+    let r = scan("reach-paths.jar", &fixture("reach-paths"));
+    for (host, last) in [
+        ("by-name.example.invalid", "fixture/ByName.host Reflection"),
+        ("lambda.example.invalid", "fixture/Main.lambda$onEnable$0 Call"),
+        ("listener.example.invalid", "fixture/Events.onJoin Callback"),
+        ("static-init.example.invalid", "fixture/Config.<clinit> StaticInit"),
+        ("tostring.example.invalid", "fixture/Overrider.toString Callback"),
+        ("virtual.example.invalid", "fixture/TaskImpl.run Call"),
+    ] {
+        assert_eq!(path(&r, "str.url", Some(host)), ["fixture/Main.onEnable Entry", last], "{host}");
+    }
+    assert!(path(&r, "str.url", Some("unused.example.invalid")).is_empty());
+
+    // The step before is the code that makes the call or lists the methods, not the one
+    // that happens to create the object, whichever the scan meets first.
+    let r = scan("reach-order.jar", &fixture("reach-order"));
+    let entry = "fixture/Main.onEnable Entry";
+    let listing = "fixture/Main.register Call";
+    for (host, want) in [
+        ("late-call.example.invalid", vec![entry, "fixture/TaskImpl.run Call"]),
+        ("supertype.example.invalid", vec![entry, "fixture/Base.foo Call"]),
+        ("listed.example.invalid", vec![entry, listing, "fixture/Plain.secret Reflection"]),
+        ("listed-late.example.invalid", vec![entry, listing, "fixture/Late.secret Reflection"]),
+        ("listed-static.example.invalid", vec![entry, listing, "fixture/Commands.helper Reflection"]),
+    ] {
+        assert_eq!(path(&r, "str.url", Some(host)), want, "{host}");
+    }
+    let shared = path(&r, "str.url", Some("shared.example.invalid"));
+    assert_eq!(shared.last().map(String::as_str), Some("fixture/Shared.shared Call"), "{shared:?}");
+
+    // A call on an interface lands on a method the created class inherits from a superclass
+    // that doesn't implement the interface, whether the call or the `new` comes first.
+    let r = scan("reach-dispatch.jar", &fixture("reach-dispatch"));
+    assert_eq!(path(&r, "str.url", Some("inherited.example.invalid")), [entry, "fixture/AbstractModule.start Call"]);
+    assert_eq!(path(&r, "str.url", Some("inherited-late.example.invalid")), [entry, "fixture/Main.serveAll Call", "fixture/AbstractService.serve Call"]);
 
     // No plugin main class: nothing to start from.
     let r = scan("meta-no-descriptor.jar", &fixture("meta-no-descriptor"));

@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "code.load: java/net/URLClassLoader.<init> (in fixture/Load.run)"
+          "detail": "code.load: java/net/URLClassLoader.<init> (in fixture/Load.run)",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "net.http: java/net/URL.openConnection (in fixture/Fetch.get)"
+          "detail": "net.http: java/net/URL.openConnection (in fixture/Fetch.get)",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "code.load",
@@ -80,11 +84,13 @@ expression: report
         {
           "location": "fixture/Load",
           "method": "run(Ljava/net/URL;)V",
-          "detail": "java/net/URLClassLoader.<init>"
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "net.http",
@@ -97,11 +103,13 @@ expression: report
         {
           "location": "fixture/Fetch",
           "method": "get()Ljava/net/URL;",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -114,11 +122,13 @@ expression: report
         {
           "location": "fixture/Fetch",
           "method": "get()Ljava/net/URL;",
-          "detail": "https://cdn.example.invalid/addon.jar"
+          "detail": "https://cdn.example.invalid/addon.jar",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

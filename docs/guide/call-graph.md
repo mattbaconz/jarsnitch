@@ -44,9 +44,48 @@ NOTABLE  Can open raw network connections   [net.socket]
 
 › real output: jarsnitch 0.2.1, lines 4–5 and the last finding of the full report in [Read a report](report.md#the-command-line-report-line-by-line)
 
+## Call paths
+
+Each reached finding carries one call path: the methods that lead from an entry point to the code where the finding is. The website draws it as the finding's [trail](report.md#the-trail), and the JSON has it as [`path`](json.md#a-step).
+
+### How the path is chosen
+
+- While it walks the graph, jarsnitch notes for every method it reaches the method whose code reached it first, and how. Following those notes back from the finding's code gives the path, entry point first.
+- The walk's work list is first in, first out: it handles every method one step from the entry points before any method two steps away, and so on. So the path it keeps is a short one.
+- The path goes to the first reached place in the finding's evidence that has one. If that place comes after the first 50, it takes the 50th spot in `evidence`, so the path always ends at a place the report lists.
+- The step before a method is the code that leads to it: the method that makes the call, creates the object, uses the class or lists the methods. When a call and the object it lands on are in different methods, the call is the step before, wherever the object was created.
+- A class whose static fields are used but none of whose methods run is reached without a path: there's no method to end it at.
+- Some evidence covers a whole class, like `corr.hidden-command`. Its path goes to the method of that class with the shortest path, leaving out constructors and static initializers unless nothing else in the class is reached.
+- It's one path, not every path. Code reached in several ways shows only the first way found.
+
+### The five kinds of step
+
+| Step | In the JSON | Meaning |
+|---|---|---|
+| entry | `entry` | The server starts the plugin here: its main class, or a class it declares. Always the first step. |
+| calls | `call` | A direct call, or a call through an interface or superclass. |
+| callback | `callback` | The server, a library or the JVM calls it on an object the step before creates: an event handler, a command executor, `run()`, `toString()`. |
+| static init | `static-init` | Using a class runs its static initializer. |
+| reflection | `reflection` | The step before names the class for reflection, or lists its methods. |
+
+In SampleShop 1.4.1 the server calls `onEnable` on the main class, so every path starts there. `onEnable` creates a `ChatListener`, which is a Bukkit `Listener`, so the server calls its `@EventHandler` method `onChat` back. `onEnable` also calls `AddonLoader.load` itself.
+
+| Finding | Path |
+|---|---|
+| `mc.set-op` | `SampleShop.onEnable` (entry), then `ChatListener.onChat` (callback) |
+| `corr.download-and-run` | `SampleShop.onEnable` (entry), then `AddonLoader.load` (calls) |
+| `corr.hidden-command` | `SampleShop.onEnable` (entry), then `ChatListener.onChat` (callback): its evidence covers the whole `ChatListener` class |
+| `net.socket` | none: nothing calls `TcpClient.connect` |
+
+› real output: jarsnitch 0.3.0, `scan SampleShop-1.4.1.jar --json`, the `path` of each finding, classes without their package `example/sampleshop/`
+
+Real plugins often have longer paths. In the 100 most-downloaded plugins on Modrinth, all 829 reached findings have a path, from 1 to 15 steps long, with a median of 4.
+
+› Modrinth top 100, latest releases · jarsnitch 0.3.0 · 14 Nov 2026
+
 ## When there's no graph
 
-Without a descriptor entry point there's nothing to start from: mods, libraries and API jars, or a plugin whose main class is missing from the jar (`meta.missing-main`). Then `reachability` is `null` in the JSON, every finding's `reached` is `null`, and nothing is marked not called.
+Without a descriptor entry point there's nothing to start from: mods, libraries and API jars, or a plugin whose main class is missing from the jar (`meta.missing-main`). Then `reachability` is `null` in the JSON, every finding's `reached` is `null`, every `path` is empty, and nothing is marked not called.
 
 `reached` is also `null` for findings that aren't about code: resources, nested jars and the jar as a whole. The graph covers the top-level jar's own classes, not nested jars or decoded code.
 
@@ -56,7 +95,7 @@ Three High rules (`corr.download-and-run`, `corr.command-and-network` and `corr.
 
 ## It never changes a severity
 
-Reachability affects the order of findings and the "not called" mark, nothing else. Severity, counts and exit codes are the same as if every method were reached.
+Reachability affects the order of findings, the "not called" mark and the call paths, nothing else. Severity, counts and exit codes are the same as if every method were reached.
 
 ## In the top 100 plugins
 

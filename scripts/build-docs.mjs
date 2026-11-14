@@ -394,10 +394,10 @@ function render(lines, ctx) {
   return out.join("\n");
 }
 
-// The site's own header: the same CSP, logo mark and nav as web/index.html.
+// The site's own header: the same CSP, logo and nav as web/index.html.
 const index = read("web/index.html");
 const CSP = index.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/)[1];
-const MARK = index.match(/<!--logo:mark-->([\s\S]*?)<!--\/logo:mark-->/)[1];
+const LOCKUP = index.match(/<!--logo:lockup-->([\s\S]*?)<!--\/logo:lockup-->/)[1];
 const VERSION = read("Cargo.toml").match(/^version = "([^"]+)"/m)[1];
 const DISCLAIMER = "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.";
 
@@ -430,7 +430,7 @@ function shell(page, body, toc, prev, next) {
   <a class="skip" href="#main">Skip to content</a>
   <header class="bar">
     <div class="wrap">
-      <a class="brand" href="${root}">${MARK}<span class="brand-name">jarsnitch</span></a>
+      <a class="brand" href="${root}" aria-label="jarsnitch">${LOCKUP}</a>
       <nav class="nav" aria-label="Site">
         ${top.map(([t, p]) => `<a href="${docs(p)}"${p === page ? ' aria-current="page"' : t === "Docs" && !top.some(([, q]) => q === page) ? ' aria-current="true"' : ""}>${t}</a>`).join("\n        ")}
         <a href="${REPO}">GitHub</a>

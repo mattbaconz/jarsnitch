@@ -16,9 +16,9 @@ Findings are matched by rule and value (a host, an IP address, a webhook id, a p
 
 You can also drop both jars at once anywhere on the page. Two jars whose names share a stem before the version, like `Foo-1.9.jar` and `foo_2.0.jar`, are compared automatically, and so are any two jars dropped while the Compare tab is open. The older name goes on the left: version numbers are sorted as numbers, so `Foo-1.9.jar` comes before `Foo-1.10.jar`. A dropped folder is always scanned, never compared.
 
-**Try a sample update** compares SampleShop 1.4.0 with 1.4.1, a made-up update that names a new author and adds a downloader and a hidden operator command.
+**a sample update**, the link after **Try a sample plugin** under the drop zones, compares SampleShop 1.4.0 with 1.4.1, a made-up update that names a new author and adds a downloader and a hidden operator command.
 
-<!-- gif: site-compare | The jarsnitch page comparing the sample update SampleShop 1.4.0 to 1.4.1: the update adds 2 high, 3 notable and 2 info findings, the first High finding's locations open, and the Changes section shows a new author. -->
+<!-- gif: site-compare | The jarsnitch page comparing the sample update SampleShop 1.4.0 to 1.4.1: the update adds 2 high, 3 notable and 2 info findings, the first High finding shows its call path from onEnable to the matched code, and the Changes section shows a new author. -->
 
 ## On the command line
 

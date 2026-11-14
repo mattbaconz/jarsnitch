@@ -44,20 +44,6 @@ document.getElementById("tool")?.addEventListener("keydown", (e) => {
   tab.focus();
 });
 
-// Copy buttons: data-copy names the element whose text is copied.
-for (const button of document.querySelectorAll("[data-copy]")) {
-  button.addEventListener("click", async () => {
-    const text = document.getElementById(button.dataset.copy).textContent.trim();
-    try {
-      await navigator.clipboard.writeText(text);
-      button.textContent = "copied";
-    } catch {
-      button.textContent = "select it";
-    }
-    setTimeout(() => (button.textContent = "copy"), 1600);
-  });
-}
-
 // The read pass: a band sweeps the logo left to right and lights the pixels it
 // covers, and the pupil follows it. Decoration only. It runs only while the logo
 // is on screen, and not at all with reduced motion.

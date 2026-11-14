@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…"
+          "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -75,11 +78,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://discord.com/api/webhooks/"
+          "detail": "https://discord.com/api/webhooks/",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

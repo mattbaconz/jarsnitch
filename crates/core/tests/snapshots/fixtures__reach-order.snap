@@ -1,0 +1,263 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "reach-order.jar",
+    "size": 4801,
+    "sha256": "3d92886121429957b222f126fa3dffdadc00b055ce401228a04dd55c0bff47f1"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-reach-order",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "authors": [],
+      "website": null,
+      "commands": [],
+      "permissions": [],
+      "dependencies": [],
+      "optional_dependencies": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 21,
+    "reached_methods": 19,
+    "dynamic": false
+  },
+  "findings": [
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "late-call.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/TaskImpl",
+          "method": "run()V",
+          "detail": "https://late-call.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/TaskImpl",
+          "method": "run()V",
+          "via": "call"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "listed-late.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Late",
+          "method": "secret()V",
+          "detail": "https://listed-late.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "register()V",
+          "via": "call"
+        },
+        {
+          "location": "fixture/Late",
+          "method": "secret()V",
+          "via": "reflection"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "listed-static.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Commands",
+          "method": "helper()V",
+          "detail": "https://listed-static.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "register()V",
+          "via": "call"
+        },
+        {
+          "location": "fixture/Commands",
+          "method": "helper()V",
+          "via": "reflection"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "listed.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Plain",
+          "method": "secret()V",
+          "detail": "https://listed.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "register()V",
+          "via": "call"
+        },
+        {
+          "location": "fixture/Plain",
+          "method": "secret()V",
+          "via": "reflection"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "shared.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Shared",
+          "method": "shared()V",
+          "detail": "https://shared.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "register()V",
+          "via": "call"
+        },
+        {
+          "location": "fixture/Commands",
+          "method": "helper()V",
+          "via": "reflection"
+        },
+        {
+          "location": "fixture/Shared",
+          "method": "shared()V",
+          "via": "call"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "supertype.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Base",
+          "method": "foo()V",
+          "detail": "https://supertype.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Base",
+          "method": "foo()V",
+          "via": "call"
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 11,
+    "classes": 10,
+    "uncompressed_bytes": 4748
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

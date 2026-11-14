@@ -8,7 +8,7 @@ jarsnitch runs in two places: a web page that reads the jar inside your browser 
 2. Drop a plugin `.jar` on the page, or click the drop zone to choose one. No jar at hand? Press **Try a sample plugin**.
 3. The report appears under the drop zone. **Download JSON** saves the same report as a file.
 
-<!-- gif: site-scan | The jarsnitch page: SampleShop-1.4.1.jar is dropped on the Scan tab, the report shows 2 high, 4 notable and 5 info findings, and the first High finding's Found in list is opened. -->
+<!-- gif: site-scan | The jarsnitch page: SampleShop-1.4.1.jar is dropped on the Scan tab, the report shows 2 high, 4 notable and 5 info findings and a map of where they are in the jar, and clicking ChatListener on the map jumps to its finding's call path from onEnable to the matched code. -->
 
 The page loads its own files once, including the analyzer compiled to WebAssembly, and makes no request after that. Your jar is read inside the tab and never uploaded. [Privacy](privacy.md) shows how to check that yourself.
 
@@ -28,7 +28,7 @@ The page is tested in the Chromium, Firefox and WebKit engines. Safari as Apple 
 Check the install:
 
 ```out $ jarsnitch --version
-jarsnitch 0.2.1
+jarsnitch 0.3.0
 ```
 
 ## Your first scan
@@ -67,7 +67,7 @@ NOTABLE  Can open raw network connections   [net.socket]
 This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.
 ```
 
-› real output: jarsnitch 0.2.1, Windows · exit code 0
+› real output: jarsnitch 0.3.0, Windows · exit code 0
 
 The exit code is 0: the jar has no High finding. The one notable finding, a raw socket, sits in a bundled helper class that the plugin never calls, so it's listed last and marked. [Read a report](report.md) goes through every line.
 

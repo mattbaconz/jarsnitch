@@ -130,13 +130,47 @@ pub struct Finding {
     pub legit_uses: String,
     /// Host, IP, webhook id, path, class name or hash for value-carrying rules.
     pub value: Option<String>,
-    /// First 50 locations, sorted.
+    /// First 50 locations, sorted. When `path` leads to a later one, or there's no path and
+    /// the first reached location is a later one, that one takes the 50th place.
     pub evidence: Vec<Evidence>,
     pub evidence_total: usize,
     /// True when the plugin's entry points can reach at least one location, false when
-    /// every location is code they can't reach. None when it doesn't apply: a resource,
-    /// a nested jar, the jar as a whole, or no reachability for this jar.
+    /// every location is code they can't reach. None otherwise: no location is reached
+    /// and some are outside the call graph (a resource, a nested jar, the jar as a
+    /// whole), or there's no reachability for this jar.
     pub reached: Option<bool>,
+    /// When `reached` is true: one call path from an entry point to the first reached
+    /// location that has one, entry point first. Empty otherwise, and when the only
+    /// reached code is a class whose static fields are used but none of whose methods
+    /// run.
+    pub path: Vec<Step>,
+}
+
+/// One method on a call path.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Step {
+    /// Class internal name.
+    pub location: String,
+    /// Method name and descriptor.
+    pub method: String,
+    /// How the step before it leads here.
+    pub via: Via,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Via {
+    /// The server starts the plugin here: its main class, or a class it declares.
+    Entry,
+    /// A direct call, or a call through an interface or superclass.
+    Call,
+    /// The server, a library or the JVM calls it on an object the step before creates:
+    /// an event handler, a command executor, `run()`, `toString()`.
+    Callback,
+    /// Using a class runs its static initializer.
+    StaticInit,
+    /// The step before names the class for reflection, or lists its methods.
+    Reflection,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -146,6 +180,9 @@ pub struct Evidence {
     /// Method name and descriptor, when the evidence is inside a method.
     pub method: Option<String>,
     pub detail: String,
+    /// Whether the plugin's entry points reach this code. None when it doesn't apply, as
+    /// for the finding's `reached`.
+    pub reached: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize)]

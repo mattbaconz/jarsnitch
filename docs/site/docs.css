@@ -126,7 +126,9 @@
 
 /* Anatomy of a finding: the report's own card (web/style.css), numbered. Undo the prose styles. */
 .dg-card .finding { padding-top: 40px; }
-.prose .dg-card .why, .prose .dg-card .h4, .prose .dg-card .where code { color: var(--ink); }
+.prose .dg-card .why, .prose .dg-card .h4, .prose .dg-card .trail code { color: var(--ink); }
+.prose .dg-card .trail { padding: 0; }
+.prose .dg-card .trail li { margin: 0; }
 .prose .dg-card code { padding: 0; border: 0; background: none; }
 .prose .dg-card code:not(.rule) { font-size: 0.9em; }
 .prose .dg-card .rule { font-size: var(--t-label); color: var(--ink-3); }
@@ -149,7 +151,8 @@
 }
 .dg-card .finding-head > [data-pin]::after { left: 0; top: -30px; }
 .dg-card .finding-head > .rule[data-pin]::after { left: auto; right: 0; }
-.dg-card .finding > .unreached[data-pin]::after { top: 3px; }
+/* The "no caller" row has no node of its own, so its pin takes that place, in the gutter. */
+.dg-card .trail li[data-pin]::after { content: attr(data-pin); left: -30px; top: 1px; width: 20px; height: 20px; border: 0; }
 
 /* ── Benchmark bars ───────────────────────────────────────── */
 

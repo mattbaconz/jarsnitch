@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "",
           "method": null,
-          "detail": "short or garbled names 92%, default package 100%, encoded strings 100%"
+          "detail": "short or garbled names 92%, default package 100%, encoded strings 100%",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

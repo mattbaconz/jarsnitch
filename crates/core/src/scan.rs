@@ -48,7 +48,7 @@ fn sha256(b: &[u8]) -> String {
 }
 
 fn ev(location: &str, method: Option<&str>, detail: impl Into<String>) -> Evidence {
-    Evidence { location: location.to_string(), method: method.map(str::to_string), detail: detail.into() }
+    Evidence { location: location.to_string(), method: method.map(str::to_string), detail: detail.into(), reached: None }
 }
 
 /// A call on a class inside the jar, resolved against its superclass chain at the end.
@@ -742,7 +742,7 @@ impl<'l> Scan<'l> {
                 for e in [x, y] {
                     let name = e.method.as_deref().and_then(|m| m.split('(').next()).unwrap_or_default();
                     let detail = format!("{} (in {}.{name})", e.detail, e.location);
-                    found.push((corr, Evidence { location: location.clone(), method: Some(method.clone()), detail }));
+                    found.push((corr, Evidence { location: location.clone(), method: Some(method.clone()), detail, reached: None }));
                 }
             }
         }
@@ -923,20 +923,40 @@ impl<'l> Scan<'l> {
             .into_iter()
             .map(|((id, value), evidence)| {
                 let r = rules::rule(id);
+                let mut evidence: Vec<Evidence> = evidence.into_iter().collect();
+                if let Some(reach) = &reach {
+                    for e in &mut evidence {
+                        e.reached = reach.at(&graph, &e.location, e.method.as_deref());
+                    }
+                }
                 let title = if id == "obf.score" { format!("{} (score {score}/100)", r.title) } else { r.title.to_string() };
                 // Reached if any location is; unreached only if every location is code
                 // that can't be reached.
-                let reached = reach.as_ref().and_then(|reach| {
-                    let mut unreached = false;
-                    for e in &evidence {
-                        match reach.at(&graph, &e.location, e.method.as_deref()) {
-                            Some(true) => return Some(true),
-                            Some(false) => unreached = true,
-                            None => return None,
-                        }
-                    }
-                    unreached.then_some(false)
-                });
+                let reached = if evidence.iter().any(|e| e.reached == Some(true)) {
+                    Some(true)
+                } else if !evidence.is_empty() && evidence.iter().all(|e| e.reached == Some(false)) {
+                    Some(false)
+                } else {
+                    None
+                };
+                let (path, from) = match (&reach, reached) {
+                    (Some(reach), Some(true)) => evidence
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, e)| e.reached == Some(true))
+                        .map(|(i, e)| (reach.path(&graph, &e.location, e.method.as_deref()), i))
+                        .find(|(p, _)| !p.is_empty())
+                        // No path at all: still show a reached place.
+                        .unwrap_or_else(|| (Vec::new(), evidence.iter().position(|e| e.reached == Some(true)).unwrap_or(0))),
+                    _ => Default::default(),
+                };
+                let evidence_total = evidence.len();
+                // Keep the location the path leads to (or, with no path, a reached one)
+                // among the ones shown. It sorts after the rest, so the list stays sorted.
+                if from >= EVIDENCE_CAP {
+                    evidence.swap(EVIDENCE_CAP - 1, from);
+                }
+                evidence.truncate(EVIDENCE_CAP);
                 Finding {
                     rule: id.to_string(),
                     severity: r.severity,
@@ -944,9 +964,10 @@ impl<'l> Scan<'l> {
                     why: r.why.to_string(),
                     legit_uses: r.legit_uses.to_string(),
                     value,
-                    evidence_total: evidence.len(),
-                    evidence: evidence.into_iter().take(EVIDENCE_CAP).collect(),
+                    evidence_total,
+                    evidence,
                     reached,
+                    path,
                 }
             })
             .collect();

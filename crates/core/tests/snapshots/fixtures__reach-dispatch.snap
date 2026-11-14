@@ -1,0 +1,123 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "reach-dispatch.jar",
+    "size": 2893,
+    "sha256": "d40f734e6797a3a0da9c56773e364681a6616c28f3f3edf110b80732dd1d97f0"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-reach-dispatch",
+      "version": "1.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "authors": [],
+      "website": null,
+      "commands": [],
+      "permissions": [],
+      "dependencies": [],
+      "optional_dependencies": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 11,
+    "reached_methods": 11,
+    "dynamic": false
+  },
+  "findings": [
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "inherited-late.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/AbstractService",
+          "method": "serve()V",
+          "detail": "https://inherited-late.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "serveAll()V",
+          "via": "call"
+        },
+        {
+          "location": "fixture/AbstractService",
+          "method": "serve()V",
+          "via": "call"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "inherited.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/AbstractModule",
+          "method": "start()V",
+          "detail": "https://inherited.example.invalid/",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/AbstractModule",
+          "method": "start()V",
+          "via": "call"
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 8,
+    "classes": 7,
+    "uncompressed_bytes": 2323
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

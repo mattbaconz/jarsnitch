@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": null,
-          "detail": "writes jar or class files and refers to the plugins folder in one class"
+          "detail": "writes jar or class files and refers to the plugins folder in one class",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        }
+      ]
     },
     {
       "rule": "fs.write-archive",
@@ -75,11 +84,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused(Ljava/io/InputStream;)V",
-          "detail": "writes a file named .jar or .class"
+          "detail": "writes a file named .jar or .class",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

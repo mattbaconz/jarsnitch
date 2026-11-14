@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "fixture/ChatListener",
           "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
-          "detail": "org/bukkit/entity/Player.setOp"
+          "detail": "org/bukkit/entity/Player.setOp",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

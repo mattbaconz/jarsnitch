@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -51,11 +52,13 @@ expression: report
         {
           "location": "plugin.yml",
           "method": null,
-          "detail": "declared class fixture.Missing isn't in the jar"
+          "detail": "declared class fixture.Missing isn't in the jar",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

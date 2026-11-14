@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,26 +59,31 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
-          "detail": "com/velocitypowered/api/command/CommandManager.executeAsync"
+          "detail": "com/velocitypowered/api/command/CommandManager.executeAsync",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
-          "detail": "net/md_5/bungee/api/plugin/PluginManager.dispatchCommand"
+          "detail": "net/md_5/bungee/api/plugin/PluginManager.dispatchCommand",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
-          "detail": "org/bukkit/Bukkit.dispatchCommand"
+          "detail": "org/bukkit/Bukkit.dispatchCommand",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused(Lnet/md_5/bungee/api/plugin/PluginManager;Lnet/md_5/bungee/api/CommandSender;Lcom/velocitypowered/api/command/CommandManager;Lcom/velocitypowered/api/command/CommandSource;)V",
-          "detail": "org/bukkit/Server.dispatchCommand"
+          "detail": "org/bukkit/Server.dispatchCommand",
+          "reached": false
         }
       ],
       "evidence_total": 4,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

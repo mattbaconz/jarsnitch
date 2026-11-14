@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "agentmain(Ljava/lang/String;Ljava/lang/instrument/Instrumentation;)V",
-          "detail": "java/lang/instrument/Instrumentation.addTransformer"
+          "detail": "java/lang/instrument/Instrumentation.addTransformer",
+          "reached": false
         },
         {
           "location": "fixture/Main$Transformer",
           "method": null,
-          "detail": "implements java/lang/instrument/ClassFileTransformer"
+          "detail": "implements java/lang/instrument/ClassFileTransformer",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

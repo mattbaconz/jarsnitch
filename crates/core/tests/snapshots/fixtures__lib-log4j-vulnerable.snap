@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -71,11 +72,13 @@ expression: report
         {
           "location": "META-INF/maven/org.apache.logging.log4j/log4j-core/pom.properties",
           "method": null,
-          "detail": "org.apache.logging.log4j:log4j-core:2.14.1"
+          "detail": "org.apache.logging.log4j:log4j-core:2.14.1",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

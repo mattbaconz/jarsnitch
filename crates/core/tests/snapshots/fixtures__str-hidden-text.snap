@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "203.0.113.9"
+          "detail": "203.0.113.9",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://cdn.example.invalid/a.jar"
+          "detail": "https://cdn.example.invalid/a.jar",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.ip",
@@ -80,11 +84,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "203.0.113.9"
+          "detail": "203.0.113.9",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -97,11 +103,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://cdn.example.invalid/a.jar"
+          "detail": "https://cdn.example.invalid/a.jar",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

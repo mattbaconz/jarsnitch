@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,26 +59,31 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/net/DatagramSocket.<init>"
+          "detail": "java/net/DatagramSocket.<init>",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/net/ServerSocket.<init>"
+          "detail": "java/net/ServerSocket.<init>",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/net/Socket.<init>"
+          "detail": "java/net/Socket.<init>",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/nio/channels/SocketChannel.open"
+          "detail": "java/nio/channels/SocketChannel.open",
+          "reached": false
         }
       ],
       "evidence_total": 4,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

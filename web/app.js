@@ -23,6 +23,14 @@ function h(tag, props, ...children) {
   return el;
 }
 
+/** Builds an SVG element; attributes only, so the page's style policy is never involved. */
+function svg(tag, props, ...children) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [key, value] of Object.entries(props ?? {})) el.setAttribute(key, String(value));
+  for (const child of children.flat(Infinity)) if (child) el.append(child);
+  return el;
+}
+
 function setStatus(text, error = false) {
   status.textContent = text;
   status.classList.toggle("error", error);
@@ -363,24 +371,151 @@ function openTarget(e) {
 /** Heading tags: a report nested in the jar list sits two levels lower. */
 const hx = (n, nested) => `h${n + (nested ? 2 : 0)}`;
 
-function findingCard(f, nested) {
+function findingCard(f, ctx, id) {
   const title = f.value ? [f.title, ": ", code(f.value)] : f.title;
-  return h("article", { class: `finding sev-${f.severity}` },
-    h("div", { class: "finding-head" }, sevBadge(f.severity), h(hx(4, nested), {}, title), ruleChip(f.rule)),
+  const t = trail(f, ctx.jar);
+  return h("article", { class: `finding sev-${f.severity}`, id, tabindex: id ? "-1" : null },
+    h("div", { class: "finding-head" }, sevBadge(f.severity), h(hx(4, ctx.nested), {}, title), ruleChip(f.rule)),
     h("p", { class: "why" }, f.why),
+    t.node,
     legit(f),
-    evidence(f),
-    f.reached === false ? notCalled() : null);
+    morePlaces(f, t.shown));
 }
 
 const legit = (f) => h("p", { class: "legit" }, h("span", { class: "k" }, "Common legitimate uses"), h("span", { class: "vh" }, ": "), f.legit_uses);
 const notCalled = () => h("p", { class: "unreached" }, "Not called from the plugin's entry points.");
 
+// The trail: from the jar, through the call path the engine found, to the code that matched.
+
+const VIA = {
+  entry: ["entry", "The server starts the plugin here: its main class, or a class it names."],
+  call: ["calls", "The step above calls this, directly or through an interface or superclass."],
+  callback: ["callback", "The server, a library or the JVM calls this on an object the step above creates: an event handler, a command, run(), toString()."],
+  "static-init": ["static init", "The step above uses the class, which runs its static initializer."],
+  reflection: ["reflection", "The step above names the class for reflection, or lists its methods."],
+};
+const PRIM = { B: "byte", C: "char", D: "double", F: "float", I: "int", J: "long", S: "short", Z: "boolean" };
+
+/** "(Ljava/io/File;[I)V" → "File, int[]". */
+function params(desc) {
+  const inside = /^\(([^)]*)\)/.exec(desc)?.[1] ?? "";
+  const out = [];
+  let dims = 0;
+  for (let i = 0; i < inside.length; i++) {
+    const c = inside[i];
+    if (c === "[") {
+      dims++;
+      continue;
+    }
+    let t = PRIM[c] ?? c;
+    if (c === "L") {
+      const end = inside.indexOf(";", i);
+      t = inside.slice(i + 1, end < 0 ? undefined : end).split("/").pop();
+      i = end < 0 ? inside.length : end;
+    }
+    out.push(t + "[]".repeat(dims));
+    dims = 0;
+  }
+  return out.join(", ");
+}
+
+/** A class (and method) as package, then class, then method, so the eye finds the class. */
+function member(location, method) {
+  const cut = location.lastIndexOf("/") + 1;
+  const pkg = location.slice(0, cut);
+  const cls = location.slice(cut);
+  const at = method ? method.indexOf("(") : -1;
+  const name = method ? method.slice(0, at < 0 ? undefined : at) : null;
+  const args = at < 0 ? "" : params(method.slice(at));
+  return h("code", {},
+    pkg ? [h("span", { class: "pk" }, breakable(pkg)), h("wbr")] : null,
+    name === "<init>" ? ["new ", cls, h("wbr"), h("span", { class: "m" }, `(${args})`)] : cls,
+    name && name !== "<init>" ? h("span", { class: "m" }, name === "<clinit>" ? ".<clinit>" : [`.${name}`, h("wbr"), `(${args})`]) : null);
+}
+
+/** A matched call or text; a combination's part names its rule first. */
+function matched(detail) {
+  const part = /^([a-z]+\.[a-z-]+): ([\s\S]*)$/.exec(detail);
+  return h("code", {}, part ? [ruleChip(part[1]), breakable(part[2])] : breakable(detail));
+}
+
+/** A trail row; the explanation is on hover and, for screen readers, in the label. */
+const row = (cls, k, title, body) =>
+  h("li", { class: cls }, h("span", { class: "t-k", title }, k, title ? h("span", { class: "vh" }, `: ${title}`) : null), body);
+
+/** Steps of a long path: the first two and the last four, with a button for the rest. */
+function steps(path) {
+  const rows = path.map((s, i) => row("t-step t-on", i === 0 ? VIA.entry[0] : VIA[s.via]?.[0] ?? s.via, i === 0 ? VIA.entry[1] : VIA[s.via]?.[1], member(s.location, s.method)));
+  if (rows.length <= 7) return rows;
+  const hidden = rows.slice(2, -4);
+  // Focus moves to the first revealed step, not to the page, when the button goes away.
+  const reveal = () => {
+    hidden[0].tabIndex = -1;
+    more.replaceWith(...hidden);
+    hidden[0].focus();
+  };
+  const more = h("li", { class: "t-more" }, h("span", { class: "t-k" }, ""),
+    h("button", { type: "button", onclick: reveal }, `${plural(hidden.length, "more step")}`));
+  return [...rows.slice(0, 2), more, ...rows.slice(-4)];
+}
+
+/**
+ * How the plugin gets to a finding: the call path from an entry point when the engine found
+ * one, or else the place in the jar, from the jar down, with a break when nothing the entry
+ * points run calls the code. Then the matched calls or text at that place. Nodes follow the
+ * jar map: squares for code the call graph covers, solid when reached and hollow when not;
+ * circles for what it doesn't cover. Returns the list and the evidence it shows.
+ */
+function trail(f, jar) {
+  const target = f.path.at(-1);
+  const first = f.evidence.find((e) => e.reached === true) ?? f.evidence[0];
+  if (!first) return { node: null, shown: [] };
+  const at = target ?? first;
+  const here = f.evidence.filter((e) => e.location === at.location && (e.method == null || e.method === (target ? target.method : first.method)));
+  const shown = (here.length ? here : [first]).slice(0, 4);
+  const state = f.path.length || first.reached === true ? "t-on" : first.reached === false ? "t-off" : "t-na";
+  const rows = [];
+  if (f.path.length) {
+    rows.push(...steps(f.path));
+  } else {
+    rows.push(row("t-jar t-na", "jar", null, h("code", {}, breakable(jar))));
+    if (first.reached === false) rows.push(h("li", { class: "t-gap" }, h("span", { class: "t-k" }, "no caller"), h("span", {}, "Nothing the entry points run calls this.")));
+    // Locations nest: `lib.jar!/a/B` is a class in a bundled jar, `a/B!embedded-1!/c/D` a class
+    // decoded from text stored in a/B. Evidence about the jar as a whole has no location.
+    const parts = first.location ? first.location.split("!/") : [];
+    parts.forEach((p, i) => {
+      const last = i === parts.length - 1;
+      const blob = /^(.*)!(embedded-\d+)$/.exec(p);
+      if (blob) {
+        rows.push(row("t-step t-na", "class", null, h("code", {}, breakable(blob[1]))));
+        rows.push(row("t-step t-na", "embedded", "Code stored as encoded text in the class above, decoded and scanned.", h("code", {}, blob[2])));
+        return;
+      }
+      const kind = !last ? "nested jar" : first.method || !/\.[A-Za-z0-9]+$/.test(p) ? "class" : "file";
+      rows.push(row(`t-step ${last ? state : "t-na"}`, kind, null, last && first.method ? member(p, first.method) : h("code", {}, breakable(p))));
+    });
+  }
+  rows.push(...shown.map((e) => row(`t-hit ${state}`, "match", null, matched(e.detail))));
+  const label = f.path.length ? "How the plugin reaches this code" : first.reached === false ? "Where this code is, with no call path to it" : "Where this is in the jar";
+  return { node: h("ol", { class: "trail", "aria-label": label }, rows), shown };
+}
+
+/** The finding's other places, when there are more than the trail shows. */
+function morePlaces(f, shown) {
+  if (f.evidence_total <= shown.length) return null;
+  const line = (e) => [code(where(e)), e.detail ? h("span", { class: "detail" }, breakable(e.detail)) : null, e.reached === false ? h("span", { class: "detail" }, "not called") : null];
+  const hidden = f.evidence_total - f.evidence.length;
+  return h("details", { class: "where" },
+    h("summary", {}, `All ${plural(f.evidence_total, "place")} it was found`),
+    h("ul", {}, f.evidence.map((e) => h("li", {}, line(e)))),
+    hidden > 0 ? h("p", { class: "muted" }, `${hidden} more not listed.`) : null);
+}
+
 /**
  * Cards for findings in report order, with code the entry points don't call last;
  * findings that share a rule (hosts, say) share a card.
  */
-function findingCards(findings, nested) {
+function cardGroups(findings) {
   const groups = [];
   const called = findings.filter((f) => f.reached !== false);
   for (const f of [...called, ...findings.filter((f) => f.reached === false)]) {
@@ -388,14 +523,23 @@ function findingCards(findings, nested) {
     if (last?.[0].rule === f.rule && (last[0].reached === false) === (f.reached === false)) last.push(f);
     else groups.push([f]);
   }
-  return groups.map((g) => (g.length === 1 ? findingCard(g[0], nested) : groupCard(g, nested)));
+  return groups;
 }
 
-function groupCard(group, nested) {
+/** Cards for groups of findings; `tag` makes their ids, which the jar map links to. */
+function findingCards(groups, ctx, tag = "f") {
+  return groups.map((g, i) => {
+    const id = ctx.idp ? `${ctx.idp}${tag}${i}` : null;
+    return g.length === 1 ? findingCard(g[0], ctx, id) : groupCard(g, ctx, id);
+  });
+}
+
+function groupCard(group, ctx, id) {
+  const nested = ctx.nested;
   const f = group[0];
   const row = (x) => h("li", {}, code(x.value ?? "(no value)"), x.evidence[0] ? h("span", { class: "detail" }, "in ", breakable(where(x.evidence[0])), x.evidence_total > 1 ? ` and ${plural(x.evidence_total - 1, "more place")}` : "") : null);
   const shown = 8;
-  return h("article", { class: `finding sev-${f.severity}` },
+  return h("article", { class: `finding sev-${f.severity}`, id, tabindex: id ? "-1" : null },
     h("div", { class: "finding-head" }, sevBadge(f.severity), h(hx(4, nested), {}, `${f.title} (${group.length})`), ruleChip(f.rule)),
     h("p", { class: "why" }, f.why),
     legit(f),
@@ -404,18 +548,6 @@ function groupCard(group, nested) {
       ? h("details", { class: "where" }, h("summary", {}, `Show ${group.length - shown} more`), h("ul", { class: "values" }, group.slice(shown).map(row)))
       : null,
     f.reached === false ? notCalled() : null);
-}
-
-function evidence(f) {
-  const [first] = f.evidence;
-  if (!first) return null;
-  const line = (e) => [code(where(e)), e.detail ? h("span", { class: "detail" }, breakable(e.detail)) : null];
-  if (f.evidence_total === 1) return h("p", { class: "where" }, h("span", { class: "k" }, "Found in "), line(first));
-  const hidden = f.evidence_total - f.evidence.length;
-  return h("details", { class: "where" },
-    h("summary", {}, "Found in ", code(where(first)), ` and ${plural(f.evidence_total - 1, "more place")}`),
-    h("ul", {}, f.evidence.map((e) => h("li", {}, line(e)))),
-    hidden > 0 ? h("p", { class: "muted" }, `${hidden} more not listed.`) : null);
 }
 
 /** A collapsed section whose content is only built when it's opened. */
@@ -428,6 +560,7 @@ function fold(summary, build, { open = false, cls = "fold", id, heading } = {}) 
   };
   if (open) fill();
   else d.addEventListener("toggle", fill);
+  d.fill = fill;
   return d;
 }
 
@@ -435,9 +568,10 @@ function fold(summary, build, { open = false, cls = "fold", id, heading } = {}) 
 const section = (cls, id, title, n, body, nested) =>
   h("section", { class: `section ${cls}`.trim(), id }, h(hx(3, nested), { "data-n": n }, title), body);
 
-function findingsSection(findings, reach, id, nested) {
-  const important = findings.filter((f) => f.severity !== "info");
-  const info = findings.filter((f) => f.severity === "info");
+function findingsSection(findings, reach, id, ctx) {
+  const important = cardGroups(findings.filter((f) => f.severity !== "info"));
+  const info = cardGroups(findings.filter((f) => f.severity === "info"));
+  const infoCount = findings.filter((f) => f.severity === "info").length;
   const notCalledCount = findings.filter((f) => f.reached === false).length;
   return section("findings", id, "Findings", findings.length ? plural(findings.length, "finding") : null,
     findings.length === 0
@@ -446,9 +580,117 @@ function findingsSection(findings, reach, id, nested) {
           notCalledCount && reach?.dynamic
             ? h("p", { class: "muted" }, `${plural(notCalledCount, "finding is", "findings are")} in code the plugin's entry points don't call, but the plugin also loads code at runtime, so that code may still run.`)
             : null,
-          important.length ? h("div", { class: "list" }, findingCards(important, nested)) : h("p", { class: "empty" }, "No high or notable findings."),
-          info.length ? fold(`Info findings (${info.length})`, () => h("div", { class: "list" }, findingCards(info, nested)), { cls: "fold info" }) : null,
-        ], nested);
+          important.length ? h("div", { class: "list" }, findingCards(important, ctx)) : h("p", { class: "empty" }, "No high or notable findings."),
+          infoCount ? fold(`Info findings (${infoCount})`, () => h("div", { class: "list" }, findingCards(info, ctx, "i")), { cls: "fold info", id: ctx.idp ? `${ctx.idp}info` : null }) : null,
+        ], ctx.nested);
+}
+
+/** The card a finding is on, for links from the jar map. */
+function cardIds(findings, idp) {
+  const ids = new Map();
+  for (const [tag, list] of [["f", findings.filter((f) => f.severity !== "info")], ["i", findings.filter((f) => f.severity === "info")]]) {
+    cardGroups(list).forEach((g, i) => g.forEach((f) => ids.set(f, `${idp}${tag}${i}`)));
+  }
+  return ids;
+}
+
+/** Follows a jar map link, opening the info fold first when the card is inside it. */
+function goToCard(e, idp) {
+  const a = e.target.closest("a[href^='#']");
+  if (!a) return;
+  const id = a.hash.slice(1);
+  let card = document.getElementById(id);
+  const info = document.getElementById(`${idp}info`);
+  // The fold builds its cards when it first opens, and hides them while it's closed.
+  if (info && (!card || info.contains(card))) {
+    info.open = true;
+    info.fill();
+    card = document.getElementById(id);
+  }
+  if (!card) return;
+  e.preventDefault();
+  card.scrollIntoView({ block: "start" });
+  card.focus({ preventScroll: true });
+}
+
+const SEV_RANK = { high: 3, notable: 2, info: 1 };
+const LETTER = { high: "H", notable: "N", info: "I" };
+const MAP_ROWS = 16;
+/** Reach of the code at a place: reached, not called, or outside the call graph. */
+const REACH = {
+  on: ["", "reached from an entry point"],
+  off: [", not called", "nothing the entry points run calls it"],
+  na: [", not traced", "not traced: a file, a nested jar or decoded code"],
+};
+
+/**
+ * The jar map: every class or file with findings, by package, one mark per rule with the
+ * severity's letter. A square is code the call graph covers, solid when the plugin's entry
+ * points reach it and hollow when nothing they run calls it; a circle is a place it doesn't
+ * cover. The trail draws its nodes the same way.
+ */
+function jarMap(r, id, ctx) {
+  const places = new Map();
+  const ids = ctx.idp ? cardIds(r.findings, ctx.idp) : new Map();
+  for (const f of r.findings) {
+    for (const e of f.evidence) {
+      if (!e.location) continue;
+      const p = places.get(e.location) ?? { rules: new Map(), card: null, top: 0 };
+      const was = p.rules.get(f.rule)?.reach;
+      const now = e.reached === true ? "on" : e.reached === false ? "off" : "na";
+      p.rules.set(f.rule, { severity: f.severity, reach: [was, now].includes("on") ? "on" : [was, now].includes("na") ? "na" : "off" });
+      if (SEV_RANK[f.severity] > p.top) {
+        p.top = SEV_RANK[f.severity];
+        p.card = ids.get(f) ?? null;
+      }
+      places.set(e.location, p);
+    }
+  }
+  if (!places.size) return null;
+  let list = [...places.entries()];
+  const dropped = Math.max(0, list.length - MAP_ROWS);
+  if (dropped) list = list.sort(([a, x], [b, y]) => y.top - x.top || y.rules.size - x.rules.size || a.localeCompare(b)).slice(0, MAP_ROWS);
+  const byPkg = new Map();
+  for (const [loc, p] of list) {
+    const cut = loc.lastIndexOf("/") + 1;
+    const pkg = loc.slice(0, cut);
+    byPkg.set(pkg, [...(byPkg.get(pkg) ?? []), [loc.slice(cut), p]]);
+  }
+  const seen = new Set();
+  const rows = [];
+  for (const pkg of [...byPkg.keys()].sort()) {
+    const items = byPkg.get(pkg).sort(([a], [b]) => a.localeCompare(b));
+    // Files at the top of the jar hang from the jar itself.
+    rows.push(h("li", { class: "j-pkg" }, h("span", {}, breakable(pkg || r.file.name))));
+    items.forEach(([name, p], k) => {
+      const rules = [...p.rules.entries()].sort(([a, x], [b, y]) => SEV_RANK[y.severity] - SEV_RANK[x.severity] || a.localeCompare(b));
+      const says = rules.map(([rule, x]) => `${LABEL[x.severity]} ${rule}${REACH[x.reach][0]}`).join("; ");
+      for (const [, x] of rules) seen.add(x.reach);
+      rows.push(h("li", { class: k === items.length - 1 ? "j-last" : null },
+        h("span", { class: "j-name" }, p.card ? h("a", { href: `#${p.card}` }, breakable(name)) : breakable(name)),
+        h("span", { class: "sqs", title: says },
+          h("span", { class: "vh" }, `${says}.`),
+          rules.map(([, x]) => h("i", { class: `sq sq-${x.reach} sev-${x.severity}`, "aria-hidden": "true" }, LETTER[x.severity]))),
+        h("span", { class: "j-rules", "aria-hidden": "true" }, rules.map(([rule]) => rule).join(" · "))));
+    });
+  }
+  const reach = r.reachability;
+  const pct = reach && reach.methods ? (100 * reach.reached_methods) / reach.methods : 0;
+  return section("map", id, "Where in the jar", plural(places.size, "place"), [
+    reach
+      ? h("div", { class: "meter" },
+          h("span", {}, `Call graph: ${reach.reached_methods} of ${reach.methods} methods reached from ${plural(reach.entry_points.length, "entry point")}`),
+          svg("svg", { viewBox: "0 0 100 6", preserveAspectRatio: "none", "aria-hidden": "true" },
+            svg("rect", { class: "m-bg", width: 100, height: 6 }),
+            svg("rect", { class: "m-on", width: pct.toFixed(2), height: 6 })))
+      : null,
+    h("ul", { class: "jmap", onclick: (e) => goToCard(e, ctx.idp) }, rows),
+    dropped ? h("p", { class: "jmap-more" }, `and ${plural(dropped, "more place")} with fewer or lower findings`) : null,
+    h("p", { class: "jmap-key" },
+      ["on", "off", "na"].filter((k) => seen.has(k)).map((k) => h("span", {}, h("i", { class: `sq sq-${k}`, "aria-hidden": "true" }), REACH[k][1])),
+      h("span", {}, "H high · N notable · I info"),
+      h("a", { href: "docs/report/#the-trail" }, "How to read a trail")),
+  ], ctx.nested);
 }
 
 function facts(rows) {
@@ -516,8 +758,11 @@ const pluginName = (r) => {
   return p?.name ? `${p.name} ${p.version ?? ""}`.trim() : r.file.name;
 };
 
+let reports = 0;
+
 function renderReport(r, { nested = false, ms, sample = false } = {}) {
   const p = r.plugins[0];
+  const ctx = { nested, jar: r.file.name, idp: `r${++reports}-` };
   const bad = unreadable(r.warnings);
   // An unreadable file gets no class count, score or counts: nothing in it was analyzed.
   const meta = [
@@ -538,6 +783,7 @@ function renderReport(r, { nested = false, ms, sample = false } = {}) {
     counts: bad ? null : countList(counts(r.findings)),
     download: downloadButton(`${r.file.name}.jarsnitch.json`, r),
     toc: [
+      bad || !r.findings.some((f) => f.evidence.some((e) => e.location)) ? null : ["r-map", "Where in the jar"],
       bad ? null : ["r-findings", "Findings", r.findings.length],
       ["r-about", "About this jar"],
       r.warnings.length ? ["r-warnings", "Warnings", r.warnings.length] : null,
@@ -546,7 +792,8 @@ function renderReport(r, { nested = false, ms, sample = false } = {}) {
   }, [
     bad ? h("p", { class: "banner error" }, "This file isn't a readable jar or zip, so nothing in it was checked.") : null,
     r.partial ? h("p", { class: "banner warn" }, "Partial report: a scan limit was hit, so part of the jar wasn't checked. A partial report is not a clean one.") : null,
-    bad ? null : findingsSection(r.findings, r.reachability, id("r-findings"), nested),
+    bad ? null : jarMap(r, id("r-map"), ctx),
+    bad ? null : findingsSection(r.findings, r.reachability, id("r-findings"), ctx),
     jarDetails(r, id("r-about"), nested),
     warningsSection(r.warnings, id("r-warnings"), nested),
   ]);
@@ -634,11 +881,12 @@ function changeRow(c) {
 }
 
 /** Added items in diff order, with runs of findings grouped like in a report. */
-function addedList(items) {
+function addedList(items, jar) {
   const out = [];
   let run = [];
+  let n = 0;
   const flush = () => {
-    out.push(findingCards(run));
+    out.push(findingCards(cardGroups(run), { nested: false, jar, idp: `d${reports}-${n++}-` }));
     run = [];
   };
   for (const i of items) {
@@ -653,6 +901,7 @@ function addedList(items) {
 }
 
 function renderDiff(d, { ms, sample = false } = {}) {
+  reports++;
   const label = (side) => {
     const p = side.plugins[0];
     return p?.name ? `${p.name} ${p.version ?? ""}`.trim() : side.file.name;
@@ -688,7 +937,7 @@ function renderDiff(d, { ms, sample = false } = {}) {
     d.warnings.map((w) => h("p", { class: "banner warn" }, w.message)),
     section("adds", "r-adds", "This update adds", items(d.added.length),
       d.added.length
-        ? h("div", { class: "list" }, addedList(d.added))
+        ? h("div", { class: "list" }, addedList(d.added, d.new.file.name))
         : h("p", { class: "empty" }, "Nothing new from the rule list.")),
     section("removes", "r-removes", "This update removes", items(d.removed.length),
       d.removed.length ? h("div", { class: "list" }, d.removed.map(removedRow)) : h("p", { class: "empty" }, "Nothing.")),

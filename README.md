@@ -4,7 +4,7 @@ See what a Minecraft plugin can do before you install it.
 
 > **Try it in your browser:** https://jarsnitch.mbaconz.workers.dev. The page reads the jar on your machine; nothing is uploaded.
 
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="https://raw.githubusercontent.com/mattbaconz/jarsnitch/main/docs/media/site-compare.png"><img src="https://raw.githubusercontent.com/mattbaconz/jarsnitch/main/docs/media/site-compare.gif" alt="The jarsnitch page comparing the sample update SampleShop 1.4.0 to 1.4.1: the update adds 2 high, 3 notable and 2 info findings, the first High finding's locations open, and the Changes section shows a new author."></picture>
+<picture><source media="(prefers-reduced-motion: reduce)" srcset="https://raw.githubusercontent.com/mattbaconz/jarsnitch/main/docs/media/site-compare.png"><img src="https://raw.githubusercontent.com/mattbaconz/jarsnitch/main/docs/media/site-compare.gif" alt="The jarsnitch page comparing the sample update SampleShop 1.4.0 to 1.4.1: the update adds 2 high, 3 notable and 2 info findings, the first High finding shows its call path from onEnable to the matched code, and the Changes section shows a new author."></picture>
 
 jarsnitch reads a plugin `.jar` (Bukkit, Spigot, Paper, Folia, Velocity, BungeeCord) and tells you in plain English what its code is able to do: run commands on your machine, download and run new code, give players operator, send data to a Discord webhook. Each finding says where in the code it was found and why it matters.
 

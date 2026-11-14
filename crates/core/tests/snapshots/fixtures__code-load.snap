@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,21 +59,25 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused([B)V",
-          "detail": "java/lang/invoke/MethodHandles$Lookup.defineClass"
+          "detail": "java/lang/invoke/MethodHandles$Lookup.defineClass",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused([B)V",
-          "detail": "java/net/URLClassLoader.<init>"
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": false
         },
         {
           "location": "fixture/Main$Loader",
           "method": "define([B)Ljava/lang/Class;",
-          "detail": "fixture/Main$Loader.defineClass (subclass of java/lang/ClassLoader)"
+          "detail": "fixture/Main$Loader.defineClass (subclass of java/lang/ClassLoader)",
+          "reached": false
         }
       ],
       "evidence_total": 3,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

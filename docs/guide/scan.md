@@ -4,7 +4,7 @@ Scan one jar, several jars or a whole plugins folder, on the website or with `ja
 
 ## On the website
 
-<!-- gif: site-scan | The jarsnitch page: SampleShop-1.4.1.jar is dropped on the Scan tab, the report shows 2 high, 4 notable and 5 info findings, and the first High finding's Found in list is opened. -->
+<!-- gif: site-scan | The jarsnitch page: SampleShop-1.4.1.jar is dropped on the Scan tab, the report shows 2 high, 4 notable and 5 info findings and a map of where they are in the jar, and clicking ChatListener on the map jumps to its finding's call path from onEnable to the matched code. -->
 
 | You drop or choose | What happens |
 |---|---|

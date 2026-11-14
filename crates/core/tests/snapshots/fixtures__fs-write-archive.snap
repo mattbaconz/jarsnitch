@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "download(Ljava/io/InputStream;)V",
-          "detail": "writes a file named .jar or .class"
+          "detail": "writes a file named .jar or .class",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/util/jar/JarOutputStream.<init>"
+          "detail": "java/util/jar/JarOutputStream.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

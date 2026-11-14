@@ -58,7 +58,7 @@ pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Lim
 6. Strings and text resources: extract URLs, IPs and webhooks; decode base64 and hex candidates and feed results back to step 4 or 5.
 7. Resolve reflection targets, then match all facts against the rule tables to produce findings.
 8. Evaluate correlations over the findings, per class and per method with its direct callees.
-9. Walk the call graph from the entry points and mark each finding reached or not.
+9. Walk the call graph from the entry points, mark each finding and each evidence location reached or not, and give each reached finding a call path.
 10. Compute the obfuscation score; parse descriptors and libraries.
 11. Sort everything and build the `Report`.
 
@@ -76,72 +76,177 @@ The `cafebabe` crate was considered and not used: jarsnitch needs only a small p
 
 - **Entry points:** the descriptor's `main`, `bootstrapper` and `loader` classes (Bukkit, Paper, BungeeCord, Velocity), plus classes named in `META-INF/services/` files or other top-level text resources. They're treated as created, so their constructors run. Classes the manifest names (`Main-Class`, `Premain-Class`, `Agent-Class`, `Launcher-Agent-Class`) count with every method. Without a descriptor entry point (mods, libraries), `reachability` is `null`.
 - **Edges:** calls, including `invokedynamic` bootstrap arguments (lambdas, method references); `new`; static field access, which runs `<clinit>` after the superclasses'; class literals and constant names passed to `Class.forName`, `loadClass` or `findClass`; string literals that look like class names.
-- **Creating a class** reaches its public and protected instance methods when it extends or implements a type outside the jar other than `Object` (listeners, `Runnable`, `CommandExecutor`), plus methods with runtime-visible annotations (`@EventHandler`), `toString`, `hashCode`, `equals`, `finalize`, and methods matching a virtual call seen so far.
+- **Creating a class** reaches its public and protected instance methods when it extends or implements a type outside the jar other than `Object` (listeners, `Runnable`, `CommandExecutor`), plus methods with runtime-visible annotations (`@EventHandler`), `toString`, `hashCode`, `equals`, `finalize`, and methods matching a virtual call seen so far. A virtual call and a created class match by the same test whichever the walk meets first: the call's owner is outside the jar, or a subtype or supertype of the class declaring the method, or a created class below both inherits it (a call through an interface reaches the superclass method the created class gets). The `reach-dispatch` fixture checks that last case in both orders.
 - **Runtime lookups:** `getDeclaredMethods`, `getMethods`, `getDeclaredConstructors` or `getConstructors` in reachable code makes every method of every created class reachable. Loading a class by a computed name, `defineClass`, `defineHiddenClass` or a `code.load` call sets `dynamic`: code marked unreached may still run.
-- A finding is reached when any of its locations is a reached method (or, for class-level evidence, a reached class), unreached when every location is graph code that isn't reached, and `null` otherwise. Severity and exit codes ignore it.
+- **The walk:** a first-in, first-out work list of reached methods. When a method is first reached, the walk records its parent, the method whose code reached it (none for an entry point), and how, as a `Via`. The parent is the method that makes the call, creates the object, uses the class or lists the methods: a method that a virtual call lands on gets the call's method as parent even when another method creates the object later, and a method reached by a runtime lookup gets the method that did the lookup. Classes already created when a lookup first runs are taken in id order, which follows the jar, so the same bytes give the same parents. Every method one step from the entry points is handled before any method two steps away, so following parents back gives a short path.
+- **`Via`:** `entry` for every method reached while the entry points are set up (their constructors, the methods the server calls on them, every method of a manifest class); `call` for a call or method reference, including virtual dispatch to an override in a created class; `callback` for a method reached because its class was created (an override of an outside type, an annotated method, an `Object` method); `static-init` for `<clinit>`; `reflection` for a class named by reflection, or methods listed by a runtime lookup, static ones included.
+- A finding is reached when any of its locations is a reached method (or, for class-level evidence, a reached class), unreached when every location is graph code that isn't reached, and `null` otherwise, such as no reached location and some outside the graph. Each evidence entry carries the same value for its own location. Severity and exit codes ignore it.
+- **Paths:** a reached finding's `path` follows parents back from the first reached location in its evidence that has one, entry point first. Parents are always reached before their children, so the walk ends at an entry point. When that location is past the first 50, it replaces the 50th in `evidence`, which stays sorted. A class whose static fields are used but none of whose methods run is reached with no path. For class-level evidence it starts from the class's reached method with the shortest path, constructors and `<clinit>` only when nothing else in the class is reached. The `reach-paths` fixture has one host per kind of step; every path starts at `fixture/Main.onEnable` (`entry`) and ends at:
+
+| Host | Last step | `via` |
+|---|---|---|
+| `by-name.example.invalid` | `fixture/ByName.host` | `reflection` |
+| `lambda.example.invalid` | `fixture/Main.lambda$onEnable$0` | `call` |
+| `listener.example.invalid` | `fixture/Events.onJoin` | `callback` |
+| `static-init.example.invalid` | `fixture/Config.<clinit>` | `static-init` |
+| `tostring.example.invalid` | `fixture/Overrider.toString` | `callback` |
+| `virtual.example.invalid` | `fixture/TaskImpl.run` | `call` |
+
+› real output: jarsnitch 0.3.0, `scan reach-paths.jar --json` in `fixtures/jars`
+
+The `reach-order` fixture checks that each step names the code that really leads to the next one, whichever the walk meets first: `TaskImpl.run` and `Base.foo` come straight from the `onEnable` call that lands on them, not from `make()`, which only creates the objects, and `Plain.secret`, `Late.secret` and the static `Commands.helper` come from `Main.register`, which lists methods (`reflection`).
 
 The network correlations use the same graph: a method's own parts and those of the methods it calls directly (the resolved target, or the only implementation when the target is abstract) count together when they come from different classes.
 
 ## Report format
 
-`crates/core` serializes `Report` with serde. Abridged example:
+`crates/core` serializes `Report` with serde. A scan of the `reach-paths` fixture, with 3 of its 9 findings:
 
 ```json
-{
-  "schema_version": 1,
-  "tool_version": "0.2.1",
-  "file": { "name": "ExamplePlugin.jar", "size": 48213, "sha256": "9f2c..." },
-  "partial": false,
-  "plugins": [
-    {
-      "platform": "bukkit",
-      "descriptor": "plugin.yml",
-      "name": "ExamplePlugin",
-      "version": "1.2.0",
-      "main": "com.example.ExamplePlugin",
-      "authors": ["ExampleDev"],
-      "website": "https://plugin.example.com",
-      "commands": ["example"],
-      "permissions": ["example.use"],
-      "dependencies": ["Vault"],
-      "optional_dependencies": [],
-      "folia_supported": false,
-      "maven_libraries": []
-    }
-  ],
-  "libraries": [
-    { "group": "com.google.code.gson", "artifact": "gson", "version": "2.10.1",
-      "location": "META-INF/maven/com.google.code.gson/gson/pom.properties" }
-  ],
-  "nested": [ { "path": "libs/helper.jar", "size": 10240, "sha256": "41ab..." } ],
-  "obfuscation": { "score": 4, "short_names": 0.05, "default_package": 0.0, "encoded_strings": 0.01 },
-  "reachability": { "entry_points": ["com/example/ExamplePlugin"], "methods": 210, "reached_methods": 162, "dynamic": false },
-  "findings": [
-    {
-      "rule": "str.url",
-      "severity": "info",
-      "title": "Contains web addresses",
-      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
-      "legit_uses": "Update checks, statistics, documentation links, APIs.",
-      "value": "api.example.invalid",
-      "evidence": [
-        { "location": "com/example/UpdateChecker", "method": "check()V",
-          "detail": "https://api.example.invalid/v1/latest" }
+[
+  {
+    "schema_version": 1,
+    "tool_version": "0.3.0",
+    "file": {
+      "name": "reach-paths.jar",
+      "size": 4738,
+      "sha256": "ff17cf81ec2e22593ca5d6667350caaf7aad6a52df4d6e577f48bd05fa7ec375"
+    },
+    "partial": false,
+    "plugins": [
+      {
+        "platform": "bukkit",
+        "descriptor": "plugin.yml",
+        "name": "Fixture-reach-paths",
+        "version": "1.0.0",
+        "main": "fixture.Main",
+        "bootstrapper": null,
+        "loader": null,
+        "authors": [],
+        "website": null,
+        "commands": [],
+        "permissions": [],
+        "dependencies": [],
+        "optional_dependencies": [],
+        "folia_supported": false,
+        "maven_libraries": []
+      }
+    ],
+    "libraries": [],
+    "nested": [],
+    "obfuscation": {
+      "score": 0,
+      "short_names": 0.0,
+      "default_package": 0.0,
+      "encoded_strings": 0.0
+    },
+    "reachability": {
+      "entry_points": [
+        "fixture/Main"
       ],
-      "evidence_total": 1,
-      "reached": true
-    }
-  ],
-  "warnings": [ { "code": "class.malformed", "location": "a/B.class", "message": "truncated constant pool" } ],
-  "stats": { "entries": 42, "classes": 30, "uncompressed_bytes": 120000 },
-  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
-}
+      "methods": 19,
+      "reached_methods": 13,
+      "dynamic": false
+    },
+    "findings": [
+      {
+        "rule": "str.url",
+        "severity": "info",
+        "title": "Contains web addresses",
+        "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+        "legit_uses": "Update checks, statistics, documentation links, APIs.",
+        "value": "static-init.example.invalid",
+        "evidence": [
+          {
+            "location": "fixture/Config",
+            "method": "<clinit>()V",
+            "detail": "https://static-init.example.invalid/",
+            "reached": true
+          }
+        ],
+        "evidence_total": 1,
+        "reached": true,
+        "path": [
+          {
+            "location": "fixture/Main",
+            "method": "onEnable()V",
+            "via": "entry"
+          },
+          {
+            "location": "fixture/Config",
+            "method": "<clinit>()V",
+            "via": "static-init"
+          }
+        ]
+      },
+      {
+        "rule": "str.url",
+        "severity": "info",
+        "title": "Contains web addresses",
+        "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+        "legit_uses": "Update checks, statistics, documentation links, APIs.",
+        "value": "unused.example.invalid",
+        "evidence": [
+          {
+            "location": "fixture/Main",
+            "method": "unused()V",
+            "detail": "https://unused.example.invalid/",
+            "reached": false
+          }
+        ],
+        "evidence_total": 1,
+        "reached": false,
+        "path": []
+      },
+      {
+        "rule": "str.url",
+        "severity": "info",
+        "title": "Contains web addresses",
+        "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+        "legit_uses": "Update checks, statistics, documentation links, APIs.",
+        "value": "virtual.example.invalid",
+        "evidence": [
+          {
+            "location": "fixture/TaskImpl",
+            "method": "run()V",
+            "detail": "https://virtual.example.invalid/",
+            "reached": true
+          }
+        ],
+        "evidence_total": 1,
+        "reached": true,
+        "path": [
+          {
+            "location": "fixture/Main",
+            "method": "onEnable()V",
+            "via": "entry"
+          },
+          {
+            "location": "fixture/TaskImpl",
+            "method": "run()V",
+            "via": "call"
+          }
+        ]
+      }
+    ],
+    "warnings": [],
+    "stats": {
+      "entries": 10,
+      "classes": 9,
+      "uncompressed_bytes": 4998
+    },
+    "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+  }
+]
 ```
+
+› real output: jarsnitch 0.3.0, `scan reach-paths.jar --json` in `fixtures/jars`, 6 of the 9 findings left out
 
 - `value` is `null` for capability rules and holds the host, IP, webhook id, path, class name or hash for value-carrying rules.
 - `evidence` is capped at 50 entries per finding; `evidence_total` gives the real count.
 - `reachability` is `null` when the jar has no plugin main class to start from. `entry_points` lists the first 100 classes the call graph starts from; `dynamic` means reachable code loads code at runtime: classes by computed names, class loaders (`code.load`) or classes defined from bytes.
-- `reached` is `true` when the entry points reach at least one of the finding's locations, `false` when every location is code they don't reach, and `null` when it doesn't apply: resources, nested jars, the jar as a whole, or no `reachability`.
+- `reached` is `true` when the entry points reach at least one of the finding's locations, `false` when every location is code they don't reach, and `null` when it doesn't apply: resources, nested jars, the jar as a whole, or no `reachability`. Each evidence entry's `reached` says the same for that one location.
+- `path` is one call path from an entry point to the first reached location, entry point first, when `reached` is `true`, and empty otherwise. Each step has `location`, `method` and `via` (`entry`, `call`, `callback`, `static-init` or `reflection`).
 - Ordering: findings by severity (high first), then rule id, then value. Evidence by location, method, detail, deduplicated.
 - `platform` is one of `bukkit`, `paper`, `bungee`, `velocity`, `fabric`, `quilt`, `forge`, `neoforge`.
 - Stability: adding a field is not a breaking change. Renaming, removing or changing the meaning of a field bumps `schema_version`. Rule ids never change.
@@ -199,25 +304,7 @@ A capability that already existed but now appears in many more places counts as 
 
 ### Diff JSON
 
-Abridged from `jarsnitch diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json` (the web page's sample update):
-
-```json
-{
-  "schema_version": 1,
-  "tool_version": "0.2.1",
-  "old": { "file": { "name": "SampleShop-1.4.0.jar", "size": 3267, "sha256": "62903a86..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
-  "new": { "file": { "name": "SampleShop-1.4.1.jar", "size": 5316, "sha256": "699600d2..." }, "plugins": [ ... ], "partial": false, "warnings": [] },
-  "obfuscation": { "old": 0, "new": 0 },
-  "added":   [ { "kind": "finding", "finding": { "rule": "corr.download-and-run", "severity": "high", "...": "..." } },
-               { "kind": "class", "value": "example/sampleshop/AddonLoader", "rules": ["code.load", "corr.download-and-run", "fs.write-archive"], "severity": "high" } ],
-  "removed": [ { "kind": "finding", "finding": { "rule": "str.url", "value": "sampleshop.example.com", "...": "..." } } ],
-  "changed": [ { "kind": "plugin-field", "key": "plugin.yml authors", "old": "ExampleDev", "new": "ExampleNewOwner" },
-               { "kind": "plugin-field", "key": "plugin.yml version", "old": "1.4.0", "new": "1.4.1" } ],
-  "unchanged": [ { "rule": "net.http", "value": null }, { "rule": "str.url", "value": "api.example.invalid" } ],
-  "warnings": [],
-  "disclaimer": "..."
-}
-```
+A real comparison of the web page's sample update, `jarsnitch diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json`, is in [JSON format](guide/json.md#examples).
 
 In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry), `library` (bundled, from `pom.properties`), `dependency` and `optional-dependency`; every kind except `finding` carries its `value`, and `class` also carries the `rules` its evidence triggered and the highest `severity` among them. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version`, `main`, `authors` or `website` of one descriptor; authors are sorted and joined with ", ", so a new order isn't a change), and `old` / `new` are `null` when a side doesn't have it.
 
@@ -251,7 +338,7 @@ Flow:
 2. The user drops or picks files (each drop zone is also a keyboard-reachable `<input type="file">`; the Scan one takes several files). One jar is scanned. Two jars whose names share a stem before the version (`Foo-1.9.jar`, `foo_2.0.jar`), or any two dropped while the Compare tab is open, are compared, older name first (`Foo-1.9.jar` before `Foo-1.10.jar`), with a Swap button. Anything else, including a dropped folder (the `.jar` files directly in it, like the CLI), is scanned jar by jar into one row per jar, most High then most Notable findings first, each opening to its full report. The sample buttons load the sample jars into the same flow.
 3. `app.js` reads `file.arrayBuffer()` and posts it to the worker as a transferable (no copy).
 4. The worker runs `scan` or `diff` through `engine.js` and posts the parsed result back. If the wasm traps, the worker starts a fresh instance for the next request.
-5. `app.js` renders the report and offers "Download JSON", built locally from a `Blob`: one report object for one jar, an array for several, one object for a diff. Findings are in the core's order, except that info findings start collapsed in their own fold and findings that share a rule (hosts, say) share one card. Findings in code the entry points don't call come last in the high and notable list and in the info fold (the CLI puts them after all other findings), and say so; "About this jar" shows the call-graph size and entry points. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
+5. `app.js` renders the report and offers "Download JSON", built locally from a `Blob`: one report object for one jar, an array for several, one object for a diff. Findings are in the core's order, except that info findings start collapsed in their own fold and findings that share a rule (hosts, say) share one card. Findings in code the entry points don't call come last in the high and notable list and in the info fold (the CLI puts them after all other findings), and say so. Each single-finding card draws a trail from the jar through `path` to the matched evidence, "Where in the jar" maps the places with findings by package and class with a call-graph meter, and "About this jar" shows the call-graph size and entry points. Report text comes from the jar, so it's only ever inserted as text, never as HTML.
 
 Privacy rules:
 
@@ -306,7 +393,7 @@ rustup target add wasm32-unknown-unknown
 ./scripts/build-web.sh
 ```
 
-On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 660 KB; the deployed 0.2.1 build is about 216 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
+On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 660 KB; the 0.2.1 build measured about 216 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
 
 ```bash
 node scripts/check-web.mjs

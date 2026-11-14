@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -62,11 +63,13 @@ expression: report
         {
           "location": "fixture/Addons",
           "method": "load(Ljava/io/File;)Ljava/lang/ClassLoader;",
-          "detail": "java/net/URLClassLoader.<init>"
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.discord-webhook",
@@ -79,11 +82,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "sendStats()V",
-          "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…"
+          "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "net.http",
@@ -96,16 +101,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "checkForUpdates()V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "sendStats()V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -118,11 +126,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "checkForUpdates()V",
-          "detail": "https://api.example.invalid/version"
+          "detail": "https://api.example.invalid/version",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -135,11 +145,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "onEnable()V",
-          "detail": "https://discord.com/invite/example"
+          "detail": "https://discord.com/invite/example",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        }
+      ]
     }
   ],
   "warnings": [],

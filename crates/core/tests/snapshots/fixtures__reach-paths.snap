@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,24 @@ expression: report
         {
           "location": "fixture/ByName",
           "method": "host()Ljava/lang/String;",
-          "detail": "https://by-name.example.invalid/"
+          "detail": "https://by-name.example.invalid/",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/ByName",
+          "method": "host()Ljava/lang/String;",
+          "via": "reflection"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -75,11 +89,24 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "lambda$onEnable$0()V",
-          "detail": "https://lambda.example.invalid/"
+          "detail": "https://lambda.example.invalid/",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "lambda$onEnable$0()V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -92,11 +119,13 @@ expression: report
         {
           "location": "fixture/lib/Lib",
           "method": "host()Ljava/lang/String;",
-          "detail": "https://library.example.invalid/"
+          "detail": "https://library.example.invalid/",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -109,11 +138,24 @@ expression: report
         {
           "location": "fixture/Events",
           "method": "onJoin(Lorg/bukkit/event/player/PlayerJoinEvent;)V",
-          "detail": "https://listener.example.invalid/"
+          "detail": "https://listener.example.invalid/",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Events",
+          "method": "onJoin(Lorg/bukkit/event/player/PlayerJoinEvent;)V",
+          "via": "callback"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -126,11 +168,13 @@ expression: report
         {
           "location": "fixture/NeverMade",
           "method": "run()V",
-          "detail": "https://never-made.example.invalid/"
+          "detail": "https://never-made.example.invalid/",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -143,11 +187,24 @@ expression: report
         {
           "location": "fixture/Config",
           "method": "<clinit>()V",
-          "detail": "https://static-init.example.invalid/"
+          "detail": "https://static-init.example.invalid/",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Config",
+          "method": "<clinit>()V",
+          "via": "static-init"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -160,11 +217,24 @@ expression: report
         {
           "location": "fixture/Overrider",
           "method": "toString()Ljava/lang/String;",
-          "detail": "https://tostring.example.invalid/"
+          "detail": "https://tostring.example.invalid/",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Overrider",
+          "method": "toString()Ljava/lang/String;",
+          "via": "callback"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -177,11 +247,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://unused.example.invalid/"
+          "detail": "https://unused.example.invalid/",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -194,11 +266,24 @@ expression: report
         {
           "location": "fixture/TaskImpl",
           "method": "run()V",
-          "detail": "https://virtual.example.invalid/"
+          "detail": "https://virtual.example.invalid/",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/TaskImpl",
+          "method": "run()V",
+          "via": "call"
+        }
+      ]
     }
   ],
   "warnings": [],

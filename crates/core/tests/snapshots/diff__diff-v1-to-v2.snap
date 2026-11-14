@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/diff.rs
+assertion_line: 178
 expression: "diff(\"diff-v1\", \"diff-v2\")"
 ---
 {
@@ -87,11 +88,13 @@ expression: "diff(\"diff-v1\", \"diff-v2\")"
           {
             "location": "fixture/Addons",
             "method": "load(Ljava/io/File;)Ljava/lang/ClassLoader;",
-            "detail": "java/net/URLClassLoader.<init>"
+            "detail": "java/net/URLClassLoader.<init>",
+            "reached": false
           }
         ],
         "evidence_total": 1,
-        "reached": false
+        "reached": false,
+        "path": []
       }
     },
     {
@@ -107,11 +110,13 @@ expression: "diff(\"diff-v1\", \"diff-v2\")"
           {
             "location": "fixture/Main",
             "method": "sendStats()V",
-            "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…"
+            "detail": "https://discord.com/api/webhooks/000000000000000000/xxxx…",
+            "reached": false
           }
         ],
         "evidence_total": 1,
-        "reached": false
+        "reached": false,
+        "path": []
       }
     }
   ],

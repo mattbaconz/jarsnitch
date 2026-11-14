@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "fixture/Loader",
           "method": "unused(Ljava/io/File;)V",
-          "detail": "java/net/URLClassLoader.<init>"
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "net.http",
@@ -75,11 +78,13 @@ expression: report
         {
           "location": "fixture/Updater",
           "method": "unused()V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -92,11 +97,13 @@ expression: report
         {
           "location": "fixture/Updater",
           "method": "unused()V",
-          "detail": "https://updates.example.invalid/latest"
+          "detail": "https://updates.example.invalid/latest",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

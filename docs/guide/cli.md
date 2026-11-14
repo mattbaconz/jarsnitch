@@ -21,10 +21,10 @@ Exit codes: 0 no High findings (diff: none added), 1 a file couldn't be read or
 there was nothing to scan, 2 at least one High finding (diff: the update adds one).
 ```
 
-› real output: jarsnitch 0.2.1
+› real output: jarsnitch 0.3.0
 
 - `-h` or `--help` anywhere on the line, or `help` as the first word, prints this and exits with 0.
-- `-V` or `--version` prints `jarsnitch 0.2.1` and exits with 0.
+- `-V` or `--version` prints `jarsnitch 0.3.0` and exits with 0.
 
 ## Options and arguments
 

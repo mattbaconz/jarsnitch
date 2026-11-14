@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "exec.process: java/lang/Runtime.exec"
+          "detail": "exec.process: java/lang/Runtime.exec",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "net.http: java/net/URL.openConnection"
+          "detail": "net.http: java/net/URL.openConnection",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "exec.process",
@@ -80,11 +84,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/lang/Runtime.exec"
+          "detail": "java/lang/Runtime.exec",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "net.http",
@@ -97,11 +103,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -114,11 +122,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://api.example.invalid/task"
+          "detail": "https://api.example.invalid/task",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

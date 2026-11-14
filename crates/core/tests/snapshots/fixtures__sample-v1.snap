@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -66,11 +67,13 @@ expression: report
         {
           "location": "example/sampleshop/libs/net/TcpClient",
           "method": "connect(Ljava/lang/String;I)Ljava/net/Socket;",
-          "detail": "java/net/Socket.<init>"
+          "detail": "java/net/Socket.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "mc.console-command",
@@ -83,11 +86,24 @@ expression: report
         {
           "location": "example/sampleshop/ShopCommand",
           "method": "onCommand(Lorg/bukkit/command/CommandSender;Lorg/bukkit/command/Command;Ljava/lang/String;[Ljava/lang/String;)Z",
-          "detail": "org/bukkit/Bukkit.dispatchCommand"
+          "detail": "org/bukkit/Bukkit.dispatchCommand",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/ShopCommand",
+          "method": "onCommand(Lorg/bukkit/command/CommandSender;Lorg/bukkit/command/Command;Ljava/lang/String;[Ljava/lang/String;)Z",
+          "via": "callback"
+        }
+      ]
     },
     {
       "rule": "net.http",
@@ -100,11 +116,24 @@ expression: report
         {
           "location": "example/sampleshop/UpdateChecker",
           "method": "check(Ljava/util/logging/Logger;)V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -117,11 +146,24 @@ expression: report
         {
           "location": "example/sampleshop/UpdateChecker",
           "method": "check(Ljava/util/logging/Logger;)V",
-          "detail": "https://api.example.invalid/sampleshop/latest"
+          "detail": "https://api.example.invalid/sampleshop/latest",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -134,11 +176,13 @@ expression: report
         {
           "location": "plugin.yml",
           "method": null,
-          "detail": "https://sampleshop.example.com"
+          "detail": "https://sampleshop.example.com",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

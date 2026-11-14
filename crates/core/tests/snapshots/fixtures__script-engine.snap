@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()Ljava/lang/Object;",
-          "detail": "javax/script/ScriptEngine.eval"
+          "detail": "javax/script/ScriptEngine.eval",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()Ljava/lang/Object;",
-          "detail": "javax/script/ScriptEngineManager.<init>"
+          "detail": "javax/script/ScriptEngineManager.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

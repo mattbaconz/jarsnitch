@@ -16,9 +16,59 @@ A report lists what a plugin's code is able to do, how much that matters and whe
 2. **Title** in plain English. Rules that carry a value add it after a colon, such as `Contains web addresses: api.example.invalid`.
 3. **Rule id.** It never changes, so you can filter on it in `--json` output. On the website it links to the rule.
 4. **Why it matters,** in one line.
-5. **Common legitimate uses,** because most capabilities have them. The website and the JSON carry this line; the command line leaves it out to stay short.
-6. **Where:** the class and method, then the call or text that matched. When there are more places, the website shows "Found in X and N more places" and lists them (up to 50, then "N more not listed"); the command line shows the first 3 and "+N more".
-7. **Not called:** nothing the plugin starts from reaches this code.
+5. **Trail:** on the website, how the plugin gets to the code, from an entry point (or from the jar) down to the call or text that matched. See [The trail](#the-trail). The command line prints the first 3 places as `at` lines, then "+N more".
+6. **Not called:** nothing the plugin starts from reaches this code. On the website the trail shows a dashed `no caller` break instead of a call path; the command line adds "not called from the plugin's entry points".
+7. **Common legitimate uses,** because most capabilities have them. The website and the JSON carry this line; the command line leaves it out to stay short.
+
+## The trail
+
+Each card for a single finding on the website has a trail: a short list of rows down to the place the rule matched. A row starts with a label. For the steps of a call path (`entry`, `calls`, `callback`, `static init`, `reflection`) and for `embedded`, point at the label for what it means, or, with a screen reader, hear it read with the label. The table below explains every label.
+
+Each row has a node on the trail's line, drawn like the marks in [Where in the jar](#where-in-the-jar): a solid square for code the plugin's entry points reach, a hollow square for code nothing calls, and a circle for the jar, a nested jar, a file or decoded code, which the call graph doesn't cover. The `match` node takes the severity's colour.
+
+| Row | Meaning |
+|---|---|
+| `jar` | The file you scanned. A trail without a call path starts here. |
+| `entry` | Where the server starts the plugin: a method of its main class, or of a class it declares, such as `onEnable`. |
+| `calls` | The row above calls this method, directly or through an interface or superclass. |
+| `callback` | The server, a library or the JVM calls this method on an object the row above creates: an event handler, a command, `run()`, `toString()`. |
+| `static init` | The row above uses the class, which runs its static initializer, shown as `.<clinit>`. |
+| `reflection` | The row above names the class for reflection, or lists its methods. |
+| `no caller` | A dashed break: nothing the entry points run calls this code. |
+| `nested jar` | A jar inside the jar. The rows below it are inside that jar. |
+| `class` | A class, with the method when the place is inside one. |
+| `embedded` | Code stored as encoded text in the class above, decoded and scanned. |
+| `file` | A file in the jar, such as `plugin.yml`. |
+| `match` | The call or text that matched, up to 4 from the same place. In a combination each part starts with its rule id, such as `code.load`. |
+
+A method is shown as package, class and method with short parameter types, like `example/sampleshop/ChatListener.onChat(AsyncPlayerChatEvent)`. A constructor is shown as `new ClassName(…)`.
+
+Which rows a trail has depends on the finding:
+
+- **Reached:** the call path the engine found, from an `entry` row to the method the finding is in, then the matches there. A path of more than 7 steps shows the first 2 and the last 4, with a button for the steps between. How the path is chosen: [Call paths](call-graph.md#call-paths).
+- **Not called:** `jar`, the dashed `no caller` break, then the class and method, then the matches.
+- **Not code, or no call graph:** `jar`, then where the place is: each `nested jar` it sits in, then the `class` (with an `embedded` row for decoded code) or the `file`, then the matches. A finding about the jar as a whole, like the obfuscation score, goes straight from `jar` to the match.
+
+Two trails from the SampleShop 1.4.1 sample, written out as text:
+
+```text
+entry      example/sampleshop/SampleShop.onEnable()
+callback   example/sampleshop/ChatListener.onChat(AsyncPlayerChatEvent)
+match      org/bukkit/entity/Player.setOp
+```
+
+```text
+jar        SampleShop-1.4.1.jar
+no caller  Nothing the entry points run calls this.
+class      example/sampleshop/libs/net/TcpClient.connect(String, int)
+match      java/net/Socket.<init>
+```
+
+› `mc.set-op` and `net.socket` in the sample, as the website draws them
+
+When a finding was found in more places than its trail shows, **All N places it was found** under the card opens a list of them: up to 50, each with its class and method, the matched call or text, and "not called" when it applies, then "N more not listed" for the rest.
+
+Findings that share a rule and differ only in value share one card that lists the values instead of a trail; see [Findings](#findings) below.
 
 ## The website's report, top to bottom
 
@@ -35,14 +85,26 @@ On the left, or at the top on a phone:
 
 ### Banners
 
-A banner above the findings when it applies: the sample note, "This file isn't a readable jar or zip, so nothing in it was checked.", or "Partial report: a scan limit was hit, so part of the jar wasn't checked."
+A banner at the top when it applies: the sample note, "This file isn't a readable jar or zip, so nothing in it was checked.", or "Partial report: a scan limit was hit, so part of the jar wasn't checked."
+
+### Where in the jar
+
+A map of where the findings are, above the findings. It's there when at least one finding is at a place inside the jar.
+
+- **Call graph meter:** "Call graph: R of M methods reached from N entry points", with a bar filled to that share. Only for a jar with a call graph.
+- **Jar map:** a tree with a row for each package with findings, like `example/sampleshop/`, and under it a row for each class or file with findings. Files at the top level of the jar, like `plugin.yml`, sit under the jar's file name.
+- **Marks:** one for each rule found at that place, highest severity first, with the severity's letter (H, N or I) in its colour. A square is code the call graph covers: solid when the entry points reach it, hollow when nothing they run calls it. A circle is a place it doesn't cover: a file, a class in a nested jar, or decoded code. The rule ids follow the marks, except on a phone. Each mark's severity, rule and reach are also given as a tooltip and as text for screen readers, and a key under the map explains the marks it uses.
+- **Links:** a class or file name links to the card of its highest finding, and opens the Info fold first when that card is inside it.
+- **Up to 16 places.** A jar with more shows the 16 with the highest severity, then the most rules, and counts the rest: "and N more places with fewer or lower findings".
+
+In the SampleShop 1.4.1 sample the map has 6 places: `plugin.yml`, with a circle for `str.url`; `AddonLoader` with 4 solid squares (`corr.download-and-run`, `code.load`, `fs.write-archive`, `str.url`), `ChatListener` with 2, `ShopCommand` with 1 and `UpdateChecker` with 2, all in `example/sampleshop/`; and `TcpClient` in `example/sampleshop/libs/net/`, with one hollow square for `net.socket`.
 
 ### Findings
 
-- High and Notable findings as cards, highest first, with the ones in code nothing calls at the end of the list.
+- High and Notable findings as cards, highest first, with the ones in code nothing calls at the end of the list. A card for one finding has a [trail](#the-trail).
 - When some findings aren't called *and* the plugin loads code at runtime, a line above the cards says that code may still run.
 - **Info findings (n)** are folded; open the fold to see them.
-- Findings that share a rule and differ only in value, like several hosts, share one card titled with the count, such as "Contains web addresses (3)". Each value shows where it was found; past 8 values a **Show N more** button lists the rest.
+- Findings that share a rule and differ only in value, like several hosts, share one card titled with the count, such as "Contains web addresses (3)". Each value shows where it was found, as "in X and N more places"; past 8 values a **Show N more** button lists the rest. When those findings aren't called, the card ends with "Not called from the plugin's entry points."
 - An empty section says "No high or notable findings." or, when nothing at all matched, "jarsnitch found nothing from its rule list in this jar."
 
 ### About this jar
@@ -63,7 +125,7 @@ Scanning several jars gives one row per jar, most High findings first, then most
 
 ### A comparison
 
-A comparison has its own layout: what the update adds, removes and changes, then what's unchanged. See [Compare two versions](compare.md#reading-a-comparison).
+A comparison has its own layout: what the update adds, removes and changes, then what's unchanged. The findings it adds get the same cards, trails included, drawn from the new version. See [Compare two versions](compare.md#reading-a-comparison).
 
 ## The command line report, line by line
 

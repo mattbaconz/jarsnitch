@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()Ljava/lang/Object;",
-          "detail": "java/io/ObjectInputStream.readObject"
+          "detail": "java/io/ObjectInputStream.readObject",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

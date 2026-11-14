@@ -5,7 +5,12 @@
 //! can see; code that loads classes by names built at runtime can still get there.
 
 use std::cell::OnceCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
+
+use crate::report::{Step, Via};
+
+/// No parent: an entry point.
+const NONE: u32 = u32::MAX;
 
 /// Method name id and descriptor id, packed.
 pub(crate) type Sig = u64;
@@ -91,6 +96,10 @@ pub(crate) struct Graph {
 /// What the entry points reach.
 pub(crate) struct Reach {
     reached: Vec<bool>,
+    /// The method whose code first led to each reached method, NONE for entry points.
+    /// The work list runs first in, first out, so these give short paths.
+    parent: Vec<u32>,
+    via: Vec<Via>,
     live: HashSet<u32>,
     pub dynamic: bool,
 }
@@ -244,13 +253,17 @@ impl Graph {
         let mut s = State {
             g: self,
             reached: vec![false; self.methods.len()],
-            work: Vec::new(),
+            parent: vec![NONE; self.methods.len()],
+            via: vec![Via::Entry; self.methods.len()],
+            cur: NONE,
+            work: VecDeque::new(),
             inited: HashSet::new(),
             instantiated: HashSet::new(),
-            has_instance: HashSet::new(),
+            instances: HashMap::new(),
             virtual_calls: HashMap::new(),
             seen_calls: HashSet::new(),
             enumerate: false,
+            enumerator: NONE,
             dynamic: false,
             object_sigs,
             object: self.names.get("java/lang/Object"),
@@ -264,7 +277,7 @@ impl Graph {
                 c.methods.iter().copied().filter(|&m| s.is_constructor(self.methods[m as usize].sig)).collect()
             });
             for m in constructors {
-                s.reach(m);
+                s.reach(m, Via::Entry);
             }
         }
         for e in whole {
@@ -272,7 +285,8 @@ impl Graph {
                 s.everything(id);
             }
         }
-        while let Some(m) = s.work.pop() {
+        while let Some(m) = s.work.pop_front() {
+            s.cur = m;
             for &r in &self.methods[m as usize].refs {
                 s.apply(r);
             }
@@ -284,7 +298,7 @@ impl Graph {
                 live.insert(self.methods[m].class);
             }
         }
-        Reach { reached: s.reached, live, dynamic: s.dynamic }
+        Reach { reached: s.reached, parent: s.parent, via: s.via, live, dynamic: s.dynamic }
     }
 }
 
@@ -302,20 +316,61 @@ impl Reach {
     pub fn reached_count(&self) -> usize {
         self.reached.iter().filter(|&&r| r).count()
     }
+
+    /// One call path from an entry point to code at `location` (in `method`, or in any
+    /// method of the class), entry point first. Empty when that code isn't reached.
+    pub fn path(&self, g: &Graph, location: &str, method: Option<&str>) -> Vec<Step> {
+        let target = match method {
+            Some(m) => g.method_at(location, m).filter(|&m| self.reached[m as usize]),
+            // Anywhere in the class: its shortest path, constructors and static
+            // initializers only when nothing else in the class is reached.
+            None => g.names.get(location).and_then(|c| g.classes.get(&c)).and_then(|c| {
+                c.methods.iter().copied().filter(|&m| self.reached[m as usize]).min_by_key(|&m| {
+                    let special = g.names.str((g.methods[m as usize].sig >> 32) as u32).starts_with('<');
+                    (special, self.depth(m))
+                })
+            }),
+        };
+        let mut steps = Vec::new();
+        let mut next = target.unwrap_or(NONE);
+        // A parent is always reached before its child, so the chain ends at an entry point.
+        while next != NONE && steps.len() < self.parent.len() {
+            let (location, method) = g.describe(next);
+            steps.push(Step { location, method, via: self.via[next as usize] });
+            next = self.parent[next as usize];
+        }
+        steps.reverse();
+        steps
+    }
+
+    fn depth(&self, mut m: u32) -> usize {
+        let mut n = 0;
+        while m != NONE && n < self.parent.len() {
+            m = self.parent[m as usize];
+            n += 1;
+        }
+        n
+    }
 }
 
 struct State<'g> {
     g: &'g Graph,
     reached: Vec<bool>,
-    work: Vec<u32>,
+    parent: Vec<u32>,
+    via: Vec<Via>,
+    /// The method whose code is being applied; NONE while the entry points are set up.
+    cur: u32,
+    work: VecDeque<u32>,
     inited: HashSet<u32>,
     instantiated: HashSet<u32>,
-    /// Classes with an instantiated subtype, themselves included.
-    has_instance: HashSet<u32>,
-    /// Owners of the virtual calls seen so far, by signature.
-    virtual_calls: HashMap<Sig, Vec<u32>>,
+    /// The instantiated classes below each type, the type itself included.
+    instances: HashMap<u32, Vec<u32>>,
+    /// Owner and calling method of the virtual calls seen so far, by signature.
+    virtual_calls: HashMap<Sig, Vec<(u32, u32)>>,
     seen_calls: HashSet<(Sig, u32)>,
     enumerate: bool,
+    /// The method that first lists a class's methods by reflection.
+    enumerator: u32,
     dynamic: bool,
     object_sigs: Vec<Sig>,
     object: Option<u32>,
@@ -329,19 +384,38 @@ impl State<'_> {
         Some((sig >> 32) as u32) == self.init
     }
 
-    /// A virtual call seen so far could land on this method of an instance of `c`.
-    fn called(&self, c: u32, sig: Sig) -> bool {
-        self.virtual_calls
-            .get(&sig)
-            .is_some_and(|owners| owners.iter().any(|&o| !self.g.classes.contains_key(&o) || self.g.is_subtype(c, o)))
+    /// A call on `owner` may land on a method declared in `t`, an instantiated type.
+    fn dispatches(&self, owner: u32, t: u32) -> bool {
+        !self.g.classes.contains_key(&owner) || self.g.is_subtype(t, owner) || self.g.is_subtype(owner, t)
     }
 
-    fn reach(&mut self, m: u32) {
+    /// A call on `owner` may also land on `t`'s method through an instantiated class
+    /// below both that inherits it, as when `AbstractModule.start` implements `Module`
+    /// for a `FooModule extends AbstractModule implements Module`.
+    fn lands(&self, owner: u32, t: u32) -> bool {
+        self.dispatches(owner, t) || self.instances.get(&owner).is_some_and(|cs| cs.iter().any(|&c| self.g.is_subtype(c, t)))
+    }
+
+    /// The method that made the first virtual call seen so far that could land on the
+    /// method with `sig` declared in `t`. The same test as `apply`, so the result
+    /// doesn't depend on whether the call or the `new` comes first.
+    fn caller(&self, t: u32, sig: Sig) -> Option<u32> {
+        self.virtual_calls.get(&sig)?.iter().find(|&&(o, _)| self.lands(o, t)).map(|&(_, caller)| caller)
+    }
+
+    fn reach(&mut self, m: u32, how: Via) {
+        self.reach_from(m, how, self.cur);
+    }
+
+    /// `parent` is the method whose code leads to `m`, NONE for an entry point.
+    fn reach_from(&mut self, m: u32, how: Via, parent: u32) {
         if let Some(r) = self.reached.get_mut(m as usize)
             && !*r
         {
             *r = true;
-            self.work.push(m);
+            self.parent[m as usize] = parent;
+            self.via[m as usize] = if parent == NONE { Via::Entry } else { how };
+            self.work.push_back(m);
         }
     }
 
@@ -355,7 +429,7 @@ impl State<'_> {
                 return;
             }
             if let Some(m) = self.clinit.and_then(|s| self.g.by_key.get(&(x, s)).copied()) {
-                self.reach(m);
+                self.reach(m, Via::StaticInit);
             }
             next = self.g.classes[&x].sup;
         }
@@ -370,22 +444,34 @@ impl State<'_> {
         // A type from outside the jar (Listener, Runnable, CommandExecutor, ClassLoader)
         // means the server or the JVM may call any method the class overrides.
         let callbacks = types.iter().any(|t| !self.g.classes.contains_key(t) && Some(*t) != self.object);
+        // Listed before the methods, so `caller` sees this class. A method listing runs
+        // `instantiate` again on classes already listed.
+        if !self.instances.get(&c).is_some_and(|cs| cs.contains(&c)) {
+            for &t in &types {
+                self.instances.entry(t).or_default().push(c);
+            }
+        }
         for t in types {
-            self.has_instance.insert(t);
             let Some(class) = self.g.classes.get(&t) else { continue };
             for &m in &class.methods {
                 let method = &self.g.methods[m as usize];
                 if self.reached[m as usize] || (method.is_static && !self.enumerate) {
                     continue;
                 }
-                if (callbacks && method.visible)
-                    || method.annotated
-                    || self.enumerate
-                    || self.object_sigs.contains(&method.sig)
-                    || self.called(c, method.sig)
-                {
-                    self.reach(m);
-                }
+                // The step before is the method that creates the object, makes the call
+                // or lists the methods.
+                let (how, parent) = if method.is_static {
+                    (Via::Reflection, self.enumerator)
+                } else if (callbacks && method.visible) || method.annotated || self.object_sigs.contains(&method.sig) {
+                    (Via::Callback, self.cur)
+                } else if let Some(caller) = self.caller(t, method.sig) {
+                    (Via::Call, caller)
+                } else if self.enumerate {
+                    (Via::Reflection, self.enumerator)
+                } else {
+                    continue;
+                };
+                self.reach_from(m, how, parent);
             }
         }
     }
@@ -396,7 +482,7 @@ impl State<'_> {
         let methods = class.methods.clone();
         self.instantiate(c);
         for m in methods {
-            self.reach(m);
+            self.reach(m, Via::Reflection);
         }
     }
 
@@ -405,7 +491,7 @@ impl State<'_> {
             Ref::Call(owner, sig) => {
                 let target = self.g.resolve(owner, sig);
                 if let Some(t) = target {
-                    self.reach(t);
+                    self.reach(t, Via::Call);
                     self.init(self.g.methods[t as usize].class);
                 }
                 // Constructors and static methods don't dispatch on the receiver.
@@ -415,18 +501,16 @@ impl State<'_> {
                 {
                     return;
                 }
-                self.virtual_calls.entry(sig).or_default().push(owner);
-                let in_jar = self.g.classes.contains_key(&owner);
+                self.virtual_calls.entry(sig).or_default().push((owner, self.cur));
                 let Some(candidates) = self.g.by_sig.get(&sig) else { return };
                 for &m in candidates {
                     let method = &self.g.methods[m as usize];
-                    let class = method.class;
                     if !self.reached[m as usize]
                         && !method.is_static
-                        && self.has_instance.contains(&class)
-                        && (!in_jar || self.g.is_subtype(class, owner) || self.g.is_subtype(owner, class))
+                        && self.instances.contains_key(&method.class)
+                        && self.lands(owner, method.class)
                     {
-                        self.reach(m);
+                        self.reach(m, Via::Call);
                     }
                 }
             }
@@ -437,7 +521,11 @@ impl State<'_> {
             Ref::Enumerate => {
                 if !self.enumerate {
                     self.enumerate = true;
-                    let classes: Vec<u32> = self.instantiated.drain().collect();
+                    self.enumerator = self.cur;
+                    // Sorted: queue order decides each method's parent, and ids follow
+                    // the jar's own order.
+                    let mut classes: Vec<u32> = self.instantiated.drain().collect();
+                    classes.sort_unstable();
                     for c in classes {
                         self.instantiate(c);
                     }

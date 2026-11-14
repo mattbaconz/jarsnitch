@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused(Lorg/bukkit/entity/Player;Lorg/bukkit/OfflinePlayer;)V",
-          "detail": "org/bukkit/OfflinePlayer.setOp"
+          "detail": "org/bukkit/OfflinePlayer.setOp",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused(Lorg/bukkit/entity/Player;Lorg/bukkit/OfflinePlayer;)V",
-          "detail": "org/bukkit/entity/Player.setOp"
+          "detail": "org/bukkit/entity/Player.setOp",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

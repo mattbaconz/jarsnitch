@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -62,11 +63,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "onJoin(Lorg/bukkit/event/player/PlayerJoinEvent;)V",
-          "detail": "org/bukkit/Bukkit.dispatchCommand"
+          "detail": "org/bukkit/Bukkit.dispatchCommand",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onJoin(Lorg/bukkit/event/player/PlayerJoinEvent;)V",
+          "via": "entry"
+        }
+      ]
     },
     {
       "rule": "net.http",
@@ -79,11 +88,24 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "checkForUpdates()V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "checkForUpdates()V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -96,11 +118,24 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "checkForUpdates()V",
-          "detail": "https://api.example.invalid/hello/latest"
+          "detail": "https://api.example.invalid/hello/latest",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "checkForUpdates()V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -113,11 +148,13 @@ expression: report
         {
           "location": "plugin.yml",
           "method": null,
-          "detail": "https://example.invalid/hello"
+          "detail": "https://example.invalid/hello",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,16 +59,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "code.load: via reflection: java/net/URLClassLoader"
+          "detail": "code.load: via reflection: java/net/URLClassLoader",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "str.ip: 192.0.2.10"
+          "detail": "str.ip: 192.0.2.10",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "code.load",
@@ -80,16 +84,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "via reflection: java/net/URLClassLoader"
+          "detail": "via reflection: java/net/URLClassLoader",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "via reflection: java/net/URLClassLoader.<init>"
+          "detail": "via reflection: java/net/URLClassLoader.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "reflect.indirect",
@@ -102,16 +109,19 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/net/URLClassLoader"
+          "detail": "java/net/URLClassLoader",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java/net/URLClassLoader.<init>"
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 2,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.hidden-text",
@@ -124,21 +134,25 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "/addon"
+          "detail": "/addon",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "192.0.2.10"
+          "detail": "192.0.2.10",
+          "reached": false
         },
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "java.net.URLClassLoader"
+          "detail": "java.net.URLClassLoader",
+          "reached": false
         }
       ],
       "evidence_total": 3,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.ip",
@@ -151,11 +165,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "192.0.2.10"
+          "detail": "192.0.2.10",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     }
   ],
   "warnings": [],

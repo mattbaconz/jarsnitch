@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -66,16 +67,30 @@ expression: report
         {
           "location": "example/sampleshop/AddonLoader",
           "method": "load(Ljava/io/File;)V",
-          "detail": "code.load: java/net/URLClassLoader.<init>"
+          "detail": "code.load: java/net/URLClassLoader.<init>",
+          "reached": true
         },
         {
           "location": "example/sampleshop/AddonLoader",
           "method": "load(Ljava/io/File;)V",
-          "detail": "str.url: https://cdn.example.invalid/addons/boost.jar"
+          "detail": "str.url: https://cdn.example.invalid/addons/boost.jar",
+          "reached": true
         }
       ],
       "evidence_total": 2,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "corr.hidden-command",
@@ -88,11 +103,24 @@ expression: report
         {
           "location": "example/sampleshop/ChatListener",
           "method": null,
-          "detail": "chat or command handler, string-literal comparison and mc.set-op in one class"
+          "detail": "chat or command handler, string-literal comparison and mc.set-op in one class",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/ChatListener",
+          "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
+          "via": "callback"
+        }
+      ]
     },
     {
       "rule": "code.load",
@@ -105,11 +133,24 @@ expression: report
         {
           "location": "example/sampleshop/AddonLoader",
           "method": "load(Ljava/io/File;)V",
-          "detail": "java/net/URLClassLoader.<init>"
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "fs.write-archive",
@@ -122,11 +163,24 @@ expression: report
         {
           "location": "example/sampleshop/AddonLoader",
           "method": "load(Ljava/io/File;)V",
-          "detail": "writes a file named .jar or .class"
+          "detail": "writes a file named .jar or .class",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "mc.set-op",
@@ -139,11 +193,24 @@ expression: report
         {
           "location": "example/sampleshop/ChatListener",
           "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
-          "detail": "org/bukkit/entity/Player.setOp"
+          "detail": "org/bukkit/entity/Player.setOp",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/ChatListener",
+          "method": "onChat(Lorg/bukkit/event/player/AsyncPlayerChatEvent;)V",
+          "via": "callback"
+        }
+      ]
     },
     {
       "rule": "net.socket",
@@ -156,11 +223,13 @@ expression: report
         {
           "location": "example/sampleshop/libs/net/TcpClient",
           "method": "connect(Ljava/lang/String;I)Ljava/net/Socket;",
-          "detail": "java/net/Socket.<init>"
+          "detail": "java/net/Socket.<init>",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "mc.console-command",
@@ -173,11 +242,24 @@ expression: report
         {
           "location": "example/sampleshop/ShopCommand",
           "method": "onCommand(Lorg/bukkit/command/CommandSender;Lorg/bukkit/command/Command;Ljava/lang/String;[Ljava/lang/String;)Z",
-          "detail": "org/bukkit/Bukkit.dispatchCommand"
+          "detail": "org/bukkit/Bukkit.dispatchCommand",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/ShopCommand",
+          "method": "onCommand(Lorg/bukkit/command/CommandSender;Lorg/bukkit/command/Command;Ljava/lang/String;[Ljava/lang/String;)Z",
+          "via": "callback"
+        }
+      ]
     },
     {
       "rule": "net.http",
@@ -190,11 +272,24 @@ expression: report
         {
           "location": "example/sampleshop/UpdateChecker",
           "method": "check(Ljava/util/logging/Logger;)V",
-          "detail": "java/net/URL.openConnection"
+          "detail": "java/net/URL.openConnection",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -207,11 +302,24 @@ expression: report
         {
           "location": "example/sampleshop/UpdateChecker",
           "method": "check(Ljava/util/logging/Logger;)V",
-          "detail": "https://api.example.invalid/sampleshop/latest"
+          "detail": "https://api.example.invalid/sampleshop/latest",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/UpdateChecker",
+          "method": "check(Ljava/util/logging/Logger;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -224,11 +332,24 @@ expression: report
         {
           "location": "example/sampleshop/AddonLoader",
           "method": "load(Ljava/io/File;)V",
-          "detail": "https://cdn.example.invalid/addons/boost.jar"
+          "detail": "https://cdn.example.invalid/addons/boost.jar",
+          "reached": true
         }
       ],
       "evidence_total": 1,
-      "reached": true
+      "reached": true,
+      "path": [
+        {
+          "location": "example/sampleshop/SampleShop",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "example/sampleshop/AddonLoader",
+          "method": "load(Ljava/io/File;)V",
+          "via": "call"
+        }
+      ]
     },
     {
       "rule": "str.url",
@@ -241,11 +362,13 @@ expression: report
         {
           "location": "plugin.yml",
           "method": null,
-          "detail": "https://shop-plugins.example.net"
+          "detail": "https://shop-plugins.example.net",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

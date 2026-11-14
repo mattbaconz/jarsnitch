@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "base64 string decodes to a class file; scanned as fixture/Main!embedded-1"
+          "detail": "base64 string decodes to a class file; scanned as fixture/Main!embedded-1",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "exec.process",
@@ -75,11 +78,13 @@ expression: report
         {
           "location": "fixture/Main!embedded-1!/payload/Payload",
           "method": "unused()V",
-          "detail": "java/lang/Runtime.exec"
+          "detail": "java/lang/Runtime.exec",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],

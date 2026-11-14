@@ -1,5 +1,6 @@
 ---
 source: crates/core/tests/fixtures.rs
+assertion_line: 211
 expression: report
 ---
 {
@@ -58,11 +59,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "https://api.example.invalid/v1/check"
+          "detail": "https://api.example.invalid/v1/check",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -75,11 +78,13 @@ expression: report
         {
           "location": "config.yml",
           "method": null,
-          "detail": "mc.example.net"
+          "detail": "mc.example.net",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -92,11 +97,13 @@ expression: report
         {
           "location": "fixture/Main",
           "method": "unused()V",
-          "detail": "play.example.com"
+          "detail": "play.example.com",
+          "reached": false
         }
       ],
       "evidence_total": 1,
-      "reached": false
+      "reached": false,
+      "path": []
     },
     {
       "rule": "str.url",
@@ -109,11 +116,13 @@ expression: report
         {
           "location": "config.yml",
           "method": null,
-          "detail": "https://updates.example.invalid/latest"
+          "detail": "https://updates.example.invalid/latest",
+          "reached": null
         }
       ],
       "evidence_total": 1,
-      "reached": null
+      "reached": null,
+      "path": []
     }
   ],
   "warnings": [],
