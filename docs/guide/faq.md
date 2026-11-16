@@ -36,6 +36,10 @@ The report includes an obfuscation score, and a finding at 25 or more. Obfuscati
 
 When an update changes a plugin's declared authors or website, the comparison says this can mean the plugin has a new owner. Plugins change hands, and a new owner can ship code the old one never would. It's a reason to read what the update adds, nothing more.
 
+## Is my copy the official one?
+
+`jarsnitch check`, or **Check against official releases** on the website, looks your jar up on Modrinth and Hangar. You learn whether it's the file the project published there and, if it isn't, how its code differs from the official file of that version. Paid plugins and plugins published only elsewhere can't be checked this way. See [Check against official releases](check.md).
+
 ## It says "not a readable jar"?
 
 The file isn't a zip, or its central directory is damaged, so nothing in it was checked. Download it again from the original page.

@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use sha2::{Digest, Sha256};
 
+use crate::Limits;
 use crate::archive::{self, ReadError};
 use crate::class::{self, ACC_PROTECTED, ACC_PUBLIC, ACC_STATIC, ClassFile, Const, Op};
 use crate::meta;
@@ -12,7 +13,6 @@ use crate::reach::{Graph, Ref, Sig};
 use crate::report::*;
 use crate::rules::{self, REFLECT_CLASS_ONLY};
 use crate::strings::{self, Payload, UrlKind};
-use crate::Limits;
 
 const EVIDENCE_CAP: usize = 50;
 pub(crate) const OBF_THRESHOLD: u32 = 25;
@@ -21,7 +21,16 @@ pub(crate) const OBF_THRESHOLD: u32 = 25;
 const HOST_LIST: usize = 100;
 
 /// Text resources scanned for addresses and encoded payloads.
-const TEXT_EXTS: &[&str] = &["yml", "yaml", "json", "properties", "txt", "toml", "conf", "cfg"];
+const TEXT_EXTS: &[&str] = &[
+    "yml",
+    "yaml",
+    "json",
+    "properties",
+    "txt",
+    "toml",
+    "conf",
+    "cfg",
+];
 /// Class names collected from resources as call-graph entry points, at most.
 const NAMED_CLASSES: usize = 100_000;
 /// Entry points listed in the report, at most.
@@ -29,8 +38,10 @@ const ENTRY_LIST: usize = 100;
 /// Rules that count as the network part of the correlations.
 const NET: &[&str] = &["net.http", "net.socket", "str.url", "str.ip"];
 
-pub fn run(name: &str, bytes: &[u8], limits: &Limits) -> (Report, Classes) {
+/// Scans a jar. With `prints`, also fingerprints every class and file for `diff`.
+pub fn run(name: &str, bytes: &[u8], limits: &Limits, prints: bool) -> (Report, Classes) {
     let mut s = Scan::new(limits);
+    s.prints = prints;
     s.archive(bytes, "", 0);
     s.finish(name, bytes)
 }
@@ -41,14 +52,91 @@ pub struct Classes {
     pub names: BTreeSet<String>,
     /// Notable and High rules with evidence in each class, before the evidence cap.
     pub rules: BTreeMap<String, BTreeSet<&'static str>>,
+    /// Each class file by its path without `.class` (`a/B`, `lib.jar!/a/B`). Only filled
+    /// when the scan was asked for prints.
+    pub code: BTreeMap<String, ClassPrint>,
+    /// Content hash of every other file except nested archives, whose own files are
+    /// listed instead. Only filled when the scan was asked for prints.
+    pub files: BTreeMap<String, [u8; 32]>,
+    /// Paths of the native programs and libraries among `files`.
+    pub natives: BTreeSet<String>,
+}
+
+/// What a class contains, for telling whether its code changed.
+#[derive(PartialEq, Eq)]
+pub struct ClassPrint {
+    /// The class location, as in `Classes::names`.
+    pub location: String,
+    /// Access flags, superclass, interfaces and annotations. For a class file that can't
+    /// be parsed, the hash of its bytes.
+    pub header: [u8; 32],
+    /// `name(desc)` to the method's fingerprint.
+    pub methods: BTreeMap<String, [u8; 32]>,
+    /// `name:desc` to the field's access flags, constant value and annotations.
+    pub fields: BTreeMap<String, [u8; 32]>,
+    /// Methods the class calls, `owner.name`.
+    pub calls: BTreeSet<String>,
+    /// Several entries with this path hold different classes, and the server may load
+    /// any of them. Their prints are mixed, so the class can't match a single copy.
+    pub duplicate: bool,
+}
+
+impl ClassPrint {
+    fn merge(&mut self, other: ClassPrint) {
+        if *self == other {
+            return;
+        }
+        self.duplicate = true;
+        self.header = mix(&self.header, &other.header);
+        for (map, more) in [
+            (&mut self.methods, other.methods),
+            (&mut self.fields, other.fields),
+        ] {
+            for (k, v) in more {
+                map.entry(k)
+                    .and_modify(|old| *old = mix(old, &v))
+                    .or_insert(v);
+            }
+        }
+        self.calls.extend(other.calls);
+    }
+}
+
+/// Two prints of things that share a path, combined so the result matches neither, in
+/// either order.
+// ponytail: three or more different copies still combine in entry order; that can only
+// report a change, never hide one. A sorted set of copies per key fixes it if it matters.
+fn mix(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
+    if a == b {
+        return *a;
+    }
+    let (a, b) = if a < b { (a, b) } else { (b, a) };
+    Sha256::new()
+        .chain_update(b"duplicate")
+        .chain_update(a)
+        .chain_update(b)
+        .finalize()
+        .into()
 }
 
 fn sha256(b: &[u8]) -> String {
-    Sha256::digest(b).iter().map(|x| format!("{x:02x}")).collect()
+    Sha256::digest(b)
+        .iter()
+        .map(|x| format!("{x:02x}"))
+        .collect()
+}
+
+fn is_zip(b: &[u8]) -> bool {
+    b.starts_with(b"PK\x03\x04") || b.starts_with(b"PK\x05\x06")
 }
 
 fn ev(location: &str, method: Option<&str>, detail: impl Into<String>) -> Evidence {
-    Evidence { location: location.to_string(), method: method.map(str::to_string), detail: detail.into(), reached: None }
+    Evidence {
+        location: location.to_string(),
+        method: method.map(str::to_string),
+        detail: detail.into(),
+        reached: None,
+    }
 }
 
 /// A call on a class inside the jar, resolved against its superclass chain at the end.
@@ -110,6 +198,8 @@ struct Scan<'l> {
     classes: u64,
     decoded: u32,
     decoded_bytes: u64,
+    /// Bytes of names and strings the code walk has handled; see `Limits::max_code_work`.
+    work: u64,
     embedded_seq: u32,
     supers: HashMap<String, String>,
     pending: Vec<Pending>,
@@ -127,6 +217,11 @@ struct Scan<'l> {
     named_classes: BTreeSet<String>,
     /// Classes the manifest names to start (`Main-Class`, agent classes).
     manifest_classes: Vec<String>,
+    /// Fingerprint classes and files for `diff`.
+    prints: bool,
+    class_prints: BTreeMap<String, ClassPrint>,
+    file_prints: BTreeMap<String, [u8; 32]>,
+    natives: BTreeSet<String>,
 }
 
 impl<'l> Scan<'l> {
@@ -141,6 +236,7 @@ impl<'l> Scan<'l> {
             classes: 0,
             decoded: 0,
             decoded_bytes: 0,
+            work: 0,
             embedded_seq: 0,
             supers: HashMap::new(),
             pending: Vec::new(),
@@ -154,6 +250,20 @@ impl<'l> Scan<'l> {
             cur: None,
             named_classes: BTreeSet::new(),
             manifest_classes: Vec::new(),
+            prints: false,
+            class_prints: BTreeMap::new(),
+            file_prints: BTreeMap::new(),
+            natives: BTreeSet::new(),
+        }
+    }
+
+    /// Keeps a class print; a second class with the same path is mixed into the first.
+    fn add_print(&mut self, key: String, p: ClassPrint) {
+        match self.class_prints.entry(key) {
+            std::collections::btree_map::Entry::Occupied(mut e) => e.get_mut().merge(p),
+            std::collections::btree_map::Entry::Vacant(e) => {
+                e.insert(p);
+            }
         }
     }
 
@@ -189,7 +299,11 @@ impl<'l> Scan<'l> {
     }
 
     fn warn(&mut self, code: &str, location: &str, message: impl Into<String>) {
-        self.warnings.push(Warning { code: code.into(), location: location.into(), message: message.into() });
+        self.warnings.push(Warning {
+            code: code.into(),
+            location: location.into(),
+            message: message.into(),
+        });
     }
 
     fn limit(&mut self, code: &str, location: &str, message: impl Into<String>) {
@@ -204,7 +318,11 @@ impl<'l> Scan<'l> {
             Err(e) => return self.warn("zip.unreadable", prefix.trim_end_matches("!/"), e),
         };
         if truncated {
-            self.limit("zip.limit", prefix.trim_end_matches("!/"), format!("more than {} entries", self.limits.max_entries));
+            self.limit(
+                "zip.limit",
+                prefix.trim_end_matches("!/"),
+                format!("more than {} entries", self.limits.max_entries),
+            );
         }
         let mut seen = HashSet::new();
         for e in &entries {
@@ -212,23 +330,47 @@ impl<'l> Scan<'l> {
                 continue;
             }
             if self.entries >= self.limits.max_entries {
-                return self.limit("zip.limit", prefix.trim_end_matches("!/"), format!("more than {} entries", self.limits.max_entries));
+                return self.limit(
+                    "zip.limit",
+                    prefix.trim_end_matches("!/"),
+                    format!("more than {} entries", self.limits.max_entries),
+                );
             }
             self.entries += 1;
             let (clean, unsafe_path) = archive::clean_name(&e.name);
             let path = format!("{prefix}{clean}");
             if unsafe_path {
-                self.hit("jar.unsafe-path", Some(format!("{prefix}{}", e.name)), ev(&path, None, e.name.clone()));
+                self.hit(
+                    "jar.unsafe-path",
+                    Some(format!("{prefix}{}", e.name)),
+                    ev(&path, None, e.name.clone()),
+                );
             }
             if !seen.insert(clean.clone()) {
-                self.warn("zip.duplicate-entry", &path, "another entry has the same name; both are scanned");
+                self.warn(
+                    "zip.duplicate-entry",
+                    &path,
+                    "another entry has the same name; both are scanned",
+                );
             }
             let left = self.limits.max_total_bytes.saturating_sub(self.total_bytes);
             if left == 0 {
-                self.limit("zip.limit", &path, format!("total size above {} bytes; rest not scanned", self.limits.max_total_bytes));
+                self.limit(
+                    "zip.limit",
+                    &path,
+                    format!(
+                        "total size above {} bytes; rest not scanned",
+                        self.limits.max_total_bytes
+                    ),
+                );
                 return;
             }
-            let bytes = match archive::read(data, e, self.limits.max_entry_bytes.min(left), self.limits.max_ratio) {
+            let bytes = match archive::read(
+                data,
+                e,
+                self.limits.max_entry_bytes.min(left),
+                self.limits.max_ratio,
+            ) {
                 Ok(b) => b,
                 Err(ReadError::Limit(m)) => {
                     self.limit("zip.limit", &path, m);
@@ -250,11 +392,28 @@ impl<'l> Scan<'l> {
 
     fn entry(&mut self, bytes: &[u8], path: &str, clean: &str, prefix: &str, depth: u32) {
         let file = clean.rsplit('/').next().unwrap_or(clean);
-        let ext = file.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
+        let ext = file
+            .rsplit_once('.')
+            .map(|(_, e)| e.to_ascii_lowercase())
+            .unwrap_or_default();
         let mismatch = |s: &mut Self, what: &str| {
-            s.hit("res.type-mismatch", Some(path.to_string()), ev(path, None, what.to_string()));
+            s.hit(
+                "res.type-mismatch",
+                Some(path.to_string()),
+                ev(path, None, what.to_string()),
+            );
         };
 
+        if self.prints && !class::is_class(bytes) && !is_zip(bytes) {
+            let h: [u8; 32] = Sha256::digest(bytes).into();
+            self.file_prints
+                .entry(path.to_string())
+                .and_modify(|old| *old = mix(old, &h))
+                .or_insert(h);
+            if native_kind(bytes).is_some() {
+                self.natives.insert(path.to_string());
+            }
+        }
         if class::is_class(bytes) {
             if ext != "class" {
                 mismatch(self, "contains a class file");
@@ -264,14 +423,17 @@ impl<'l> Scan<'l> {
         if ext == "class" {
             return mismatch(self, "named .class but isn't a class file");
         }
-        if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") {
+        if is_zip(bytes) {
             if !matches!(ext.as_str(), "jar" | "zip" | "war" | "jarinjar" | "mcpack") {
                 mismatch(self, "contains a zip archive");
             }
             return self.nested(bytes, path, depth);
         }
         if let Some(kind) = native_kind(bytes) {
-            if !matches!(ext.as_str(), "so" | "dll" | "dylib" | "jnilib" | "exe" | "bin" | "node") {
+            if !matches!(
+                ext.as_str(),
+                "so" | "dll" | "dylib" | "jnilib" | "exe" | "bin" | "node"
+            ) {
                 mismatch(self, &format!("contains a {kind}"));
             }
             return;
@@ -288,23 +450,41 @@ impl<'l> Scan<'l> {
             }
         }
         if clean.starts_with("META-INF/maven/") && clean.ends_with("/pom.properties") {
-            if let Some((group, artifact, version)) = meta::pom_properties(&String::from_utf8_lossy(bytes)) {
-                self.libraries.insert(Library { group, artifact, version, location: path.to_string() });
+            if let Some((group, artifact, version)) =
+                meta::pom_properties(&String::from_utf8_lossy(bytes))
+            {
+                self.libraries.insert(Library {
+                    group,
+                    artifact,
+                    version,
+                    location: path.to_string(),
+                });
             }
             return;
         }
         if clean.eq_ignore_ascii_case("META-INF/MANIFEST.MF") {
             let manifest = String::from_utf8_lossy(bytes);
             for attr in meta::agent_attributes(&manifest) {
-                self.hit("code.instrument", None, ev(path, None, format!("manifest declares {attr}")));
+                self.hit(
+                    "code.instrument",
+                    None,
+                    ev(path, None, format!("manifest declares {attr}")),
+                );
             }
             if prefix.is_empty() {
-                self.manifest_classes.extend(meta::manifest_classes(&manifest).iter().filter_map(|c| class_name_like(c)));
+                self.manifest_classes.extend(
+                    meta::manifest_classes(&manifest)
+                        .iter()
+                        .filter_map(|c| class_name_like(c)),
+                );
             }
             return;
         }
         // ServiceLoader provider lists: one class name per line, `#` starts a comment.
-        if prefix.is_empty() && clean.starts_with("META-INF/services/") && bytes.len() <= self.limits.max_text_bytes {
+        if prefix.is_empty()
+            && clean.starts_with("META-INF/services/")
+            && bytes.len() <= self.limits.max_text_bytes
+        {
             for line in String::from_utf8_lossy(bytes).lines() {
                 self.name_class(line.split('#').next().unwrap_or("").trim());
             }
@@ -322,10 +502,22 @@ impl<'l> Scan<'l> {
     }
 
     fn nested(&mut self, bytes: &[u8], path: &str, depth: u32) {
-        self.hit("jar.nested", Some(path.to_string()), ev(path, None, "nested archive"));
-        self.nested.push(Nested { path: path.to_string(), size: bytes.len() as u64, sha256: sha256(bytes) });
+        self.hit(
+            "jar.nested",
+            Some(path.to_string()),
+            ev(path, None, "nested archive"),
+        );
+        self.nested.push(Nested {
+            path: path.to_string(),
+            size: bytes.len() as u64,
+            sha256: sha256(bytes),
+        });
         if depth >= self.limits.max_depth {
-            return self.limit("nested.too-deep", path, format!("deeper than {} levels; not scanned", self.limits.max_depth));
+            return self.limit(
+                "nested.too-deep",
+                path,
+                format!("deeper than {} levels; not scanned", self.limits.max_depth),
+            );
         }
         self.archive(bytes, &format!("{path}!/"), depth + 1);
     }
@@ -333,7 +525,10 @@ impl<'l> Scan<'l> {
     fn text(&mut self, text: &str, path: &str, depth: u32) {
         let is_sep = |c: char| c.is_whitespace() || "\"'<>(){}[],;=`".contains(c);
         let tokens: Vec<&str> = text.split(is_sep).filter(|t| !t.is_empty()).collect();
-        let hosts = tokens.iter().filter(|t| strings::bare_host(t).is_some()).count();
+        let hosts = tokens
+            .iter()
+            .filter(|t| strings::bare_host(t).is_some())
+            .count();
         let host_list = hosts > HOST_LIST;
         if host_list {
             self.warn("text.host-list", path, format!("{hosts} bare hostnames, probably a domain list such as a public suffix list; hosts in this file aren't listed"));
@@ -356,7 +551,11 @@ impl<'l> Scan<'l> {
     fn literal(&mut self, s: &str, location: &str, method: Option<&str>, depth: u32, hosts: bool) {
         self.text_checks(s, location, method, hosts);
         if let Some(text) = strings::hidden_address(s) {
-            self.hit("str.hidden-text", None, ev(location, method, strings::cut(&text, 200)));
+            self.hit(
+                "str.hidden-text",
+                None,
+                ev(location, method, strings::cut(&text, 200)),
+            );
             self.text_checks(&text, location, method, hosts);
         }
         self.payload(s, location, method, depth);
@@ -365,12 +564,24 @@ impl<'l> Scan<'l> {
     /// Text the code builds from an array of numbers or decodes from base64: a finding of
     /// its own, then treated like the literal it stands in for.
     #[allow(clippy::too_many_arguments)]
-    fn hidden_text(&mut self, facts: &mut ClassFacts, mf: &mut MethodFacts, s: &str, loc: &str, method: &str, depth: u32) {
+    fn hidden_text(
+        &mut self,
+        facts: &mut ClassFacts,
+        mf: &mut MethodFacts,
+        s: &str,
+        loc: &str,
+        method: &str,
+        depth: u32,
+    ) {
         if s.contains("textures.minecraft.net") {
             return;
         }
         if !strings::is_package_name(s) {
-            self.class_hit(facts, "str.hidden-text", ev(loc, Some(method), strings::cut(s, 200)));
+            self.class_hit(
+                facts,
+                "str.hidden-text",
+                ev(loc, Some(method), strings::cut(s, 200)),
+            );
         }
         code_string_facts(facts, mf, s);
         self.literal(s, loc, Some(method), depth, true);
@@ -388,28 +599,50 @@ impl<'l> Scan<'l> {
             }
         }
         if hosts && let Some(h) = strings::bare_host(s) {
-            self.hit("str.url", Some(h.to_string()), ev(location, method, strings::cut(s.trim(), 200)));
+            self.hit(
+                "str.url",
+                Some(h.to_string()),
+                ev(location, method, strings::cut(s.trim(), 200)),
+            );
         }
         if s.contains('.') && !s.contains("://") {
             for ip in strings::ipv4s(s) {
-                self.hit("str.ip", Some(ip), ev(location, method, strings::cut(s, 200)));
+                self.hit(
+                    "str.ip",
+                    Some(ip),
+                    ev(location, method, strings::cut(s, 200)),
+                );
             }
         }
         if let Some(file) = strings::login_file(s) {
-            self.hit("str.login-file", Some(file.to_string()), ev(location, method, strings::cut(s, 200)));
+            self.hit(
+                "str.login-file",
+                Some(file.to_string()),
+                ev(location, method, strings::cut(s, 200)),
+            );
         }
     }
 
     fn payload(&mut self, s: &str, location: &str, method: Option<&str>, depth: u32) {
-        let Some((kind, enc)) = strings::payload(s) else { return };
+        let Some((kind, enc)) = strings::payload(s) else {
+            return;
+        };
         let estimate = s.len() as u64;
-        if self.decoded >= self.limits.max_decoded || self.decoded_bytes + estimate > self.limits.max_decoded_bytes {
+        if self.decoded >= self.limits.max_decoded
+            || self.decoded_bytes + estimate > self.limits.max_decoded_bytes
+        {
             if !self.warnings.iter().any(|w| w.code == "decode.limit") {
-                self.limit("decode.limit", location, "decoded-payload budget used up; later payloads not scanned");
+                self.limit(
+                    "decode.limit",
+                    location,
+                    "decoded-payload budget used up; later payloads not scanned",
+                );
             }
             return;
         }
-        let Some(bytes) = strings::decode(s, &enc) else { return };
+        let Some(bytes) = strings::decode(s, &enc) else {
+            return;
+        };
         self.decoded += 1;
         self.decoded_bytes += bytes.len() as u64;
         self.embedded_seq += 1;
@@ -424,9 +657,21 @@ impl<'l> Scan<'l> {
                 strings::Encoding::Hex => "hex",
             },
         );
-        self.hit("blob.embedded-code", Some(sha256(&bytes)), ev(location, method, format!("{encoding} string decodes to a {what}; scanned as {label}")));
+        self.hit(
+            "blob.embedded-code",
+            Some(sha256(&bytes)),
+            ev(
+                location,
+                method,
+                format!("{encoding} string decodes to a {what}; scanned as {label}"),
+            ),
+        );
         if depth >= self.limits.max_depth {
-            return self.limit("nested.too-deep", &label, format!("deeper than {} levels; not scanned", self.limits.max_depth));
+            return self.limit(
+                "nested.too-deep",
+                &label,
+                format!("deeper than {} levels; not scanned", self.limits.max_depth),
+            );
         }
         self.total_bytes += bytes.len() as u64;
         let prefix = format!("{label}!/");
@@ -437,48 +682,150 @@ impl<'l> Scan<'l> {
     }
 
     fn class(&mut self, bytes: &[u8], prefix: &str, path: &str, depth: u32) {
-        let cf = match ClassFile::parse(bytes) {
+        let key = path.strip_suffix(".class").unwrap_or(path).to_string();
+        let parsed = ClassFile::parse(bytes).and_then(|cf| {
+            if cf.name().is_some() {
+                Ok(cf)
+            } else {
+                Err("missing class name")
+            }
+        });
+        let cf = match parsed {
             Ok(cf) => cf,
-            Err(e) => return self.warn("class.malformed", path, e),
+            Err(e) => {
+                // A class file this parser can't read still counts for `diff`, by its bytes.
+                if self.prints {
+                    let p = ClassPrint {
+                        location: key.clone(),
+                        header: Sha256::digest(bytes).into(),
+                        methods: BTreeMap::new(),
+                        fields: BTreeMap::new(),
+                        calls: BTreeSet::new(),
+                        duplicate: false,
+                    };
+                    self.add_print(key, p);
+                }
+                return self.warn("class.malformed", path, e);
+            }
         };
-        let Some(name) = cf.name() else {
-            return self.warn("class.malformed", path, "missing class name");
-        };
+        let name = cf.name().unwrap_or_default();
         self.classes += 1;
         let outer = self.cur.take();
         let loc = format!("{prefix}{name}");
+        if self.prints {
+            let mut calls = BTreeSet::new();
+            let mut memo = class::Memo::default();
+            let methods = cf
+                .methods
+                .iter()
+                .map(|m| {
+                    (
+                        format!(
+                            "{}{}",
+                            cf.utf8(m.name).unwrap_or("?"),
+                            cf.utf8(m.desc).unwrap_or("?")
+                        ),
+                        cf.method_print(m, &mut calls, &mut memo),
+                    )
+                })
+                .collect();
+            let fields = cf
+                .fields
+                .iter()
+                .map(|f| {
+                    (
+                        format!(
+                            "{}:{}",
+                            cf.utf8(f.name).unwrap_or("?"),
+                            cf.utf8(f.desc).unwrap_or("?")
+                        ),
+                        cf.field_print(f, &mut calls, &mut memo),
+                    )
+                })
+                .collect();
+            let p = ClassPrint {
+                location: loc.clone(),
+                header: cf.header_print(&mut memo),
+                methods,
+                fields,
+                calls,
+                duplicate: false,
+            };
+            self.add_print(key, p);
+        }
         self.class_locs.insert(loc.clone());
         if let Some(sup) = cf.super_name() {
-            self.supers.entry(name.to_string()).or_insert_with(|| sup.to_string());
+            self.supers
+                .entry(name.to_string())
+                .or_insert_with(|| sup.to_string());
         }
         let top = prefix.is_empty();
         let graph_class = if top {
             self.top_classes.insert(name.to_string());
             self.obf_class(&cf, name);
-            let ifaces: Vec<&str> = cf.interfaces.iter().filter_map(|&i| cf.class_name(i)).collect();
+            let ifaces: Vec<&str> = cf
+                .interfaces
+                .iter()
+                .filter_map(|&i| cf.class_name(i))
+                .collect();
             Some(self.graph.class(name, cf.super_name(), &ifaces))
         } else {
             None
         };
 
         let mut facts = ClassFacts::default();
-        if cf.interfaces.iter().any(|&i| cf.class_name(i) == Some("java/lang/instrument/ClassFileTransformer")) {
-            self.class_hit(&mut facts, "code.instrument", ev(&loc, None, "implements java/lang/instrument/ClassFileTransformer"));
+        if cf
+            .interfaces
+            .iter()
+            .any(|&i| cf.class_name(i) == Some("java/lang/instrument/ClassFileTransformer"))
+        {
+            self.class_hit(
+                &mut facts,
+                "code.instrument",
+                ev(
+                    &loc,
+                    None,
+                    "implements java/lang/instrument/ClassFileTransformer",
+                ),
+            );
         }
 
         let mut seen_strings = HashSet::new();
         for m in &cf.methods {
-            let (Some(mname), Some(mdesc)) = (cf.utf8(m.name), cf.utf8(m.desc)) else { continue };
+            let (Some(mname), Some(mdesc)) = (cf.utf8(m.name), cf.utf8(m.desc)) else {
+                continue;
+            };
             if rules::CHAT_HANDLER_DESCS.contains(&mdesc) {
                 facts.chat_handler = true;
             }
-            let (is_static, visible) = (m.access & ACC_STATIC != 0, m.access & (ACC_PUBLIC | ACC_PROTECTED) != 0);
-            self.cur = graph_class.map(|c| self.graph.method(c, mname, mdesc, is_static, visible, m.code.is_some(), m.annotated));
+            let (is_static, visible) = (
+                m.access & ACC_STATIC != 0,
+                m.access & (ACC_PUBLIC | ACC_PROTECTED) != 0,
+            );
+            self.cur = graph_class.map(|c| {
+                self.graph.method(
+                    c,
+                    mname,
+                    mdesc,
+                    is_static,
+                    visible,
+                    m.code.is_some(),
+                    m.annotated,
+                )
+            });
             let Some(code) = m.code else { continue };
             let method = format!("{mname}{mdesc}");
             let mut mf = MethodFacts::default();
+            // Bootstrap methods whose arguments this method already went through.
+            let mut bootstraps = HashSet::new();
             let mut walker = class::ops(code);
             while let Some(op) = walker.next() {
+                if self.work > self.limits.max_code_work {
+                    if !self.warnings.iter().any(|w| w.code == "class.limit") {
+                        self.limit("class.limit", &loc, "code budget used up: the code names long strings or bootstrap lists too many times; later code not scanned");
+                    }
+                    break;
+                }
                 match op {
                     Op::Invoke(i) => {
                         let decoded = mf.decoded.take();
@@ -496,9 +843,11 @@ impl<'l> Scan<'l> {
                         }
                     }
                     Op::Indy(i) => {
-                        if let Some(Const::Indy(bsm)) = cf.cp.get(usize::from(i))
+                        if let Some(Const::Indy(bsm, _)) = cf.cp.get(usize::from(i))
+                            && bootstraps.insert(*bsm)
                             && let Some((handle, args)) = cf.bootstrap.get(usize::from(*bsm))
                         {
+                            self.work += args.len() as u64;
                             if let Some((o, n, d)) = cf.handle(*handle) {
                                 self.call(&mut facts, &mut mf, &loc, &method, o, n, d);
                             }
@@ -506,6 +855,7 @@ impl<'l> Scan<'l> {
                                 if let Some((o, n, d)) = cf.handle(arg) {
                                     self.call(&mut facts, &mut mf, &loc, &method, o, n, d);
                                 } else if let Some(s) = cf.string(arg) {
+                                    self.work += s.len() as u64;
                                     seen_strings.insert(arg);
                                     self.literal(s, &loc, Some(&method), depth, true);
                                 }
@@ -516,6 +866,7 @@ impl<'l> Scan<'l> {
                     Op::Ldc(i) => match cf.cp.get(usize::from(i)) {
                         Some(Const::Str(_)) => {
                             let Some(s) = cf.string(i) else { continue };
+                            self.work += s.len() as u64;
                             seen_strings.insert(i);
                             mf.since_call.push(Cow::Borrowed(s));
                             code_string_facts(&mut facts, &mut mf, s);
@@ -526,6 +877,7 @@ impl<'l> Scan<'l> {
                         }
                         Some(Const::Class(_)) => {
                             if let Some(c) = cf.class_name(i) {
+                                self.work += c.len() as u64;
                                 mf.class_consts.push(c);
                                 self.graph_reflect(c);
                             }
@@ -541,6 +893,7 @@ impl<'l> Scan<'l> {
                         if self.cur.is_some()
                             && let Some(c) = cf.class_name(i)
                         {
+                            self.work += c.len() as u64;
                             let id = self.graph.names.id(c);
                             self.graph_ref(Ref::New(id));
                         }
@@ -549,6 +902,7 @@ impl<'l> Scan<'l> {
                         if self.cur.is_some()
                             && let Some((o, _, _)) = cf.member(i)
                         {
+                            self.work += o.len() as u64;
                             let id = self.graph.names.id(o);
                             self.graph_ref(Ref::Init(id));
                         }
@@ -581,21 +935,50 @@ impl<'l> Scan<'l> {
             }
         }
         if facts.jar_write && facts.plugins_ref {
-            self.hit("corr.modify-plugins", None, ev(&loc, None, "writes jar or class files and refers to the plugins folder in one class"));
+            self.hit(
+                "corr.modify-plugins",
+                None,
+                ev(
+                    &loc,
+                    None,
+                    "writes jar or class files and refers to the plugins folder in one class",
+                ),
+            );
         }
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn call<'c>(&mut self, facts: &mut ClassFacts, mf: &mut MethodFacts<'c>, loc: &str, method: &str, owner: &'c str, name: &'c str, desc: &'c str) {
+    fn call<'c>(
+        &mut self,
+        facts: &mut ClassFacts,
+        mf: &mut MethodFacts<'c>,
+        loc: &str,
+        method: &str,
+        owner: &'c str,
+        name: &'c str,
+        desc: &'c str,
+    ) {
+        self.work += (owner.len() + name.len() + desc.len()) as u64;
         if self.cur.is_some() {
             let o = self.graph.names.id(owner);
             let s = self.graph.sig(name, desc);
             self.graph_ref(Ref::Call(o, s));
             // Classes defined from bytes, by any loader: code the graph can't see.
-            if matches!(name, "defineClass" | "defineHiddenClass" | "defineAnonymousClass") {
+            if matches!(
+                name,
+                "defineClass" | "defineHiddenClass" | "defineAnonymousClass"
+            ) {
                 self.graph_ref(Ref::Dynamic);
             }
-            if owner == "java/lang/Class" && matches!(name, "getDeclaredMethods" | "getMethods" | "getDeclaredConstructors" | "getConstructors") {
+            if owner == "java/lang/Class"
+                && matches!(
+                    name,
+                    "getDeclaredMethods"
+                        | "getMethods"
+                        | "getDeclaredConstructors"
+                        | "getConstructors"
+                )
+            {
                 self.graph_ref(Ref::Enumerate);
             }
         }
@@ -629,19 +1012,27 @@ impl<'l> Scan<'l> {
 
         let last = mf.since_call.last().map(|s| s.to_string());
         match (owner, name) {
-            ("java/lang/String", n) if rules::STRING_COMPARES.contains(&n) && last.is_some() => facts.compares_literal = true,
-            ("java/lang/Class", "forName") | ("java/lang/ClassLoader", "loadClass") | ("java/lang/invoke/MethodHandles$Lookup", "findClass") => {
+            ("java/lang/String", n) if rules::STRING_COMPARES.contains(&n) && last.is_some() => {
+                facts.compares_literal = true
+            }
+            ("java/lang/Class", "forName")
+            | ("java/lang/ClassLoader", "loadClass")
+            | ("java/lang/invoke/MethodHandles$Lookup", "findClass") => {
                 if last.is_none() {
                     self.graph_ref(Ref::Dynamic);
                 }
                 mf.reflect_classes.extend(last.map(|s| s.replace('.', "/")));
             }
             ("java/lang/Class", "getMethod" | "getDeclaredMethod")
-            | ("java/lang/invoke/MethodHandles$Lookup", "findStatic" | "findVirtual" | "findSpecial") => {
+            | (
+                "java/lang/invoke/MethodHandles$Lookup",
+                "findStatic" | "findVirtual" | "findSpecial",
+            ) => {
                 mf.reflect_names.extend(last);
                 mf.reflect_lookup = true;
             }
-            ("java/lang/Class", "getConstructor" | "getDeclaredConstructor") | ("java/lang/invoke/MethodHandles$Lookup", "findConstructor") => {
+            ("java/lang/Class", "getConstructor" | "getDeclaredConstructor")
+            | ("java/lang/invoke/MethodHandles$Lookup", "findConstructor") => {
                 mf.reflect_names.push("<init>".into());
                 mf.reflect_lookup = true;
             }
@@ -651,9 +1042,17 @@ impl<'l> Scan<'l> {
             ("java/io/File", "getParentFile") => mf.parent_file = true,
             // ponytail: method-level, so a method that opens a resource and a remote URL
             // loses the remote one; track URL values through locals if that shows up.
-            (_, "getResource" | "getSystemResource") if desc.ends_with(")Ljava/net/URL;") => mf.local_url = true,
-            ("java/io/File", "toURI" | "toURL") | ("java/nio/file/Path", "toUri") => mf.local_url = true,
-            (o, "getPluginsFolder" | "getUpdateFolder" | "getUpdateFolderFile") if o.starts_with("org/bukkit/") => facts.plugins_ref = true,
+            (_, "getResource" | "getSystemResource") if desc.ends_with(")Ljava/net/URL;") => {
+                mf.local_url = true
+            }
+            ("java/io/File", "toURI" | "toURL") | ("java/nio/file/Path", "toUri") => {
+                mf.local_url = true
+            }
+            (o, "getPluginsFolder" | "getUpdateFolder" | "getUpdateFolderFile")
+                if o.starts_with("org/bukkit/") =>
+            {
+                facts.plugins_ref = true
+            }
             (_, "getDataFolder") if desc == "()Ljava/io/File;" => mf.data_folder = true,
             _ => {}
         }
@@ -670,7 +1069,11 @@ impl<'l> Scan<'l> {
         }
         if mf.jar_literal && mf.file_write {
             facts.jar_write = true;
-            self.class_hit(facts, "fs.write-archive", ev(loc, Some(method), "writes a file named .jar or .class"));
+            self.class_hit(
+                facts,
+                "fs.write-archive",
+                ev(loc, Some(method), "writes a file named .jar or .class"),
+            );
         }
         if mf.data_folder && mf.parent_file {
             facts.plugins_ref = true;
@@ -685,15 +1088,31 @@ impl<'l> Scan<'l> {
         for owner in &owners {
             for name in &mf.reflect_names {
                 for rule in rules::match_call(owner, name, None).collect::<Vec<_>>() {
-                    self.class_hit(facts, rule, ev(loc, Some(method), format!("via reflection: {owner}.{name}")));
-                    self.class_hit(facts, "reflect.indirect", ev(loc, Some(method), format!("{owner}.{name}")));
+                    self.class_hit(
+                        facts,
+                        rule,
+                        ev(loc, Some(method), format!("via reflection: {owner}.{name}")),
+                    );
+                    self.class_hit(
+                        facts,
+                        "reflect.indirect",
+                        ev(loc, Some(method), format!("{owner}.{name}")),
+                    );
                 }
             }
         }
         for owner in &mf.reflect_classes {
             if let Some((_, rule)) = REFLECT_CLASS_ONLY.iter().find(|(c, _)| c == owner) {
-                self.class_hit(facts, rule, ev(loc, Some(method), format!("via reflection: {owner}")));
-                self.class_hit(facts, "reflect.indirect", ev(loc, Some(method), owner.clone()));
+                self.class_hit(
+                    facts,
+                    rule,
+                    ev(loc, Some(method), format!("via reflection: {owner}")),
+                );
+                self.class_hit(
+                    facts,
+                    "reflect.indirect",
+                    ev(loc, Some(method), owner.clone()),
+                );
             }
         }
     }
@@ -703,8 +1122,11 @@ impl<'l> Scan<'l> {
     /// points at the calling method.
     fn call_correlations(&self) -> Vec<(&'static str, Evidence)> {
         const PARTS: [&[&str]; 4] = [NET, &["code.load"], &["exec.process"], &["str.login-file"]];
-        const PAIRS: [(&str, usize, usize); 3] =
-            [("corr.download-and-run", 0, 1), ("corr.command-and-network", 2, 0), ("corr.login-files-and-network", 3, 0)];
+        const PAIRS: [(&str, usize, usize); 3] = [
+            ("corr.download-and-run", 0, 1),
+            ("corr.command-and-network", 2, 0),
+            ("corr.login-files-and-network", 3, 0),
+        ];
         let mut parts: HashMap<u32, [Option<Evidence>; 4]> = HashMap::new();
         for ((rule, _), evidence) in &self.hits {
             for (k, part) in PARTS.iter().enumerate() {
@@ -712,10 +1134,19 @@ impl<'l> Scan<'l> {
                     continue;
                 }
                 for e in evidence {
-                    let Some(m) = e.method.as_deref().and_then(|m| self.graph.method_at(&e.location, m)) else { continue };
+                    let Some(m) = e
+                        .method
+                        .as_deref()
+                        .and_then(|m| self.graph.method_at(&e.location, m))
+                    else {
+                        continue;
+                    };
                     let slot = &mut parts.entry(m).or_default()[k];
                     if slot.is_none() {
-                        *slot = Some(Evidence { detail: format!("{rule}: {}", e.detail), ..e.clone() });
+                        *slot = Some(Evidence {
+                            detail: format!("{rule}: {}", e.detail),
+                            ..e.clone()
+                        });
                     }
                 }
             }
@@ -727,22 +1158,44 @@ impl<'l> Scan<'l> {
         // Only calls with the signature of a method that has parts can matter.
         let sigs: HashSet<Sig> = parts.keys().map(|&m| self.graph.sig_of(m)).collect();
         for m in 0..self.graph.method_count() as u32 {
-            let callees: Vec<u32> = self.graph.callees(m, &sigs).into_iter().filter(|c| parts.contains_key(c)).collect();
+            let callees: Vec<u32> = self
+                .graph
+                .callees(m, &sigs)
+                .into_iter()
+                .filter(|c| parts.contains_key(c))
+                .collect();
             if callees.is_empty() {
                 continue;
             }
             let own = parts.get(&m);
-            let pick = |k: usize| own.and_then(|p| p[k].as_ref()).or_else(|| callees.iter().find_map(|c| parts[c][k].as_ref()));
+            let pick = |k: usize| {
+                own.and_then(|p| p[k].as_ref())
+                    .or_else(|| callees.iter().find_map(|c| parts[c][k].as_ref()))
+            };
             for (corr, a, b) in PAIRS {
-                let (Some(x), Some(y)) = (pick(a), pick(b)) else { continue };
+                let (Some(x), Some(y)) = (pick(a), pick(b)) else {
+                    continue;
+                };
                 if x.location == y.location {
                     continue;
                 }
                 let (location, method) = self.graph.describe(m);
                 for e in [x, y] {
-                    let name = e.method.as_deref().and_then(|m| m.split('(').next()).unwrap_or_default();
+                    let name = e
+                        .method
+                        .as_deref()
+                        .and_then(|m| m.split('(').next())
+                        .unwrap_or_default();
                     let detail = format!("{} (in {}.{name})", e.detail, e.location);
-                    found.push((corr, Evidence { location: location.clone(), method: Some(method.clone()), detail, reached: None }));
+                    found.push((
+                        corr,
+                        Evidence {
+                            location: location.clone(),
+                            method: Some(method.clone()),
+                            detail,
+                            reached: None,
+                        },
+                    ));
                 }
             }
         }
@@ -760,10 +1213,17 @@ impl<'l> Scan<'l> {
         if !simple.bytes().all(|c| c.is_ascii_digit()) {
             names.push(simple);
         }
-        names.extend(cf.methods.iter().filter_map(|m| cf.utf8(m.name)).filter(|n| {
-            !matches!(*n, "<init>" | "<clinit>" | "values" | "valueOf") && !n.starts_with("lambda$") && !n.starts_with("access$")
-        }));
-        names.extend(cf.fields.iter().filter_map(|&f| cf.utf8(f)));
+        names.extend(
+            cf.methods
+                .iter()
+                .filter_map(|m| cf.utf8(m.name))
+                .filter(|n| {
+                    !matches!(*n, "<init>" | "<clinit>" | "values" | "valueOf")
+                        && !n.starts_with("lambda$")
+                        && !n.starts_with("access$")
+                }),
+        );
+        names.extend(cf.fields.iter().filter_map(|f| cf.utf8(f.name)));
         for n in names {
             self.obf.names += 1;
             if short_or_garbled(n) {
@@ -811,8 +1271,16 @@ impl<'l> Scan<'l> {
         let correlations: [(&'static str, bool, [&[&str]; 2]); 4] = [
             ("corr.download-and-run", true, [NET, &["code.load"]]),
             ("corr.command-and-network", true, [&["exec.process"], NET]),
-            ("corr.login-files-and-network", true, [&["str.login-file"], NET]),
-            ("corr.hidden-loader", false, [&["blob.embedded-code"], &["code.load"]]),
+            (
+                "corr.login-files-and-network",
+                true,
+                [&["str.login-file"], NET],
+            ),
+            (
+                "corr.hidden-loader",
+                false,
+                [&["blob.embedded-code"], &["code.load"]],
+            ),
         ];
         let mut found = Vec::new();
         for (corr, class_scope, parts) in correlations {
@@ -826,7 +1294,10 @@ impl<'l> Scan<'l> {
                         let scope = if class_scope { e.location.as_str() } else { "" };
                         let slot = &mut by_scope.entry(scope).or_default()[i];
                         if slot.is_none() {
-                            *slot = Some(Evidence { detail: format!("{rule}: {}", e.detail), ..e.clone() });
+                            *slot = Some(Evidence {
+                                detail: format!("{rule}: {}", e.detail),
+                                ..e.clone()
+                            });
                         }
                     }
                 }
@@ -845,32 +1316,65 @@ impl<'l> Scan<'l> {
 
         let mut plugins = Vec::new();
         for (info, path) in std::mem::take(&mut self.descriptors) {
-            if matches!(info.platform.as_str(), "bukkit" | "paper" | "bungee" | "velocity") {
-                for class in [&info.main, &info.bootstrapper, &info.loader].into_iter().flatten() {
+            if matches!(
+                info.platform.as_str(),
+                "bukkit" | "paper" | "bungee" | "velocity"
+            ) {
+                for class in [&info.main, &info.bootstrapper, &info.loader]
+                    .into_iter()
+                    .flatten()
+                {
                     if !self.top_classes.contains(&class.replace('.', "/")) {
-                        self.hit("meta.missing-main", Some(class.clone()), ev(&path, None, format!("declared class {class} isn't in the jar")));
+                        self.hit(
+                            "meta.missing-main",
+                            Some(class.clone()),
+                            ev(
+                                &path,
+                                None,
+                                format!("declared class {class} isn't in the jar"),
+                            ),
+                        );
                     }
                 }
             }
             plugins.push(info);
         }
         plugins.sort_by(|a, b| a.descriptor.cmp(&b.descriptor));
-        let unreadable = self.warnings.iter().any(|w| w.code == "zip.unreadable" && w.location.is_empty());
+        let unreadable = self
+            .warnings
+            .iter()
+            .any(|w| w.code == "zip.unreadable" && w.location.is_empty());
         if plugins.is_empty() && !unreadable {
-            self.hit("meta.no-descriptor", None, ev("", None, "no plugin or mod descriptor at the jar root"));
+            self.hit(
+                "meta.no-descriptor",
+                None,
+                ev("", None, "no plugin or mod descriptor at the jar root"),
+            );
         }
 
         let libraries: Vec<Library> = std::mem::take(&mut self.libraries).into_iter().collect();
         for lib in &libraries {
             if meta::log4j_vulnerable(&lib.group, &lib.artifact, &lib.version) {
-                self.hit("lib.log4j-vulnerable", None, ev(&lib.location, None, format!("{}:{}:{}", lib.group, lib.artifact, lib.version)));
+                self.hit(
+                    "lib.log4j-vulnerable",
+                    None,
+                    ev(
+                        &lib.location,
+                        None,
+                        format!("{}:{}:{}", lib.group, lib.artifact, lib.version),
+                    ),
+                );
             }
         }
 
         let ratio = |a: u64, b: u64| if b == 0 { 0.0 } else { a as f64 / b as f64 };
         let round = |x: f64| (x * 1000.0).round() / 1000.0;
         let o = &self.obf;
-        let (sn, dp, es) = (ratio(o.short_names, o.names), ratio(o.default_package, o.classes), ratio(o.encoded_strings, o.long_strings));
+        let (sn, dp, es) = (
+            ratio(o.short_names, o.names),
+            ratio(o.default_package, o.classes),
+            ratio(o.encoded_strings, o.long_strings),
+        );
         // Small samples are scaled down so one API key or a couple of short names can't
         // make a tiny jar look obfuscated.
         let damped = 0.5 * ratio(o.short_names, o.names.max(20))
@@ -886,29 +1390,66 @@ impl<'l> Scan<'l> {
             if rules::rule(id).severity == Severity::Info {
                 continue;
             }
-            for e in evidence.iter().filter(|e| self.class_locs.contains(&e.location)) {
-                class_rules.entry(e.location.clone()).or_default().insert(id);
+            for e in evidence
+                .iter()
+                .filter(|e| self.class_locs.contains(&e.location))
+            {
+                class_rules
+                    .entry(e.location.clone())
+                    .or_default()
+                    .insert(id);
             }
         }
-        let classes = Classes { names: std::mem::take(&mut self.class_locs), rules: class_rules };
+        let classes = Classes {
+            names: std::mem::take(&mut self.class_locs),
+            rules: class_rules,
+            code: std::mem::take(&mut self.class_prints),
+            files: std::mem::take(&mut self.file_prints),
+            natives: std::mem::take(&mut self.natives),
+        };
 
         // Reachability starts from the plugin's own main classes; without one there's
         // nothing to start from.
         let mut entries: Vec<String> = plugins
             .iter()
-            .filter(|p| matches!(p.platform.as_str(), "bukkit" | "paper" | "bungee" | "velocity"))
-            .flat_map(|p| [&p.main, &p.bootstrapper, &p.loader].into_iter().flatten().map(|c| c.replace('.', "/")))
+            .filter(|p| {
+                matches!(
+                    p.platform.as_str(),
+                    "bukkit" | "paper" | "bungee" | "velocity"
+                )
+            })
+            .flat_map(|p| {
+                [&p.main, &p.bootstrapper, &p.loader]
+                    .into_iter()
+                    .flatten()
+                    .map(|c| c.replace('.', "/"))
+            })
             .filter(|c| self.graph.has_class(c))
             .collect();
         let mut seen = HashSet::new();
         entries.retain(|c| seen.insert(c.clone()));
         let graph = std::mem::take(&mut self.graph);
         let reach = (!entries.is_empty()).then(|| {
-            let named: Vec<String> = self.named_classes.iter().filter(|c| graph.has_class(c) && !entries.contains(c)).cloned().collect();
+            let named: Vec<String> = self
+                .named_classes
+                .iter()
+                .filter(|c| graph.has_class(c) && !entries.contains(c))
+                .cloned()
+                .collect();
             entries.extend(named);
-            let manifest: Vec<String> = self.manifest_classes.iter().filter(|c| graph.has_class(c)).cloned().collect();
+            let manifest: Vec<String> = self
+                .manifest_classes
+                .iter()
+                .filter(|c| graph.has_class(c))
+                .cloned()
+                .collect();
             let r = graph.reach(&entries, &manifest);
-            entries.extend(manifest.into_iter().filter(|c| !entries.contains(c)).collect::<Vec<_>>());
+            entries.extend(
+                manifest
+                    .into_iter()
+                    .filter(|c| !entries.contains(c))
+                    .collect::<Vec<_>>(),
+            );
             r
         });
         let reachability = reach.as_ref().map(|r| Reachability {
@@ -929,12 +1470,17 @@ impl<'l> Scan<'l> {
                         e.reached = reach.at(&graph, &e.location, e.method.as_deref());
                     }
                 }
-                let title = if id == "obf.score" { format!("{} (score {score}/100)", r.title) } else { r.title.to_string() };
+                let title = if id == "obf.score" {
+                    format!("{} (score {score}/100)", r.title)
+                } else {
+                    r.title.to_string()
+                };
                 // Reached if any location is; unreached only if every location is code
                 // that can't be reached.
                 let reached = if evidence.iter().any(|e| e.reached == Some(true)) {
                     Some(true)
-                } else if !evidence.is_empty() && evidence.iter().all(|e| e.reached == Some(false)) {
+                } else if !evidence.is_empty() && evidence.iter().all(|e| e.reached == Some(false))
+                {
                     Some(false)
                 } else {
                     None
@@ -947,7 +1493,15 @@ impl<'l> Scan<'l> {
                         .map(|(i, e)| (reach.path(&graph, &e.location, e.method.as_deref()), i))
                         .find(|(p, _)| !p.is_empty())
                         // No path at all: still show a reached place.
-                        .unwrap_or_else(|| (Vec::new(), evidence.iter().position(|e| e.reached == Some(true)).unwrap_or(0))),
+                        .unwrap_or_else(|| {
+                            (
+                                Vec::new(),
+                                evidence
+                                    .iter()
+                                    .position(|e| e.reached == Some(true))
+                                    .unwrap_or(0),
+                            )
+                        }),
                     _ => Default::default(),
                 };
                 let evidence_total = evidence.len();
@@ -971,21 +1525,39 @@ impl<'l> Scan<'l> {
                 }
             })
             .collect();
-        findings.sort_by(|a, b| b.severity.cmp(&a.severity).then_with(|| a.rule.cmp(&b.rule)).then_with(|| a.value.cmp(&b.value)));
+        findings.sort_by(|a, b| {
+            b.severity
+                .cmp(&a.severity)
+                .then_with(|| a.rule.cmp(&b.rule))
+                .then_with(|| a.value.cmp(&b.value))
+        });
 
         let report = Report {
             schema_version: SCHEMA_VERSION,
             tool_version: env!("CARGO_PKG_VERSION").to_string(),
-            file: FileInfo { name: name.to_string(), size: bytes.len() as u64, sha256: sha256(bytes) },
+            file: FileInfo {
+                name: name.to_string(),
+                size: bytes.len() as u64,
+                sha256: sha256(bytes),
+            },
             partial: self.partial,
             plugins,
             libraries,
             nested: self.nested,
-            obfuscation: Obfuscation { score, short_names: round(sn), default_package: round(dp), encoded_strings: round(es) },
+            obfuscation: Obfuscation {
+                score,
+                short_names: round(sn),
+                default_package: round(dp),
+                encoded_strings: round(es),
+            },
             reachability,
             findings,
             warnings: self.warnings,
-            stats: Stats { entries: self.entries, classes: self.classes, uncompressed_bytes: self.total_bytes },
+            stats: Stats {
+                entries: self.entries,
+                classes: self.classes,
+                uncompressed_bytes: self.total_bytes,
+            },
             disclaimer: DISCLAIMER.to_string(),
         };
         (report, classes)
@@ -993,9 +1565,19 @@ impl<'l> Scan<'l> {
 }
 
 fn may_be_in_jar(owner: &str) -> bool {
-    !["java/", "javax/", "jdk/", "sun/", "com/sun/", "kotlin/", "org/bukkit/", "net/md_5/", "com/velocitypowered/"]
-        .iter()
-        .any(|p| owner.starts_with(p))
+    ![
+        "java/",
+        "javax/",
+        "jdk/",
+        "sun/",
+        "com/sun/",
+        "kotlin/",
+        "org/bukkit/",
+        "net/md_5/",
+        "com/velocitypowered/",
+    ]
+    .iter()
+    .any(|p| owner.starts_with(p))
 }
 
 /// What a string used in code says about jar writes and the plugins folder.
@@ -1017,8 +1599,13 @@ fn class_name_like(s: &str) -> Option<String> {
     let sep = if s.contains('/') { '/' } else { '.' };
     let mut parts = 0;
     for part in s.split(sep) {
-        let ident = part.chars().next().is_some_and(|c| c.is_alphabetic() || c == '_' || c == '$')
-            && part.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$');
+        let ident = part
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_alphabetic() || c == '_' || c == '$')
+            && part
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '$');
         if !ident {
             return None;
         }
@@ -1033,16 +1620,63 @@ fn is_plugins_dir(s: &str) -> bool {
 }
 
 const JAVA_KEYWORDS: &[&str] = &[
-    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue",
-    "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if",
-    "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private",
-    "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
-    "throw", "throws", "transient", "try", "void", "volatile", "while",
+    "abstract",
+    "assert",
+    "boolean",
+    "break",
+    "byte",
+    "case",
+    "catch",
+    "char",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "double",
+    "else",
+    "enum",
+    "extends",
+    "final",
+    "finally",
+    "float",
+    "for",
+    "goto",
+    "if",
+    "implements",
+    "import",
+    "instanceof",
+    "int",
+    "interface",
+    "long",
+    "native",
+    "new",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "short",
+    "static",
+    "strictfp",
+    "super",
+    "switch",
+    "synchronized",
+    "this",
+    "throw",
+    "throws",
+    "transient",
+    "try",
+    "void",
+    "volatile",
+    "while",
 ];
 
 fn short_or_garbled(n: &str) -> bool {
     n.chars().count() <= 2
-        || !n.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'$')
+        || !n
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'$')
         || JAVA_KEYWORDS.contains(&n)
 }
 
@@ -1057,7 +1691,14 @@ fn native_kind(b: &[u8]) -> Option<&'static str> {
         }
     }
     let m = b.get(..4)?;
-    if [[0xFE, 0xED, 0xFA, 0xCE], [0xFE, 0xED, 0xFA, 0xCF], [0xCE, 0xFA, 0xED, 0xFE], [0xCF, 0xFA, 0xED, 0xFE]].iter().any(|x| x == m)
+    if [
+        [0xFE, 0xED, 0xFA, 0xCE],
+        [0xFE, 0xED, 0xFA, 0xCF],
+        [0xCE, 0xFA, 0xED, 0xFE],
+        [0xCF, 0xFA, 0xED, 0xFE],
+    ]
+    .iter()
+    .any(|x| x == m)
         || (m == [0xCA, 0xFE, 0xBA, 0xBE] && !class::is_class(b))
     {
         return Some("macOS program or library (Mach-O)");

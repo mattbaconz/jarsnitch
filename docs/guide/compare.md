@@ -6,7 +6,7 @@ A plugin you already trust can change in an update: a new owner, a compromised a
 
 <!-- diagram: diff-flow -->
 
-Findings are matched by rule and value (a host, an IP address, a webhook id, a path), not by where they sit in the code. Code that only moved inside the jar doesn't make a new finding, and a capability the old version already had counts as unchanged even if it now appears in more places. What's new in a moved class still shows: a new class that carries notable or High evidence is listed under Adds.
+Findings are matched by rule and value (a host, an IP address, a webhook id, a path), not by where they sit in the code. Code that only moved inside the jar doesn't make a new finding, and a capability the old version already had counts as unchanged even if it now appears in more places. What's new in a moved class still shows: a new class that carries notable or High evidence is listed under Adds. Classes in both versions are also compared method by method, so code added to a class that already existed shows under Code.
 
 ## On the website
 
@@ -81,16 +81,27 @@ Changes:
   plugin.yml website: https://sampleshop.example.com -> https://shop-plugins.example.net
 A different author or website can mean the plugin has a new owner.
 
+Code: 1 class changed, 2 added, 0 removed, 3 unchanged
+
+INFO     Changed class: example/sampleshop/SampleShop
+         ~ method onEnable()V
+         now calls: example/sampleshop/AddonLoader.<init>, example/sampleshop/AddonLoader.load, example/sampleshop/ChatListener.<init>, example/sampleshop/SampleShop.getDataFolder, example/sampleshop/SampleShop.getServer, org/bukkit/Server.getPluginManager, +1 more
+
+New classes (2): example/sampleshop/AddonLoader, example/sampleshop/ChatListener
+Other files: ~ plugin.yml
+
 Unchanged: mc.console-command, net.http, net.socket, str.url
 
 This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.
 ```
 
-› real output: jarsnitch 0.2.1 on the site's sample jars · exit code 2
+› real output: jarsnitch 0.4.0 on the site's sample jars · exit code 2
 
 - The exit code is **2** when the update adds a High finding, **0** otherwise.
 - If either file can't be read, or isn't a zip, `diff` prints an error to standard error and exits with **1**. Nothing goes to standard output, not even with `--json`, so a script never mistakes a failed comparison for an empty one.
 - `--json` prints one object; see [JSON format](json.md#a-comparison).
+
+No old file to compare with? [`jarsnitch check`](check.md) finds the official file of the version you run on Modrinth or Hangar, and the latest release, and compares both with your jar.
 
 ## Reading a comparison
 
@@ -108,7 +119,23 @@ The same kinds, gone from the new version. In the sample, the old website addres
 
 ### Changes
 
-Values that changed under the same key: bundled and downloaded library versions, nested jar hashes, and the plugin's name, version, main class, authors and website. When the authors or the website differ, the comparison adds that this can mean the plugin has a new owner. Authors are compared as a sorted list, so a new order isn't a change.
+Values that changed under the same key: bundled and downloaded library versions, nested jar hashes, and the plugin's name, version, main class, bootstrapper, loader, authors and website. When the authors or the website differ, the comparison adds that this can mean the plugin has a new owner. Authors are compared as a sorted list, so a new order isn't a change.
+
+### Code
+
+Every class in both versions is compared method by method. **Code** lists the classes whose code changed, most severe first, and what changed in each:
+
+- `+ method` and `- method`: methods only one version has. `~ method`: a method in both whose code, access flags, try/catch handlers or annotations differ.
+- `+ field` and `- field`: fields, by name and type. `~ field`: a field in both whose access flags, constant value or annotations differ.
+- `~ superclass, interfaces, access flags or annotations`: the class declaration changed.
+- `~ more than one entry has this name`: a jar has different copies of this class, such as the same name twice, or `/a/B.class` next to `a/B.class`. The server may load any of them, so they're compared together and the class is at least notable. Two jars with the same copies, in any order, are the same.
+- `now calls:` methods the class calls that it didn't call before.
+
+A changed class has the severity of the most severe notable or High rule its new code adds, otherwise info. The command line lists every class with notable or High code, then the others up to 10 in all; `--json` and the website list them all. Then come **New classes** and **Removed classes**, every class only one version has, and **Other files**, the files that aren't classes, compared by content.
+
+This is where code added to an existing class shows, which Adds can't do on its own: a downloader injected into a plugin's main class adds no new class, but it changes `onEnable` and adds calls. In the sample, `onEnable` changed so that it starts the new `AddonLoader` and registers the new `ChatListener`.
+
+A rebuild changes code that does the same thing. The compiler numbers lambdas in order, so one new lambda renames the others (`lambda$revert$1` becomes `lambda$revert$0`) and they show as removed and added. Read Adds first; Code tells you where to look.
 
 ### Unchanged
 
@@ -122,7 +149,9 @@ Findings both versions have, listed by rule id with a count when a rule has seve
 
 - **New owner:** under Changes, when the authors or the website differ.
 - **`diff.classes-renamed`:** fewer than half of the old class names still exist and either version scores 25 or more for obfuscation. The jar was probably re-obfuscated, so new and removed classes are left out for this pair. Findings are still compared.
+- **`diff.native-changed`:** a native library (a Linux, Windows or macOS program or library, known by its first bytes, whatever its name) was added, removed or changed. jarsnitch doesn't read native code, so it can't say what changed in it.
 - **`diff.partial`:** a scan limit was hit on either side, so part of a jar wasn't checked.
+- **`diff.same-version`:** both jars give the same version, but their code differs. An update normally changes the version, so one of the two may not be the build its author published. [Check against official releases](check.md) can tell you which.
 
 ## Use it before every update
 

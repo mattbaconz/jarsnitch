@@ -8,6 +8,7 @@ Every report is also JSON: `--json` on the command line, **Download JSON** on th
 |---|---|
 | `jarsnitch scan … --json` | An array of reports, one per jar, even for a single jar. |
 | `jarsnitch diff … --json` | One comparison object. Nothing at all when a file can't be read (exit code 1). |
+| `jarsnitch check … --json` | An array with one [check](#a-check) per jar. |
 | Website, one jar | One report object, saved as `<file>.jarsnitch.json`. |
 | Website, several jars | An array of reports, saved as `plugins.jarsnitch.json`. |
 | Website, a comparison | One comparison object, saved as `<old>-vs-<new>.jarsnitch.json`. |
@@ -87,8 +88,141 @@ A path is one way to get to the code, not every way. How it's chosen is in [The 
 | `obfuscation` | object | `old` and `new` scores. |
 | `added`, `removed` | array | Items with a `kind`: `finding` (with the whole `finding`, `path` included), `class` (`value` is the class, plus `rules` and `severity`), or `command`, `permission`, `dependency`, `optional-dependency`, `maven-library` and `library`, each with a `value`. |
 | `changed` | array | `kind` (`library`, `maven-library`, `nested` or `plugin-field`), `key`, and `old` and `new` values, `null` when a side doesn't have one. |
+| `code` | object | The class-by-class comparison; see below. |
+| `same_code` | boolean | Both jars run the same code: no class or native library differs, nor the main class or a library the server downloads at startup, there's no `diff.classes-renamed`, and both jars were read in full. **Same code** in a check means this is `true`. |
 | `unchanged` | array | `rule` and `value` of findings both versions have. |
-| `warnings` | array | `diff.classes-renamed` or `diff.partial`, as described in [Compare two versions](compare.md#notes-a-comparison-can-add). |
+| `warnings` | array | `diff.classes-renamed`, `diff.native-changed`, `diff.partial` or `diff.same-version`, as described in [Compare two versions](compare.md#notes-a-comparison-can-add). |
+
+### Code
+
+| Field | Type | Meaning |
+|---|---|---|
+| `changed_classes` | array | Classes in both versions whose code differs, most severe first, then by name; see below. |
+| `added_classes`, `removed_classes` | array of strings | Every class only one version has, with or without findings. |
+| `unchanged_classes` | number | Classes whose code is the same in both. |
+| `added_files`, `removed_files`, `changed_files` | array of strings | Other files, compared by content. A nested jar counts by the files inside it. Jar signature files (`META-INF/*.SF`, `.RSA`, `.DSA`, `.EC`) and the `pom.properties` and `pom.xml` under `META-INF/maven/` are left out, because a build or a new signature changes them. |
+
+A class is named by its file's path without `.class`, like `example/sampleshop/SampleShop`, or `libs/x.jar!/a/B` inside a nested jar. Everything is empty when `diff.classes-renamed` is set.
+
+| Field of a changed class | Type | Meaning |
+|---|---|---|
+| `class` | string | The class. |
+| `severity` | string | That of the most severe rule in `rules_added`, else `info`; at least `notable` when `duplicate` is set. |
+| `rules_added` | array of strings | Notable and High rules with evidence in this class that the old class didn't have. |
+| `header_changed` | boolean | The superclass, interfaces, class access flags or class annotations differ. Always `false` when `duplicate` is set. |
+| `methods_added`, `methods_removed`, `methods_changed` | array of strings | Methods as `name(descriptor)`. A changed method has the same name and descriptor and different code, access flags, try/catch handlers or annotations. |
+| `fields_added`, `fields_removed`, `fields_changed` | array of strings | Fields as `name:descriptor`. A changed field has different access flags, a different constant value or different annotations. |
+| `calls_added` | array of strings | Methods the class calls now that it didn't before, as `owner.name`. |
+| `duplicate` | boolean | More than one entry in a jar has this class's name, with different code. Their fingerprints are combined in any order, so the class counts as changed unless the other jar has the same copies. |
+
+The sample update's `code`:
+
+```json
+{
+  "changed_classes": [
+    {
+      "class": "example/sampleshop/SampleShop",
+      "severity": "info",
+      "rules_added": [],
+      "header_changed": false,
+      "methods_added": [],
+      "methods_removed": [],
+      "methods_changed": [
+        "onEnable()V"
+      ],
+      "fields_added": [],
+      "fields_removed": [],
+      "fields_changed": [],
+      "calls_added": [
+        "example/sampleshop/AddonLoader.<init>",
+        "example/sampleshop/AddonLoader.load",
+        "example/sampleshop/ChatListener.<init>",
+        "example/sampleshop/SampleShop.getDataFolder",
+        "example/sampleshop/SampleShop.getServer",
+        "org/bukkit/Server.getPluginManager",
+        "org/bukkit/plugin/PluginManager.registerEvents"
+      ],
+      "duplicate": false
+    }
+  ],
+  "added_classes": [
+    "example/sampleshop/AddonLoader",
+    "example/sampleshop/ChatListener"
+  ],
+  "removed_classes": [],
+  "unchanged_classes": 3,
+  "added_files": [],
+  "removed_files": [],
+  "changed_files": [
+    "plugin.yml"
+  ]
+}
+```
+
+› real output: jarsnitch 0.4.0, `diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json`, the `code` field
+
+## A check
+
+| Field | Type | Meaning |
+|---|---|---|
+| `file` | string | The file name. |
+| `sha256` | string | SHA-256 of the whole file. |
+| `plugin`, `version` | string or null | The plugin's name and version from its descriptor. |
+| `status` | string | `official`, `same-code`, `differs`, `not-found` or `unreadable`; see [What you get for each jar](check.md#what-you-get-for-each-jar). |
+| `official` | object or null | The official file the jar matched or was compared with. `null` when nothing was found. |
+| `unlike` | object or null | With `not-found`: a file of this name and version in the project named like the plugin that isn't the same plugin (another name, or another main class and most classes different), with its comparison. Otherwise `null`. |
+| `update` | object or null | The latest release, when it's newer than the jar. |
+| `errors` | array of strings | Requests that failed. The result may be incomplete. |
+
+`official` and `update` have the same fields:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `site` | string | `modrinth` or `hangar`. |
+| `project` | string | The project's name there. |
+| `url` | string | The project's page; for an update, the version's page. |
+| `version`, `published` | string or null | The release's version number, and when it was published, as the site gives it. |
+| `file`, `download` | string or null | The file's name and download address. |
+| `diff` | object or null | A [comparison](#a-comparison). In `official`, the official file is `old` and the jar `new`, so `added` is what the jar adds; `null` when the bytes are the same. In `update`, the jar is `old` and the update `new`, and it's `null` when the release has no file for your server software. |
+
+A re-zipped copy of an official release, checked with `--no-updates`:
+
+```json
+[
+  {
+    "file": "griefprevention-rezipped.jar",
+    "sha256": "2d478b46dcc4405c9326171251c4e40dde086cf02fcb73a21aeb40616d5799a6",
+    "plugin": "GriefPrevention",
+    "version": "16.18.7",
+    "status": "same-code",
+    "official": {
+      "site": "modrinth",
+      "project": "GriefPrevention",
+      "url": "https://modrinth.com/project/griefprevention",
+      "version": "16.18.7",
+      "published": "2026-03-05T16:46:32.405428Z",
+      "file": "GriefPrevention.jar",
+      "download": "https://cdn.modrinth.com/data/O4o4mKaq/versions/dGfCZHqk/GriefPrevention.jar",
+      "diff": {
+        "code": {
+          "changed_classes": [],
+          "added_classes": [],
+          "removed_classes": [],
+          "unchanged_classes": 127,
+          "added_files": [],
+          "removed_files": [],
+          "changed_files": []
+        },
+        "same_code": true
+      }
+    },
+    "update": null,
+    "errors": []
+  }
+]
+```
+
+› real output: jarsnitch 0.4.0, `check griefprevention-rezipped.jar --no-updates --json`, Modrinth as of 15 Nov 2026, `diff` shortened to `code` and `same_code`
 
 ## Examples
 
@@ -242,7 +376,7 @@ The sample update, without `old` and `new`, which hold each side's file, plugins
 ```json
 {
   "schema_version": 1,
-  "tool_version": "0.3.0",
+  "tool_version": "0.4.0",
   "obfuscation": {
     "old": 0,
     "new": 0
@@ -364,6 +498,46 @@ The sample update, without `old` and `new`, which hold each side's file, plugins
       "new": "https://shop-plugins.example.net"
     }
   ],
+  "code": {
+    "changed_classes": [
+      {
+        "class": "example/sampleshop/SampleShop",
+        "severity": "info",
+        "rules_added": [],
+        "header_changed": false,
+        "methods_added": [],
+        "methods_removed": [],
+        "methods_changed": [
+          "onEnable()V"
+        ],
+        "fields_added": [],
+        "fields_removed": [],
+        "fields_changed": [],
+        "calls_added": [
+          "example/sampleshop/AddonLoader.<init>",
+          "example/sampleshop/AddonLoader.load",
+          "example/sampleshop/ChatListener.<init>",
+          "example/sampleshop/SampleShop.getDataFolder",
+          "example/sampleshop/SampleShop.getServer",
+          "org/bukkit/Server.getPluginManager",
+          "org/bukkit/plugin/PluginManager.registerEvents"
+        ],
+        "duplicate": false
+      }
+    ],
+    "added_classes": [
+      "example/sampleshop/AddonLoader",
+      "example/sampleshop/ChatListener"
+    ],
+    "removed_classes": [],
+    "unchanged_classes": 3,
+    "added_files": [],
+    "removed_files": [],
+    "changed_files": [
+      "plugin.yml"
+    ]
+  },
+  "same_code": false,
   "unchanged": [
     {
       "rule": "mc.console-command",
@@ -387,13 +561,14 @@ The sample update, without `old` and `new`, which hold each side's file, plugins
 }
 ```
 
-› real output: jarsnitch 0.3.0, `diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json`, `old`, `new` and 6 of the 9 added items left out
+› real output: jarsnitch 0.4.0, `diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json`, `old`, `new` and 6 of the 9 added items left out
 
 ## Order and stability
 
 - **Deterministic.** The same jar gives byte-identical JSON on every platform. There are no timestamps, paths always use `/`, and every list is sorted.
 - **Findings** are sorted by severity (high first), then rule id, then value. Evidence is sorted by location, method and detail, without duplicates. A path's steps go from the entry point to the code. Unlike the text output, the JSON doesn't move findings that aren't called; filter on `reached` instead.
 - **Stable.** Adding a field isn't a breaking change. Renaming or removing a field, or changing what it means, raises `schema_version`. Rule ids are never renamed or reused.
+- **A check** reports what Modrinth and Hangar list when it runs, so the same jar can get another result later. Each `diff` in it carries its own `schema_version`.
 - **Shareable.** Webhook and bot tokens are cut to their first 4 characters. A report still holds the file name, hashes, hosts and webhook ids, so read it before you post it.
 
 ## Recipes with jq
@@ -414,4 +589,16 @@ What an update adds, one line per finding:
 
 ```bash
 jarsnitch diff old.jar new.jar --json | jq -r '.added[] | select(.kind == "finding") | .finding | "\(.severity)  \(.rule)  \(.value // "")"'
+```
+
+Jars whose code differs from the official file:
+
+```bash
+jarsnitch check plugins/ --json | jq -r '.[] | select(.status == "differs") | "\(.file)  \(.official.url)"'
+```
+
+Updates, with the version you run:
+
+```bash
+jarsnitch check plugins/ --json | jq -r '.[] | select(.update) | "\(.file)  \(.version) -> \(.update.version)"'
 ```

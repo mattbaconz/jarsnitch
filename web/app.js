@@ -2,6 +2,7 @@
 // Report text comes from the scanned jar, so it is only ever inserted as text.
 
 import { selectTab } from "./site.js";
+import { checkAll, sameCode, addsHigh, alarming } from "./official.js";
 
 const status = document.getElementById("status");
 const results = document.getElementById("results");
@@ -42,6 +43,13 @@ let fatal = null;
 let nextId = 0;
 /** Bumped by every new scan or comparison, so an older one stops and never shows. */
 let generation = 0;
+/** Aborted with every new scan or comparison, so an official-release check still running stops. */
+let checks = new AbortController();
+function nextGeneration() {
+  checks.abort();
+  checks = new AbortController();
+  return ++generation;
+}
 const pending = new Map();
 const worker = new Worker(new URL("worker.js", import.meta.url), { type: "module" });
 
@@ -73,6 +81,9 @@ async function analyze(op, files) {
   worker.postMessage({ id, op, files: loaded }, loaded.map((f) => f.bytes));
   return { id, ...(await answer) };
 }
+
+/** Compares two files and resolves to the diff JSON. */
+const diffFiles = async (a, b) => (await analyze("diff", [a, b])).result;
 
 // Mode tabs. site.js handles clicks, arrow keys and the 1 / 2 shortcuts.
 
@@ -207,7 +218,7 @@ for (const button of document.querySelectorAll("[data-sample]")) {
 }
 
 async function scan(file, note) {
-  const gen = ++generation;
+  const gen = nextGeneration();
   setStatus(`Analyzing ${file.name}…`);
   try {
     const { result, ms } = await analyze("scan", [file]);
@@ -215,7 +226,7 @@ async function scan(file, note) {
     const c = counts(result.findings);
     if (unreadable(result.warnings)) setStatus(`${file.name} isn't a readable jar or zip.`, true);
     else setStatus(`Scanned ${file.name} in ${seconds(ms)}: ${c.high} high, ${c.notable} notable, ${c.info} info.`);
-    show(withNote(renderReport(result, { ms, sample: !!note }), note));
+    show(withNote(renderReport(result, { ms, sample: !!note, file }), note));
   } catch (e) {
     if (gen === generation) setStatus(e.message, true);
   }
@@ -223,7 +234,7 @@ async function scan(file, note) {
 
 /** Scans jars one after another; a jar that fails doesn't stop the rest. */
 async function scanMany(files) {
-  const gen = ++generation;
+  const gen = nextGeneration();
   const start = performance.now();
   const scanned = [];
   results.replaceChildren();
@@ -249,7 +260,7 @@ async function scanMany(files) {
 }
 
 async function compare(note) {
-  const gen = ++generation;
+  const gen = nextGeneration();
   const { old: a, new: b } = pair;
   setStatus(`Comparing ${a.name} with ${b.name}…`);
   try {
@@ -760,7 +771,7 @@ const pluginName = (r) => {
 
 let reports = 0;
 
-function renderReport(r, { nested = false, ms, sample = false } = {}) {
+function renderReport(r, { nested = false, ms, sample = false, file = null } = {}) {
   const p = r.plugins[0];
   const ctx = { nested, jar: r.file.name, idp: `r${++reports}-` };
   const bad = unreadable(r.warnings);
@@ -783,6 +794,7 @@ function renderReport(r, { nested = false, ms, sample = false } = {}) {
     counts: bad ? null : countList(counts(r.findings)),
     download: downloadButton(`${r.file.name}.jarsnitch.json`, r),
     toc: [
+      bad || nested || sample || !file ? null : ["r-official", "Official release"],
       bad || !r.findings.some((f) => f.evidence.some((e) => e.location)) ? null : ["r-map", "Where in the jar"],
       bad ? null : ["r-findings", "Findings", r.findings.length],
       ["r-about", "About this jar"],
@@ -792,6 +804,7 @@ function renderReport(r, { nested = false, ms, sample = false } = {}) {
   }, [
     bad ? h("p", { class: "banner error" }, "This file isn't a readable jar or zip, so nothing in it was checked.") : null,
     r.partial ? h("p", { class: "banner warn" }, "Partial report: a scan limit was hit, so part of the jar wasn't checked. A partial report is not a clean one.") : null,
+    bad || nested || sample || !file ? null : officialSection([{ file, report: r }], "r-official"),
     bad ? null : jarMap(r, id("r-map"), ctx),
     bad ? null : findingsSection(r.findings, r.reachability, id("r-findings"), ctx),
     jarDetails(r, id("r-about"), nested),
@@ -827,7 +840,11 @@ function renderMany(scanned, ms) {
     counts: countList(counts(reports.flatMap((r) => r.findings))),
     download: downloadButton("plugins.jarsnitch.json", reports),
     prov: prov(reports[0]?.tool_version, ms),
-  }, section("jars", "r-jars", "Plugins", plural(scanned.length, "jar"), h("div", { class: "list" }, order.map(jarRow))));
+    toc: [["r-official", "Official releases"], ["r-jars", "Plugins", scanned.length]],
+  }, [
+    officialSection(scanned.filter((s) => s.report && !unreadable(s.report.warnings)), "r-official"),
+    section("jars", "r-jars", "Plugins", plural(scanned.length, "jar"), h("div", { class: "list" }, order.map(jarRow))),
+  ]);
 }
 
 function jarRow({ file, report: r, error }) {
@@ -861,8 +878,9 @@ function itemRow(item, verb) {
   return h("div", { class: "row sev-info" }, sevBadge("info"), h("span", { class: "text" }, `${verb} `, KIND[item.kind](item.value)));
 }
 
-function removedRow(item) {
-  if (item.kind !== "finding") return itemRow(item, "Removed");
+/** An item on one row: a finding by its title, anything else as itemRow has it. */
+function compactRow(item, verb) {
+  if (item.kind !== "finding") return itemRow(item, verb);
   const f = item.finding;
   return h("div", { class: `row sev-${f.severity}` },
     sevBadge(f.severity), h("span", { class: "text" }, f.title, f.value ? [": ", code(f.value)] : null), ruleChip(f.rule));
@@ -900,8 +918,9 @@ function addedList(items, jar) {
   return out;
 }
 
-function renderDiff(d, { ms, sample = false } = {}) {
+function renderDiff(d, { ms, sample = false, nested = false, adds = "This update adds", removes = "This update removes", tag = null } = {}) {
   reports++;
+  const id = (x) => (nested ? null : x);
   const label = (side) => {
     const p = side.plugins[0];
     return p?.name ? `${p.name} ${p.version ?? ""}`.trim() : side.file.name;
@@ -921,37 +940,262 @@ function renderDiff(d, { ms, sample = false } = {}) {
   const items = (n, one = "item") => (n ? plural(n, one) : null);
 
   return frame({
-    label: sample ? "compare · sample" : "compare",
+    nested,
+    label: tag ?? (sample ? "compare · sample" : "compare"),
     title,
     meta: [[h("span", { class: "nw" }, d.old.file.name), " → ", h("span", { class: "nw" }, d.new.file.name)], `obfuscation ${d.obfuscation.old} → ${d.obfuscation.new}`],
     counts: countList(counts(addedFindings), " added"),
     download: downloadButton(`${d.old.file.name}-vs-${d.new.file.name}.jarsnitch.json`, d),
     toc: [
-      ["r-adds", "This update adds", d.added.length],
-      ["r-removes", "This update removes", d.removed.length],
+      ["r-adds", adds, d.added.length],
+      ["r-removes", removes, d.removed.length],
       d.changed.length ? ["r-changes", "Changes", d.changed.length] : null,
+      renamed(d) ? null : ["r-code", "Code"],
       unchanged.length ? ["r-unchanged", "Unchanged", unchanged.length] : null,
     ],
-    prov: prov(d.tool_version, ms, sample),
+    prov: nested ? null : prov(d.tool_version, ms, sample),
   }, [
     d.warnings.map((w) => h("p", { class: "banner warn" }, w.message)),
-    section("adds", "r-adds", "This update adds", items(d.added.length),
+    section("adds", id("r-adds"), adds, items(d.added.length),
       d.added.length
         ? h("div", { class: "list" }, addedList(d.added, d.new.file.name))
-        : h("p", { class: "empty" }, "Nothing new from the rule list.")),
-    section("removes", "r-removes", "This update removes", items(d.removed.length),
-      d.removed.length ? h("div", { class: "list" }, d.removed.map(removedRow)) : h("p", { class: "empty" }, "Nothing.")),
+        : h("p", { class: "empty" }, "Nothing new from the rule list."), nested),
+    section("removes", id("r-removes"), removes, items(d.removed.length),
+      d.removed.length ? h("div", { class: "list" }, d.removed.map((i) => compactRow(i, "Removed"))) : h("p", { class: "empty" }, "Nothing."), nested),
     d.changed.length
-      ? section("changes", "r-changes", "Changes", items(d.changed.length, "field"), [
+      ? section("changes", id("r-changes"), "Changes", items(d.changed.length, "field"), [
           h("div", { class: "list" }, d.changed.map(changeRow)),
           d.changed.some((c) => c.kind === "plugin-field" && / (authors|website)$/.test(c.key))
             ? h("p", { class: "after" }, "A different author or website can mean the plugin has a new owner.")
             : null,
-        ])
+        ], nested)
       : null,
+    codeSection(d, id("r-code"), nested),
     unchanged.length
-      ? section("unchanged", "r-unchanged", "Unchanged", items(unchanged.length, "rule"),
-          h("ul", { class: "chips" }, unchanged.map((u) => h("li", {}, ruleChip(u.rule), u.n > 1 ? ` ×${u.n}` : null))))
+      ? section("unchanged", id("r-unchanged"), "Unchanged", items(unchanged.length, "rule"),
+          h("ul", { class: "chips" }, unchanged.map((u) => h("li", {}, ruleChip(u.rule), u.n > 1 ? ` ×${u.n}` : null))), nested)
       : null,
   ]);
+}
+
+const renamed = (d) => d.warnings.some((w) => w.code === "diff.classes-renamed");
+const CLASS_LIST = 10;
+const MEMBER_LIST = 12;
+
+/** "onEnable()V" → "onEnable()", "load(Ljava/io/File;)…" → "load(File)". */
+function methodName(m) {
+  const at = m.indexOf("(");
+  return h("code", {}, at < 0 ? m : [m.slice(0, at), `(${params(m.slice(at))})`]);
+}
+
+/** "STATS:Ljava/lang/String;" → "STATS". */
+const fieldName = (f) => h("code", {}, f.split(":")[0]);
+
+function classChangeRow(x) {
+  const lines = [
+    x.duplicate ? h("li", {}, "More than one entry has this name, with different code; the server may load any of them, so they're compared together.") : null,
+    x.header_changed ? h("li", {}, "Superclass, interfaces or access flags changed") : null,
+    ...[["Added method", x.methods_added, methodName], ["Removed method", x.methods_removed, methodName], ["Changed method", x.methods_changed, methodName], ["Added field", x.fields_added, fieldName], ["Removed field", x.fields_removed, fieldName], ["Changed field", x.fields_changed ?? [], fieldName]]
+      .flatMap(([k, list, show]) => list.map((m) => h("li", {}, `${k} `, show(m)))),
+  ].filter(Boolean);
+  const calls = x.calls_added;
+  return h("div", { class: `row class-change sev-${x.severity}` },
+    sevBadge(x.severity),
+    h("span", { class: "text" }, "Changed class ", code(x.class)),
+    x.rules_added.length ? ruleChip(x.rules_added) : h("span", {}),
+    h("ul", { class: "members" },
+      lines.slice(0, MEMBER_LIST),
+      lines.length > MEMBER_LIST ? h("li", { class: "muted" }, `and ${lines.length - MEMBER_LIST} more`) : null,
+      calls.length ? h("li", {}, "Now calls ", calls.slice(0, 8).map((c, i) => [i ? ", " : null, code(c)]), calls.length > 8 ? ` and ${calls.length - 8} more` : null) : null));
+}
+
+/** The class-by-class comparison. Changed classes with notable or High code come first. */
+function codeSection(d, id, nested) {
+  if (renamed(d)) return null;
+  const c = d.code;
+  const same = sameCode(d);
+  const notable = c.changed_classes.filter((x) => x.severity !== "info").length;
+  const shown = c.changed_classes.slice(0, Math.max(notable, CLASS_LIST));
+  const rest = c.changed_classes.slice(shown.length);
+  const files = [...c.added_files.map((f) => ["Added", f]), ...c.removed_files.map((f) => ["Removed", f]), ...c.changed_files.map((f) => ["Changed", f])];
+  const classList = (list) => h("ul", { class: "plain" }, list.map((x) => h("li", {}, code(x))));
+  return section("code", id, "Code", same ? null : plural(c.changed_classes.length, "changed class", "changed classes"), [
+    h("p", { class: "muted" },
+      same
+        ? `The same code in both: ${plural(c.unchanged_classes, "class", "classes")}, compared method by method.`
+        : `${plural(c.changed_classes.length, "class", "classes")} changed, ${c.added_classes.length} added, ${c.removed_classes.length} removed, ${c.unchanged_classes} unchanged. Classes are compared method by method, so a rebuild that only renumbers constants isn't a change.`),
+    shown.length ? h("div", { class: "list" }, shown.map(classChangeRow)) : null,
+    rest.length ? fold(`${plural(rest.length, "more changed class", "more changed classes")}`, () => h("div", { class: "list" }, rest.map(classChangeRow)), { cls: "fold info" }) : null,
+    c.added_classes.length ? fold(`New classes (${c.added_classes.length})`, () => classList(c.added_classes), { cls: "fold info" }) : null,
+    c.removed_classes.length ? fold(`Removed classes (${c.removed_classes.length})`, () => classList(c.removed_classes), { cls: "fold info" }) : null,
+    files.length ? fold(`Other files (${files.length})`, () => h("ul", { class: "plain" }, files.map(([k, f]) => h("li", {}, `${k} `, code(f)))), { cls: "fold info" }) : null,
+  ], nested);
+}
+
+// Official releases.
+
+const SITE = { modrinth: "Modrinth", hangar: "Hangar" };
+const release = (s) => `${s.project}${s.version ? ` ${s.version}` : ""} on ${SITE[s.site]}`;
+const outLink = (href, text) => h("a", { href, target: "_blank", rel: "noopener noreferrer" }, text);
+const STATUS = {
+  official: ["ok", "Official file"],
+  "same-code": ["ok", "Same code"],
+  differs: ["high", "Code differs"],
+  "not-found": ["none", "Not found"],
+  unreadable: ["none", "Unreadable"],
+};
+
+/**
+ * Opt-in: checks the jars against the files their projects published, and for updates.
+ * Nothing leaves the tab until the button is pressed.
+ */
+function officialSection(entries, id) {
+  if (!entries.length) return null;
+  // The scan or comparison this section belongs to. A newer one makes it stale: its check
+  // doesn't start, and one already running is aborted and leaves the new report alone.
+  const born = generation;
+  const many = entries.length > 1;
+  const button = h("button", { type: "button", class: "btn" }, many ? "Check all against official releases" : "Check against official releases");
+  const note = h("p", { class: "muted", role: "status" });
+  const body = h("div", { class: "official" },
+    h("p", {}, many
+      ? "See whether each jar is the file its project published on Modrinth or Hangar, what's different if it isn't, and whether there's an update and what it adds."
+      : "See whether this is the file its project published on Modrinth or Hangar, what's different if it isn't, and whether there's an update and what it adds."),
+    h("p", { class: "muted disclose" }, `This sends ${many ? "each jar's" : "the jar's"} SHA-512 and SHA-256 hashes and plugin name and version to api.modrinth.com and hangar.papermc.io, and downloads official files from cdn.modrinth.com to compare with. The ${many ? "jars themselves aren't" : "jar itself isn't"} sent.`),
+    h("div", { class: "head-row" }, button), note);
+  const stale = () => born !== generation;
+  /** Back to the state before the press, so a stopped check doesn't leave "Looking up…". */
+  const reset = () => {
+    note.textContent = "";
+    button.disabled = false;
+  };
+  button.addEventListener("click", async () => {
+    if (stale()) {
+      button.disabled = true;
+      note.textContent = "This report is older than the last scan or comparison. Scan the jar again to check it.";
+      return;
+    }
+    const { signal } = checks;
+    button.disabled = true;
+    note.textContent = "Checking…";
+    try {
+      const checked = await checkAll(entries, { diff: diffFiles, progress: (t) => stale() || (note.textContent = t), signal });
+      if (stale()) return reset();
+      body.replaceChildren(...[
+        many ? h("p", { class: "muted" }, checkSummary(checked)) : null,
+        h("div", { class: "list" }, checked.map((c) => checkRow(c, many))),
+        h("p", { class: "after" }, "Official means the project published that file there. It isn't a check of what the code does: that's what the findings are for."),
+      ].filter(Boolean));
+      const [c] = checked;
+      const adds = c.status !== "differs" && addsHigh(c.official?.diff) ? ", but it adds a High finding to the official file" : "";
+      const update = c.update && addsHigh(c.update.diff) ? `; its update ${c.update.version} adds a High finding` : "";
+      setStatus(many ? checkSummary(checked) : `Checked ${entries[0].file.name}: ${STATUS[c.status][1].toLowerCase()}${adds}${update}.`);
+    } catch (e) {
+      if (stale()) return reset();
+      note.textContent = e.message;
+      button.disabled = false;
+    }
+  });
+  return section("official", id, many ? "Official releases" : "Official release", null, body);
+}
+
+function checkSummary(checked) {
+  const n = (s) => checked.filter((c) => c.status === s).length;
+  const high = (list) => (list.length ? ` (${list.length} ${list.length === 1 ? "adds" : "add"} a High finding)` : "");
+  const updates = checked.filter((c) => c.update);
+  const sameHigh = checked.filter((c) => c.status !== "differs" && addsHigh(c.official?.diff));
+  return `${plural(checked.length, "jar")}: ${n("official")} official, ${n("same-code")} same code${high(sameHigh)}, ${n("differs")} code differs, ${n("not-found")} not found · ${plural(updates.length, "update")} available${high(updates.filter((c) => addsHigh(c.update.diff)))}.`;
+}
+
+/** A file the server or Java reads to decide what runs: a plugin descriptor, the manifest or a service list. */
+const RUNTIME = ["plugin.yml", "paper-plugin.yml", "bungee.yml", "velocity-plugin.json", "fabric.mod.json", "quilt.mod.json", "meta-inf/mods.toml", "meta-inf/neoforge.mods.toml", "meta-inf/manifest.mf", "meta-inf/coremods.json"];
+const runtimeFile = (path) => {
+  const p = path.toLowerCase();
+  // Mixin configs pick the classes that rewrite other code as it loads.
+  const mixins = p.endsWith(".json") && (p.endsWith(".mixins.json") || p.split("/").pop().startsWith("mixins."));
+  return RUNTIME.includes(p) || path.startsWith("META-INF/services/") || mixins;
+};
+
+/** The first `max` names as code, then how many more. */
+const codeList = (items, max) => [items.slice(0, max).map((f, i) => [i ? ", " : null, code(f)]), items.length > max ? `, and ${items.length - max} more` : null];
+
+const itemSeverity = (i) => (i.kind === "finding" ? i.finding.severity : i.severity ?? "info");
+
+const compareFold = (summary, d, open = false) =>
+  fold(summary, () => renderDiff(d, { nested: true, adds: "This jar adds", removes: "This jar removes" }), { cls: "fold info", open });
+
+function checkRow(c, many) {
+  const o = c.official;
+  const u = c.update;
+  // A file of this version in the plugin's own project that isn't the same plugin.
+  const unlike = c.status === "not-found" && c.plugin && c.version ? c.unlike : null;
+  // The official file's code, or its bytes, but this jar adds a High finding to it.
+  const high = c.status !== "differs" && addsHigh(o?.diff);
+  const [tone, word] = STATUS[c.status];
+  const sites = c.hangar ? "Modrinth or Hangar" : "Modrinth";
+  const line = {
+    official: () => ["The same bytes as ", outLink(o.url, release(o)), "."],
+    "same-code": () => ["The same code as ", outLink(o.url, release(o)), ", but not the same file", sameCodeFiles(o.diff), "."],
+    differs: () => ["Its code differs from ", outLink(o.url, release(o)), "."],
+    // Only what the page asked: Hangar by bytes (server plugins only), versions on Modrinth only.
+    "not-found": () => unlike
+      ? [`No file with these bytes on ${sites}. `, outLink(unlike.url, release(unlike)),
+          ` has a ${c.plugin} ${c.version} that isn't this plugin: its name, or its main class and most of its classes, differ from this jar's.`]
+      : [
+          `No file with these bytes on ${sites}${c.plugin && c.version ? `, and no official ${c.plugin} ${c.version} on Modrinth to compare with` : ""}.`,
+          c.hangar && c.plugin && c.version ? [" The command line's ", code("jarsnitch check"), " also compares with Hangar releases."] : null,
+          " Paid, private and custom builds can't be checked this way.",
+        ],
+    unreadable: () => ["Not a readable jar."],
+  }[c.status]();
+  const parts = [h("p", { class: "chk-line" }, h("span", { class: `chk chk-${high ? "high" : tone}` }, word), h("span", {}, line))];
+  // Anyone can publish a copy as their own project.
+  if (o?.named === false) {
+    parts.push(h("p", { class: "muted" }, `This project isn't named like the plugin (${c.plugin}). Make sure it's the project you meant.`));
+  }
+  if (c.status === "same-code" && o.diff) {
+    const k = o.diff.code;
+    const read = [...k.changed_files, ...k.added_files, ...k.removed_files].filter(runtimeFile);
+    if (read.length) parts.push(h("p", { class: "muted" }, "The server or Java reads ", codeList(read, 4), ": it sets commands, permissions or what loads, so compare it with the official file."));
+  }
+  // What a differing jar adds is in its open comparison; a same-code one lists it here, like the CLI.
+  const adds = o?.diff && c.status !== "differs" ? o.diff.added.filter((i) => itemSeverity(i) !== "info") : [];
+  if (adds.length) {
+    parts.push(h("div", { class: "adds" }, h("p", { class: "muted" }, "This jar adds:"), h("div", { class: "list" }, adds.map((i) => compactRow(i, "New")))));
+  }
+  if (o?.diff && c.status !== "official") {
+    parts.push(compareFold(c.status === "differs" ? "What this jar adds to the official file" : "Compare with the official file", o.diff, (c.status === "differs" || high) && !many));
+  }
+  if (unlike?.diff) parts.push(compareFold("Compare with that file", unlike.diff));
+  if (u) {
+    const date = u.published ? `, ${u.published.slice(0, 10)}` : "";
+    // Findings, like the summary and the exit code; new classes with findings the jar already has are said after.
+    const added = u.diff ? counts(u.diff.added.filter((i) => i.kind === "finding").map((i) => i.finding)) : null;
+    const classes = u.diff ? u.diff.added.filter((i) => i.kind !== "finding" && itemSeverity(i) !== "info").length : 0;
+    const says = u.diff && (u.diff.old.partial || u.diff.new.partial)
+      ? " Comparison is incomplete; findings cover only the scanned contents."
+      : !added
+      ? ""
+      : added.high + added.notable
+        ? ` It adds ${added.high} high and ${added.notable} notable findings.`
+        : classes
+          ? " It adds no high or notable findings, but new classes with them."
+          : " It adds no high or notable findings.";
+    parts.push(h("p", { class: "chk-line" }, h("span", { class: `chk chk-${added?.high ? "high" : "up"}` }, "Update"), h("span", {}, outLink(u.url, `${u.version}${date}`), ` on ${SITE[u.site]}.${says}`)));
+    parts.push(u.diff
+      ? fold("What the update changes", () => renderDiff(u.diff, { nested: true }), { cls: "fold info" })
+      : h("p", { class: "muted" }, "Not compared: that release has no file for this server software."));
+  }
+  for (const e of c.errors) parts.push(h("p", { class: "muted" }, `Couldn't check everything: ${e}`));
+  return h("div", { class: `check sev-${alarming(c) ? "high" : "info"}` },
+    many ? h("h4", {}, c.plugin ? `${c.plugin} ${c.version ?? ""}`.trim() : c.file, h("span", { class: "jar-file" }, breakable(c.file))) : null,
+    parts);
+}
+
+function sameCodeFiles(d) {
+  const c = d?.code;
+  if (!c) return null;
+  const files = [...c.changed_files, ...c.added_files, ...c.removed_files];
+  if (!files.length) return ": every file inside is the same, only the zip differs";
+  return [": other files differ (", codeList(files, 4), ")"];
 }

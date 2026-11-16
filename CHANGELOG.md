@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 - 2026-11-16
+
+- [added] `jarsnitch check <jar|folder>` looks each jar up on Modrinth and Hangar and says whether it's the file the project published, the same code in a different file, or code that differs from the official file of its version, and then shows what it adds. It also finds the latest release for your server software (`--mc` for one Minecraft version, `--no-updates` to skip) and compares it with your jar. Exit code 2 when a jar's code differs from the official file, the jar adds a High finding to it, or the update adds one. It's the only command that uses the network: it sends hashes, plugin names and versions, never the jars. See [Check against official releases](docs/guide/check.md).
+- [added] On the website, **Check against official releases** does the same for one jar or several. Nothing is sent until you press it. Updates are checked on Modrinth.
+- [added] Comparisons compare code: every class in both jars, method by method, with the methods and fields added, removed or changed and the calls each class now makes, so code added to a class that already existed shows. Try/catch handlers and annotations count. A rebuild that only reorders the constant pool, or a jar re-zipped or signed again, isn't a change. Two entries with the same class name are both compared. It's `code` and `same_code` in the JSON, a `Code:` part on the command line and a **Code** section on the website.
+- [added] `diff.same-version`, a note when both jars give the same version but their code differs, and `diff.native-changed`, when a native library differs.
+- [fixed] A scan or comparison can't be made to take minutes by code that names a long string, or an `invokedynamic` with a long bootstrap list, over and over. Fingerprints hash each long string once per class; the scan walks each bootstrap list once per method and stops after 1 GiB of names and strings (`Limits::max_code_work` in `jarsnitch-core`), with a `class.limit` warning that marks the report partial. Real plugins use under a tenth of that.
+- [changed] The website's Content Security Policy allows `api.modrinth.com`, `cdn.modrinth.com` and `hangar.papermc.io`, for the check only.
+- [fixed] Renamed update files retain explicit server-platform and Minecraft build markers. Unreadable downloads fail the check, incomplete update comparisons retain their findings and report an error, and malformed Hangar project responses no longer appear as successful lookups.
+
 ## 0.3.0 - 2026-11-14
 
 - [added] Call paths. Each finding the plugin's entry points reach carries one call path from an entry point to the code, with how each step leads to the next: entry, call, callback, static initializer or reflection. In the JSON it's `path` on each finding, and each evidence entry has its own `reached`. Severity, counts and exit codes don't change.

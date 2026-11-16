@@ -1,6 +1,8 @@
 # Privacy
 
-Your jar never leaves your machine. The website reads it inside your browser tab and the command line tool reads it from disk. Neither sends it, or anything about it, anywhere.
+Your jar never leaves your machine. The website reads it inside your browser tab and the command line tool reads it from disk. Neither sends it anywhere.
+
+One feature uses the network, and only when you ask for it: [checking against official releases](check.md) sends the jar's hashes and its plugin name and version to Modrinth and Hangar.
 
 ## What the website loads
 
@@ -13,11 +15,21 @@ When you open the page, once:
 
 › jarsnitch.wasm 0.2.1: about 216 KB over the network with brotli · measured on the live site, 14 Nov 2026
 
-After that, nothing. Scanning, comparing and **Download JSON** all happen in the tab: the JSON file is built from memory and handed to your browser's own download. These docs are ordinary separate pages with no scripts.
+After that, nothing, unless you press **Check against official releases** ([below](#checking-against-official-releases)). Scanning, comparing and **Download JSON** all happen in the tab: the JSON file is built from memory and handed to your browser's own download. These docs are ordinary separate pages with no scripts.
+
+## Checking against official releases
+
+**Check against official releases** is the only thing that makes the page contact another site. It sends:
+
+- to `api.modrinth.com`: each jar's SHA-512 hash, its plugin name and version, and the hashes of the official files it matched;
+- to `hangar.papermc.io`: the SHA-256 hash of each server plugin Modrinth doesn't have;
+- to `cdn.modrinth.com`: requests for the official files and updates to compare with, which are compared in the tab.
+
+The requests carry no cookies and no referrer. Like any request, they show those sites your IP address and browser. Nothing is sent before you press the button, and nothing is kept after. The command line's `check` also sends plugin names and versions to `hangar.papermc.io` and downloads from Hangar's CDN; see [What it sends](check.md#what-it-sends).
 
 ## What it never does
 
-- Upload a file, or any part of one.
+- Upload a file, or any part of one. The check sends hashes, never file contents.
 - Run analytics, set cookies or store anything in your browser.
 - Load fonts, scripts, styles or images from another site.
 - Run the plugin. Its bytes are read as data; no Java runs at all.
@@ -27,7 +39,7 @@ After that, nothing. Scanning, comparing and **Download JSON** all happen in the
 The page carries this policy, and the host sends it again as a header for every file:
 
 ```text
-default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'
+default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://api.modrinth.com https://cdn.modrinth.com https://hangar.papermc.io; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'
 ```
 
 | Directive | What it allows |
@@ -35,7 +47,7 @@ default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; con
 | `default-src 'none'` | Nothing, unless a rule below says otherwise. |
 | `script-src 'self' 'wasm-unsafe-eval'` | Scripts from this site only, and compiling its WebAssembly. No inline scripts. |
 | `worker-src 'self'` | The analyzer worker, from this site. |
-| `connect-src 'self'` | Requests to this site only. That's how the page fetches the analyzer and the sample jars, and it's why the page can't send data to anyone else. |
+| `connect-src 'self' https://api.modrinth.com https://cdn.modrinth.com https://hangar.papermc.io` | Requests to this site, which is how the page fetches the analyzer and the sample jars, and to Modrinth and Hangar, which only the check against official releases uses. No other site can receive anything from the page. |
 | `style-src 'self'` | Stylesheets from this site only. No inline styles. |
 | `img-src 'self' data: blob:` | Images from this site, or made in the page. |
 | `base-uri 'none'`, `form-action 'none'` | No base URL rewriting and no form submissions. |
@@ -48,6 +60,7 @@ The header copy in `web/_headers` adds `frame-ancestors 'none'`, which stops oth
 2. Reload, then clear the list.
 3. Scan a jar and compare two. The list stays empty.
 4. Turn on offline mode (in Chrome, the throttling menu's **Offline**) and scan again. It still works.
+5. Go back online and press **Check against official releases**. The new requests go only to `api.modrinth.com`, `hangar.papermc.io` and `cdn.modrinth.com`; open one to see what it carries.
 
 ## Hosting
 
@@ -57,7 +70,7 @@ You can host it yourself: build it with `scripts/build-web.sh` (or `.ps1`), serv
 
 ## The command line tool
 
-`jarsnitch` reads the files you name and writes to your terminal. It has no network code, no telemetry and no update check. Like the website, it never loads or runs the plugin.
+`jarsnitch scan` and `jarsnitch diff` read the files you name and write to your terminal; they never use the network. `jarsnitch check` is the only command that does. It sends what's listed in [What it sends](check.md#what-it-sends), with a `User-Agent` that names jarsnitch and its version, and says so on standard error first. There's no telemetry and no update check. Like the website, it never loads or runs the plugin.
 
 ## Before you share a report
 

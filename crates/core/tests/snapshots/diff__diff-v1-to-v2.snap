@@ -1,6 +1,5 @@
 ---
 source: crates/core/tests/diff.rs
-assertion_line: 178
 expression: "diff(\"diff-v1\", \"diff-v2\")"
 ---
 {
@@ -129,6 +128,62 @@ expression: "diff(\"diff-v1\", \"diff-v2\")"
       "new": "1.1.0"
     }
   ],
+  "code": {
+    "changed_classes": [
+      {
+        "class": "fixture/Addons",
+        "severity": "notable",
+        "rules_added": [
+          "code.load"
+        ],
+        "header_changed": false,
+        "methods_added": [
+          "load(Ljava/io/File;)Ljava/lang/ClassLoader;"
+        ],
+        "methods_removed": [],
+        "methods_changed": [],
+        "fields_added": [],
+        "fields_removed": [],
+        "fields_changed": [],
+        "calls_added": [
+          "java/io/File.toURI",
+          "java/lang/Class.getClassLoader",
+          "java/net/URI.toURL",
+          "java/net/URLClassLoader.<init>"
+        ],
+        "duplicate": false
+      },
+      {
+        "class": "fixture/Main",
+        "severity": "notable",
+        "rules_added": [
+          "str.discord-webhook"
+        ],
+        "header_changed": false,
+        "methods_added": [
+          "sendStats()V"
+        ],
+        "methods_removed": [],
+        "methods_changed": [],
+        "fields_added": [
+          "STATS:Ljava/lang/String;"
+        ],
+        "fields_removed": [],
+        "fields_changed": [],
+        "calls_added": [],
+        "duplicate": false
+      }
+    ],
+    "added_classes": [],
+    "removed_classes": [],
+    "unchanged_classes": 0,
+    "added_files": [],
+    "removed_files": [],
+    "changed_files": [
+      "plugin.yml"
+    ]
+  },
+  "same_code": false,
   "unchanged": [
     {
       "rule": "net.http",

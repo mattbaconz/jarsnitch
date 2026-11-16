@@ -1,6 +1,6 @@
 # Architecture
 
-One Rust core, two front ends. The core turns bytes into a `Report`; the CLI and the web page only read files and render reports.
+One Rust core, two front ends. The core turns bytes into a `Report`; the CLI and the web page read files, render reports and, for the check against official releases, ask Modrinth and Hangar. The core never touches the network.
 
 ## Layout
 
@@ -9,9 +9,9 @@ jarsnitch/
   Cargo.toml            workspace
   crates/
     core/               jarsnitch-core: bytes in, Report out
-    cli/                jarsnitch: builds the `jarsnitch` binary
+    cli/                jarsnitch: builds the `jarsnitch` binary; src/check.rs talks to Modrinth and Hangar
     wasm/               jarsnitch-wasm: exports scan and diff to JavaScript
-  web/                  static site: index.html, style.css, site.js, app.js, worker.js, engine.js, the logo files,
+  web/                  static site: index.html, style.css, site.js, app.js, official.js, worker.js, engine.js, the logo files,
                         and jarsnitch.wasm, samples/ and docs/ (built)
   fixtures/
     stubs/              minimal API stubs (org.bukkit..., net.md_5..., com.velocitypowered...)
@@ -266,12 +266,13 @@ The network correlations use the same graph: a method's own parts and those of t
 | `descriptor.malformed` | A descriptor couldn't be parsed. |
 | `nested.too-deep` | An archive beyond depth 3 wasn't scanned. Sets `partial`. |
 | `decode.limit` | The decoded-payload budget ran out. Sets `partial`. |
+| `class.limit` | The code walk's budget ran out: the code names long strings or bootstrap lists too many times. Later code isn't scanned. Sets `partial`. |
 
 The zip reader (`crates/core/src/archive.rs`) reads the central directory the way the JVM does: it finds the end record from the back, supports zip64, corrects offsets when data is prepended (shell-script launchers), and keeps duplicate names as separate entries.
 
 ## Diff
 
-`diff` scans both jars and compares the results. It takes bytes, not reports, because it also needs every class name, which the report doesn't carry. Findings are matched by a key, not by evidence, so a finding whose code moved isn't reported as a change. Classes are matched by location, so a class with notable or high evidence that exists on one side only is listed as added or removed, including code moved into a renamed class.
+`diff` scans both jars and compares the results. It takes bytes, not reports, because it also needs every class and file in the jar, which the report doesn't carry. Findings are matched by a key, not by evidence, so a finding whose code moved isn't reported as a change. Classes are matched by location, so a class with notable or high evidence that exists on one side only is listed as added or removed, including code moved into a renamed class.
 
 ### Matching
 
@@ -286,6 +287,10 @@ The zip reader (`crates/core/src/archive.rs`) reads the central directory the wa
 | Nested jars | path; added and removed ones are `jar.nested` findings, a different SHA-256 is listed under changes |
 | Commands, permissions, dependencies, optional dependencies | the value |
 | Classes | location (`a/B`, `lib.jar!/a/B`) |
+| Class code | location; then methods by name and descriptor, fields by `name:descriptor` |
+| Other files | path, compared by SHA-256 of the content; top-level jar signature files and `META-INF/maven/**/pom.properties` and `pom.xml` are left out |
+
+Code is compared by fingerprint, not by bytes. Each method's fingerprint is a SHA-256 of its access flags, its annotations, its instructions and its exception table, with every constant-pool reference replaced by the text it points to (class, member, string, number, method handle or bootstrap method) and every branch target by the index of the instruction it lands on. `ldc` and `ldc_w` count as one instruction, and so do `goto` and `goto_w`. Exception handlers are hashed by the instructions they start, end and jump to, and by the class they catch. Annotations (runtime-visible ones on the class, its fields, methods and parameters, and annotation defaults) are hashed by value. A bootstrap method's arguments are resolved at most 4 levels deep, each bootstrap method once per class and level, and a string over 64 bytes is hashed once per class and then stands in as its digest, so code that names a long string or a long bootstrap list over and over can't make the work grow: it stays a small multiple of the class's size, and each fingerprint depends only on the class's own bytes. A constant nested deeper is hashed by its index. A rebuild that only reorders the constant pool, or a jar re-zipped with other compression or signed again, fingerprints the same. A reference that can't be resolved is hashed as its index, which errs toward reporting a change. Each class also has a header fingerprint: access flags, superclass, interfaces and annotations, and each field one of its access flags, constant value and annotations. A class file that can't be parsed is fingerprinted by its bytes. When two entries end up at the same path once their names are normalized (the same name twice, `/a/B.class` and `a/B.class`, `a\B.class`) and their code differs, their fingerprints are combined, in either order, and the class is marked `duplicate`, so it shows as changed whichever copy the server loads. Native libraries are compared like other files and count as code. The calls a class makes come from the same references, which is how a changed class lists the methods it now calls. Code that does the same thing can still change: another compiler, or one more lambda, since javac numbers lambdas in order.
 
 ### Sections
 
@@ -293,12 +298,15 @@ Sections, in this order:
 
 1. **Adds:** new findings, new commands, permissions and dependencies, new libraries, and new classes that carry notable or high evidence. Sorted by severity, then findings before classes before the rest.
 2. **Removes:** the same kinds, gone from the new version.
-3. **Changes:** library versions, nested jar hashes, and the plugin's name, version, main class, authors or website. When the authors or website differ, the CLI and the web page add that this can mean the plugin has a new owner.
-4. **Unchanged:** findings present in both, by rule id (and value).
+3. **Changes:** library versions, nested jar hashes, and the plugin's name, version, main class, bootstrapper, loader, authors or website. When the authors or website differ, the CLI and the web page add that this can mean the plugin has a new owner.
+4. **Code:** classes in both versions whose code changed, with methods and fields added, removed or changed and calls added; every class only one version has; other files whose content changed. A changed class has the severity of the most severe notable or High rule with evidence in it that the old class didn't have, otherwise info, and the list is sorted by that, then by name.
+5. **Unchanged:** findings present in both, by rule id (and value).
 
 The CLI header shows both file names, versions, short hashes and the obfuscation score old -> new; the web page shows the names, versions and scores. If either file isn't a readable zip, the CLI prints an error and exits 1 instead of a diff.
 
-If fewer than half of the old class names exist in the new jar and either side scores 25+ for obfuscation, the diff adds the warning `diff.classes-renamed`: the jar was probably re-obfuscated, so new and removed classes are left out for this pair. Findings are still compared. A partial scan on either side adds `diff.partial`.
+If fewer than half of the old class names exist in the new jar and either side scores 25+ for obfuscation, the diff adds the warning `diff.classes-renamed`: the jar was probably re-obfuscated, so new and removed classes are left out for this pair. Findings are still compared. The Code part is left empty for that pair too. A native library that was added, removed or changed adds `diff.native-changed`. A partial scan on either side adds `diff.partial`. When both jars give the same version and their code differs, the diff adds `diff.same-version`.
+
+`same_code` is true only when no class is changed, added or removed, no native library differs, the main class, bootstrapper, loader and `libraries:` entries are the same, there's no `diff.classes-renamed`, and neither side is partial or unreadable.
 
 A capability that already existed but now appears in many more places counts as unchanged.
 
@@ -306,13 +314,35 @@ A capability that already existed but now appears in many more places counts as 
 
 A real comparison of the web page's sample update, `jarsnitch diff SampleShop-1.4.0.jar SampleShop-1.4.1.jar --json`, is in [JSON format](guide/json.md#examples).
 
-In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry), `library` (bundled, from `pom.properties`), `dependency` and `optional-dependency`; every kind except `finding` carries its `value`, and `class` also carries the `rules` its evidence triggered and the highest `severity` among them. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version`, `main`, `authors` or `website` of one descriptor; authors are sorted and joined with ", ", so a new order isn't a change), and `old` / `new` are `null` when a side doesn't have it.
+In `added` and `removed`, `kind` is one of `finding`, `class`, `command`, `permission`, `maven-library` (a descriptor `libraries:` entry), `library` (bundled, from `pom.properties`), `dependency` and `optional-dependency`; every kind except `finding` carries its `value`, and `class` also carries the `rules` its evidence triggered and the highest `severity` among them. In `changed`, `kind` is `library`, `maven-library`, `nested` or `plugin-field` (`name`, `version`, `main`, `bootstrapper`, `loader`, `authors` or `website` of one descriptor; authors are sorted and joined with ", ", so a new order isn't a change), and `old` / `new` are `null` when a side doesn't have it. `code` holds the class comparison: `changed_classes` (each with `class`, `severity`, `rules_added`, `header_changed`, the methods, fields and `calls_added`, and `duplicate`), `added_classes`, `removed_classes`, `unchanged_classes` and the other files. `same_code` is described above.
+
+## Check
+
+`jarsnitch check` and the website's check against official releases (`crates/cli/src/check.rs`, `web/official.js`) find the file a project published and compare it with the installed jar. The core stays offline: the front ends fetch files and pass their bytes to `diff`.
+
+1. **By hash.** All SHA-512 hashes go to Modrinth's `POST /v2/version_files` in one request. Server plugins with no match are looked up on Hangar with `GET /api/v1/versions/hash/{sha256}`.
+2. **By name and version.** For the rest, the name and version of the jar's main descriptor: the Modrinth project with that slug (`GET /v2/projects`), else the first results of `GET /v2/search` for plugins and mods, then the project's versions for the jar's loaders (`GET /v2/project/{id}/version`). A version counts when its number is the jar's, allowing a leading `v` and anything after `-`, `+`, `_`, a space or `(`, unless that tail contains snapshot, dev, alpha, beta, rc, pre, nightly or build. Then the Hangar project of that name (`GET /api/v1/projects/{name}` and its `/versions/{version}`).
+3. **Same plugin.** Up to 3 candidate files are downloaded from Modrinth and, when none of them matches, up to 3 from Hangar. Each must have the hash the site lists, and its descriptor must have the same name, ignoring case, and either the same main class or at least half of the same classes. The candidate with the fewest changed, added and removed classes is the one compared. A download that fails, or doesn't match the hash the site lists, skips that candidate and is reported in `errors`. When nothing matches, the first file from the project named like the plugin that failed the same-plugin test is kept as `unlike`.
+4. **Status.** The same bytes are `official`. Otherwise the diff's `same_code` decides: `true` is `same-code`, `false` is `differs`. For a match by hash, the CLI and the page also say when the project's name doesn't contain the plugin's name, or the other way round, since anyone can upload a copy.
+5. **Updates.** Modrinth's `POST /v2/version_files/update_individual` with the jar's loaders, `--mc` as the game version, and the release channel only. When a version has several files (Bukkit and Paper builds, or builds for different Minecraft versions), the update's file is the one named like the jar's official file once each release's version is taken out of the name (`Fixture-1.0.0-1.8.jar` of 1.0.0 and `Fixture-1.1.0-1.8.jar` of 1.1.0); failing that, the only file with the same name stem, the lowercase file name without digits and `.-_+`. With two such files and no exact match there's no update rather than the wrong build. A release of the jar's own version isn't an update, even one uploaded later (another build of it), and neither is one published before the jar's release: dates compare to the second, then the fraction, and a release with no date counts as later. A download that fails is an error. When the newest release has no file of the jar's flavor, the project's versions are read newest first: the first release with one counts, and a release at or before the installed one ends the walk. If none counts and the newest release has a single jar whose name stem isn't in any release from the installed one back or any other build of the installed version, the project renamed its files and that jar counts. On Hangar, only when the jar's version was found there (so its date is known) and the release doesn't have the same name or hold the jar's file or the official file it was matched with: `GET /api/v1/projects/{slug}/latestrelease`, or with `--mc`, the newest release in the Release channel that lists that version for the jar's server software (`GET /api/v1/projects/{slug}/versions?platform=…&platformVersion=…`). The update is downloaded, its hash checked, and diffed with the jar as the old side.
+
+Loaders by platform: `bukkit` asks for bukkit, spigot, paper, purpur and folia; `paper` for paper, purpur and folia; `bungee` for bungeecord and waterfall; the others for themselves.
+
+Network rules:
+
+- Only `api.modrinth.com`, `hangar.papermc.io` and the download addresses their APIs return. The CLI sends `User-Agent: mattbaconz/jarsnitch/<version> (+https://github.com/mattbaconz/jarsnitch)`; the page's requests carry no cookies or referrer.
+- Requests are spaced to stay under the sites' rate limits (210 ms for Modrinth and 260 ms for Hangar in the CLI, 260 ms on the page), and a 429 is retried once, after the wait the site asks for in the CLI and after 10 s on the page.
+- Responses are capped at 256 MB, counted as they arrive, and a request gets 120 s.
+- The CLI uses HTTPS only and ignores proxy settings in the environment.
+- A failed request becomes an entry in `errors`, never a crash; the CLI then exits with 1 unless something exits with 2.
+- The website runs steps 1 to 4 against Modrinth, looks Hangar up by hash only, and checks updates on Modrinth only.
 
 ## CLI
 
-- Argument parsing with `std::env::args`; two subcommands and one flag don't need a framework.
+- Argument parsing with `std::env::args`; three subcommands and three flags don't need a framework.
 - Default output is plain text: a header per jar (name, version, platform, short hash, obfuscation score, call-graph size), then one block per finding with severity, title, rule id, the "why" line and up to 3 locations plus "+N more", then warnings and severity counts. The disclaimer is printed once, after all the reports. In `scan`, findings in code the entry points don't call come after all other findings and say so; `diff` keeps the severity order and marks them. Partial reports say so at the top. The CLI leaves out the legitimate-uses line; the web page and the JSON have it.
-- `--json` prints the serde output: an array of reports for `scan`, one object for `diff`.
+- `--json` prints the serde output: an array of reports for `scan`, one object for `diff`, an array of results for `check`.
+- `check` prints one line to standard error saying what it sends before the first request, then one block per jar and a summary.
 - Exit codes are listed in the [README](../README.md#command-line-reference).
 - Folder scans read every `.jar` directly in the folder, sorted by name, one at a time.
 
@@ -323,6 +353,7 @@ web/
   index.html    two tabs: Scan (one drop zone), Compare (old + new drop zones)
   style.css
   app.js        UI and rendering
+  official.js   the check against official releases: Modrinth and Hangar requests; the diffs run in the worker
   worker.js     module worker: fetches and compiles the wasm, runs scan and diff
   engine.js     the calls into the wasm, shared with scripts/check-web.mjs
   jarsnitch.wasm  built by scripts/build-web.ps1 / .sh, not committed
@@ -342,15 +373,15 @@ Flow:
 
 Privacy rules:
 
-- No third-party requests of any kind: no fonts, analytics, CDNs or remote images.
+- No third-party requests except the check against official releases, which runs only when the user presses its button and talks only to Modrinth and Hangar. No fonts, analytics, CDNs or remote images.
 - `index.html` carries a Content Security Policy:
 
   ```text
-  default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'
+  default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://api.modrinth.com https://cdn.modrinth.com https://hangar.papermc.io; style-src 'self'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'
   ```
 
   A `<meta>` CSP doesn't cover the worker and can't carry `frame-ancestors`. `web/_headers` sends the same policy as a response header, plus `frame-ancestors 'none'`, for hosts that read that file (Cloudflare, Netlify). The docs pages under `web/docs/` carry the same `<meta>` policy and load no scripts.
-- Check: open DevTools > Network, load the page, clear the log, run a scan and a diff. The log must stay empty. Then go offline and repeat; both must still work.
+- Check: open DevTools > Network, load the page, clear the log, run a scan and a diff. The log must stay empty. Then go offline and repeat; both must still work. Pressing the check button adds requests to `api.modrinth.com`, `hangar.papermc.io` and `cdn.modrinth.com` only.
 
 Accessibility and layout basics: a status line in an `aria-live` region announces each result in one sentence and focus moves to the result heading (reading a whole report aloud on every scan would be too much), severity is shown as text and not only as color, light and dark themes follow `prefers-color-scheme`, tabs follow the ARIA tabs pattern with arrow keys, and the page works at phone width without sideways scrolling.
 
@@ -370,6 +401,7 @@ Defaults, defined as constants in `crates/core`:
 | Text resource scanned for strings | 1 MiB |
 | Descriptor file | 1 MiB |
 | Decoded payloads per scan | 1,000, 16 MiB total |
+| Names and strings the code walk handles, counted each time an instruction uses one | 1 GiB per scan (Geyser, the largest of 100 popular plugins, uses 63 MB) |
 
 When a limit is hit, that part stops, a warning is added and everything found so far is kept. Entries are decompressed one at a time, so memory stays near the size of the largest entry plus the input.
 
@@ -393,7 +425,7 @@ rustup target add wasm32-unknown-unknown
 ./scripts/build-web.sh
 ```
 
-On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 660 KB; the 0.2.1 build measured about 216 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
+On Windows, `scripts\build-web.ps1`. Both run `cargo build -p jarsnitch-wasm --release --target wasm32-unknown-unknown` and copy the result to `web/jarsnitch.wasm` (about 800 KB; the 0.2.1 build measured about 216 KB over the network with brotli). Then they copy the sample jars and run `node scripts/build-docs.mjs`, which builds the docs pages into `web/docs/` and fails on a broken link or anchor, any inline style or script, or a verdict word. Release builds use `lto = true`, `codegen-units = 1`.
 
 ```bash
 node scripts/check-web.mjs
@@ -420,6 +452,8 @@ Keep the list short; every crate in `core` also ships in the wasm.
 | `miniz_oxide` | core | Inflating zip entries, with an output cap. Pure Rust, builds for wasm32. |
 | `serde`, `serde_json` | core | Report types, JSON, `velocity-plugin.json` |
 | `sha2` | core | File and payload hashes |
+| `serde`, `serde_json`, `sha2` | cli | Modrinth and Hangar JSON; SHA-512 and SHA-256 for the lookups |
+| `ureq` (rustls) | cli | HTTPS for `check`: blocking, no async runtime, TLS in Rust with Mozilla's root certificates (`webpki-roots`), so the binary needs no system OpenSSL. Not in the wasm. |
 | `insta` (json, redactions) | dev | Snapshot tests |
 | `miniz_oxide` | dev | Deflating entries of archives built in tests |
 

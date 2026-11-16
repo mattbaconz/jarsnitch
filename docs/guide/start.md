@@ -10,7 +10,7 @@ jarsnitch runs in two places: a web page that reads the jar inside your browser 
 
 <!-- gif: site-scan | The jarsnitch page: SampleShop-1.4.1.jar is dropped on the Scan tab, the report shows 2 high, 4 notable and 5 info findings and a map of where they are in the jar, and clicking ChatListener on the map jumps to its finding's call path from onEnable to the matched code. -->
 
-The page loads its own files once, including the analyzer compiled to WebAssembly, and makes no request after that. Your jar is read inside the tab and never uploaded. [Privacy](privacy.md) shows how to check that yourself.
+The page loads its own files once, including the analyzer compiled to WebAssembly, and makes no other request unless you ask it to [check against official releases](check.md). Your jar is read inside the tab and never uploaded. [Privacy](privacy.md) shows how to check that yourself.
 
 › analyzer download: jarsnitch.wasm 0.2.1, about 216 KB with brotli · measured on the live site, 14 Nov 2026
 

@@ -15,7 +15,7 @@ mod rules;
 mod scan;
 mod strings;
 
-pub use diff::{Change, Diff, Item, Key, OldNew, Side};
+pub use diff::{Change, ClassChange, CodeDiff, Diff, Item, Key, OldNew, Side};
 pub use report::*;
 pub use rules::{RULES, Rule, rule};
 
@@ -38,6 +38,11 @@ pub struct Limits {
     pub max_decoded: u32,
     /// Bytes produced by decoding payloads per scan.
     pub max_decoded_bytes: u64,
+    /// Bytes of names and strings the code walk handles per scan, counted each time an
+    /// instruction uses one, so code that names a long string or a long bootstrap list over
+    /// and over can't make a scan take minutes. Geyser, the largest of 100 popular plugins,
+    /// uses 63 MB of it.
+    pub max_code_work: u64,
 }
 
 impl Default for Limits {
@@ -51,17 +56,21 @@ impl Default for Limits {
             max_text_bytes: 1 << 20,
             max_decoded: 1_000,
             max_decoded_bytes: 16 << 20,
+            max_code_work: 1 << 30,
         }
     }
 }
 
 /// Scans one jar. Never panics on bad input: problems become warnings in the report.
 pub fn scan(name: &str, bytes: &[u8], limits: &Limits) -> Report {
-    scan::run(name, bytes, limits).0
+    scan::run(name, bytes, limits, false).0
 }
 
 /// Compares two versions of a jar, leading with what `new` adds. Each is scanned with
 /// `limits`; a partial scan on either side adds a `diff.partial` warning.
 pub fn diff(old_name: &str, old: &[u8], new_name: &str, new: &[u8], limits: &Limits) -> Diff {
-    diff::diff(scan::run(old_name, old, limits), scan::run(new_name, new, limits))
+    diff::diff(
+        scan::run(old_name, old, limits, true),
+        scan::run(new_name, new, limits, true),
+    )
 }

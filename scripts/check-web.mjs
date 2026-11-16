@@ -6,10 +6,23 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Engine } from "../web/engine.js";
+import { checkOfficial } from "./check-official.mjs";
+import { bare, baseVersion, exactVersion, newer, sameVersion, stem } from "../web/official.js";
 
 const root = new URL("..", import.meta.url);
 const read = (path) => readFile(new URL(path, root));
 const engine = new Engine(await WebAssembly.compile(await read("web/jarsnitch.wasm")));
+
+// The check's version, flavor and date rules, the same as the command line's.
+assert.ok(sameVersion("1.4.28", "v1.4.28-bukkit") && !sameVersion("1.4.28", "1.4.28-SNAPSHOT"));
+assert.notEqual(stem("Chunky-Bukkit-1.4.28.jar"), stem("Chunky-Paper-1.4.36.jar"));
+assert.equal(bare("Fixture-1.0.0-1.8.jar", "1.0.0"), bare("Fixture-1.1.0-1.8.jar", "v1.1.0"));
+assert.notEqual(bare("Fixture-1.0.0-1.8.jar", "1.0.0"), bare("Fixture-1.1.0-1.21.jar", "1.1.0"));
+assert.ok(exactVersion("1.0.0", "V1.0.0") && !exactVersion("1.0.0", "1.0.0-1") && !exactVersion("", ""));
+assert.deepEqual([baseVersion("5.29-paper"), baseVersion("v1.0.0+build.5")], ["5.29", "1.0.0"]);
+assert.ok(newer("2026-10-01T00:00:00.900000Z", "2026-10-01T00:00:00.100000Z") && newer("2026-10-01T00:00:00.1Z", "2026-10-01T00:00:00Z"));
+assert.ok(!newer("2026-10-01T00:00:00Z", "2026-10-01T00:00:00.000Z") && !newer("2026-09-30T23:59:59.999Z", "2026-10-01T00:00:00Z"));
+assert.ok(newer(undefined, "2026-10-01T00:00:00Z") && newer("", "x"));
 
 const benign = engine.scan("benign-plugin.jar", await read("fixtures/jars/benign-plugin.jar"));
 assert.equal(benign.schema_version, 1);
@@ -43,4 +56,5 @@ for (const path of process.argv.slice(2)) {
   const ms = Math.round(performance.now() - start);
   console.log(`${path}: ${(bytes.length / 1e6).toFixed(1)} MB, ${r.stats.classes} classes, ${r.findings.length} findings, ${ms} ms`);
 }
+await checkOfficial(engine);
 console.log("web engine ok");

@@ -1,0 +1,154 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "inject-v2.jar",
+    "size": 976,
+    "sha256": "ddd1b519461c7756c17f03c0f4e78b3f99acc660c181e625b9c4e07ab8979452"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-inject",
+      "version": "2.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "authors": [],
+      "website": null,
+      "commands": [],
+      "permissions": [],
+      "dependencies": [],
+      "optional_dependencies": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 4,
+    "reached_methods": 3,
+    "dynamic": true
+  },
+  "findings": [
+    {
+      "rule": "corr.download-and-run",
+      "severity": "high",
+      "title": "Can download and run code from the internet",
+      "why": "The jar can fetch code that isn't in this file and run it, so this report can't tell you what that code does.",
+      "legit_uses": "Dependency downloaders that fetch libraries from Maven repositories at startup. Check the hosts under str.url.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "detail": "code.load: java/net/URLClassLoader.<init>",
+          "reached": true
+        },
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "detail": "str.url: https://payload.example.invalid/x.jar",
+          "reached": true
+        }
+      ],
+      "evidence_total": 2,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "via": "call"
+        }
+      ]
+    },
+    {
+      "rule": "code.load",
+      "severity": "notable",
+      "title": "Can load new code while running",
+      "why": "Code that isn't in this jar can be added later, and jarsnitch can only judge what's in the file.",
+      "legit_uses": "Dependency loaders that fetch libraries at startup, addon or module systems, scripting add-ons.",
+      "value": null,
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "detail": "java/net/URLClassLoader.<init>",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "via": "call"
+        }
+      ]
+    },
+    {
+      "rule": "str.url",
+      "severity": "info",
+      "title": "Contains web addresses",
+      "why": "These are hosts the plugin may contact. Unfamiliar ones are worth a look.",
+      "legit_uses": "Update checks, statistics, documentation links, APIs.",
+      "value": "payload.example.invalid",
+      "evidence": [
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "detail": "https://payload.example.invalid/x.jar",
+          "reached": true
+        }
+      ],
+      "evidence_total": 1,
+      "reached": true,
+      "path": [
+        {
+          "location": "fixture/Main",
+          "method": "onEnable()V",
+          "via": "entry"
+        },
+        {
+          "location": "fixture/Main",
+          "method": "added$0()V",
+          "via": "call"
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 932
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

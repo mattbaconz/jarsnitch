@@ -25,7 +25,7 @@ The exact limits from the [rules](../rules.md):
 
 ## What makes a report partial
 
-A report is marked partial when a limit or a damaged entry stopped part of the scan. These warnings set it: `zip.limit`, `zip.unsupported` (encrypted entries or an unusual compression method), `zip.bad-entry`, `nested.too-deep` and `decode.limit`. Everything found before that point is still listed. A partial report is not a clean one: the part that wasn't checked could hold anything.
+A report is marked partial when a limit or a damaged entry stopped part of the scan. These warnings set it: `zip.limit`, `zip.unsupported` (encrypted entries or an unusual compression method), `zip.bad-entry`, `nested.too-deep`, `decode.limit` and `class.limit`. Everything found before that point is still listed. A partial report is not a clean one: the part that wasn't checked could hold anything.
 
 A file that isn't a zip at all isn't partial but unreadable: it has a `zip.unreadable` warning and no findings, and the command line exits with 1.
 

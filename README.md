@@ -12,7 +12,7 @@ It reads the bytecode. It never loads or runs the plugin.
 
 ## Two ways to use it
 
-**Website.** Drop one jar to scan it, two versions of a plugin to compare them, or your whole plugins folder to scan every jar in it. No jar at hand? The page has a sample plugin and a sample update to try. The analysis runs in your browser (WebAssembly). Your files never leave your machine: no upload, no backend, no telemetry. Once the page has loaded it needs no network at all.
+**Website.** Drop one jar to scan it, two versions of a plugin to compare them, or your whole plugins folder to scan every jar in it. No jar at hand? The page has a sample plugin and a sample update to try. The analysis runs in your browser (WebAssembly). Your files never leave your machine: no upload, no backend, no telemetry. Once the page has loaded it needs no network, unless you press **Check against official releases**, which sends hashes, plugin names and versions to Modrinth and Hangar.
 
 **Command line.**
 
@@ -26,6 +26,10 @@ jarsnitch scan plugins/
 
 ```bash
 jarsnitch diff MyPlugin-1.4.jar MyPlugin-1.5.jar
+```
+
+```bash
+jarsnitch check plugins/
 ```
 
 ## Check an update before you install it
@@ -86,6 +90,15 @@ Changes:
   plugin.yml website: https://sampleshop.example.com -> https://shop-plugins.example.net
 A different author or website can mean the plugin has a new owner.
 
+Code: 1 class changed, 2 added, 0 removed, 3 unchanged
+
+INFO     Changed class: example/sampleshop/SampleShop
+         ~ method onEnable()V
+         now calls: example/sampleshop/AddonLoader.<init>, example/sampleshop/AddonLoader.load, example/sampleshop/ChatListener.<init>, example/sampleshop/SampleShop.getDataFolder, example/sampleshop/SampleShop.getServer, org/bukkit/Server.getPluginManager, +1 more
+
+New classes (2): example/sampleshop/AddonLoader, example/sampleshop/ChatListener
+Other files: ~ plugin.yml
+
 Unchanged: mc.console-command, net.http, net.socket, str.url
 
 This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee.
@@ -93,9 +106,43 @@ This shows what the code can do, not proof of what it will do. A clean report is
 
 *(Real output, exit code 2, for the website's sample update in `web/samples/`. SampleShop is a made-up plugin.)*
 
-Findings are matched by rule and value (host, webhook id, path), not by where they sit, so a finding whose code only moved stays unchanged. A capability the old version already had counts as unchanged even if it now appears in more places. Classes are compared by name: a new class that carries notable or High evidence is listed as new, so code moved into a renamed class shows up there.
+Findings are matched by rule and value (host, webhook id, path), not by where they sit, so a finding whose code only moved stays unchanged. A capability the old version already had counts as unchanged even if it now appears in more places. A new class that carries notable or High evidence is listed as new, so code moved into a renamed class shows up there. And every class in both versions is compared method by method: **Code** lists the classes whose code changed, with the methods added, removed or changed and the calls each now makes, so code added to a class that already existed shows too.
 
 `diff` also lists what changed around the code: new classes with notable or High evidence, commands, permissions, plugin dependencies, downloaded and bundled libraries, and the plugin's name, version, main class, authors and website. A different author or website can mean the plugin has a new owner.
+
+## Is your copy the official file?
+
+A plugin can be re-uploaded somewhere with code added, or changed on your server. `check` looks each jar up on Modrinth and Hangar: is it the file the project published, and if not, what does it add to the official file of the same version? It also finds the latest release and compares it with your jar.
+
+```text
+$ jarsnitch check plugins/
+== SampleShop-1.4.1.jar ==
+SampleShop 1.4.1
+Not found on Modrinth or Hangar: no file with these bytes, and no official SampleShop 1.4.1 to compare with.
+  Paid, private and custom builds can't be checked this way.
+
+== coreprotect.jar ==
+CoreProtect 24.0
+Official file: the same bytes as CoreProtect 24.0 on Modrinth (https://modrinth.com/project/coreprotect)
+Update: 24.1, 2026-09-24 (https://modrinth.com/project/coreprotect/version/3sehX6Sg)
+  adds no notable or High findings
+  code: 23 classes changed, 6 added, 0 removed
+
+== griefprevention-rezipped.jar ==
+GriefPrevention 16.18.7
+Same code as GriefPrevention 16.18.7 on Modrinth (https://modrinth.com/project/griefprevention), but not the same file.
+  Every file is the same; only the zip around them differs.
+Update: 16.18.8, 2026-11-01 (https://modrinth.com/project/griefprevention/version/MtwPHMAS)
+  adds no notable or High findings
+  code: 17 classes changed, 3 added, 0 removed
+
+3 jars · 1 official · 1 same code · 0 code differs · 1 not found · 2 updates available
+Official means the project published that file; it isn't a check of what the code does. jarsnitch scan shows that.
+```
+
+*(Real output, exit code 0, Modrinth as of 15 Nov 2026. The third jar is an official release, re-zipped. SampleShop is made up.)*
+
+It's the one command that uses the network. It sends hashes, plugin names and versions, never your jars: see [what it sends](https://jarsnitch.mbaconz.workers.dev/docs/check/#what-it-sends). Exit code 2 means a jar's code differs from its official file, or a jar or its update adds a High finding. Paid plugins, and plugins published only on SpigotMC or GitHub, come back as not found. The website does the same with **Check against official releases**.
 
 ## What a finding tells you
 
@@ -180,20 +227,22 @@ Every report ends with:
 ```text
 jarsnitch scan <jar|folder>... [--json]
 jarsnitch diff <old.jar> <new.jar> [--json]
+jarsnitch check <jar|folder>... [--mc <version>] [--no-updates] [--json]
 jarsnitch --version
 jarsnitch --help
 ```
 
 - `scan` on a folder scans every `.jar` directly inside it (not subfolders).
-- `--json` prints the full report. `scan` prints a JSON array with one report per jar; `diff` prints one object. See [the JSON format](https://jarsnitch.mbaconz.workers.dev/docs/json/).
+- `check` compares each jar with its official release on Modrinth and Hangar and looks for updates there. `--mc` only counts updates for that Minecraft version, on both sites; `--no-updates` skips them.
+- `--json` prints the full report. `scan` prints a JSON array with one report per jar, `diff` one object, `check` an array with one result per jar. See [the JSON format](https://jarsnitch.mbaconz.workers.dev/docs/json/).
 
 Exit codes:
 
-| Code | `scan` | `diff` |
-|---|---|---|
-| 0 | No High findings | The update adds no High findings |
-| 1 | A file couldn't be read or isn't a zip, or there was nothing to scan (and no High findings) | Either file couldn't be read |
-| 2 | At least one High finding | The update adds at least one High finding |
+| Code | `scan` | `diff` | `check` |
+|---|---|---|---|
+| 0 | No High findings | The update adds no High findings | No jar's code differs from its official file, and no jar or update adds a High finding |
+| 1 | A file couldn't be read or isn't a zip, or there was nothing to scan (and no High findings) | Either file couldn't be read | A file couldn't be read, a request failed, or there was nothing to check |
+| 2 | At least one High finding | The update adds at least one High finding | A jar's code differs from its official file, or a jar or its update adds a High finding |
 
 Use exit code 2 to fail a CI job or an update script.
 
@@ -240,7 +289,7 @@ jarsnitch focuses on comparing versions, runs entirely on your machine, and repo
 
 ## Docs
 
-The full documentation is on the website: [getting started](https://jarsnitch.mbaconz.workers.dev/docs/start/), [scanning](https://jarsnitch.mbaconz.workers.dev/docs/scan/), [comparing versions](https://jarsnitch.mbaconz.workers.dev/docs/compare/), [reading a report](https://jarsnitch.mbaconz.workers.dev/docs/report/), [the call graph](https://jarsnitch.mbaconz.workers.dev/docs/call-graph/), the [command line](https://jarsnitch.mbaconz.workers.dev/docs/cli/) and [JSON format](https://jarsnitch.mbaconz.workers.dev/docs/json/), [privacy](https://jarsnitch.mbaconz.workers.dev/docs/privacy/) and an [FAQ](https://jarsnitch.mbaconz.workers.dev/docs/faq/). Its sources are in [docs/guide](https://github.com/mattbaconz/jarsnitch/blob/main/docs/guide). In this repository:
+The full documentation is on the website: [getting started](https://jarsnitch.mbaconz.workers.dev/docs/start/), [scanning](https://jarsnitch.mbaconz.workers.dev/docs/scan/), [comparing versions](https://jarsnitch.mbaconz.workers.dev/docs/compare/), [checking against official releases](https://jarsnitch.mbaconz.workers.dev/docs/check/), [reading a report](https://jarsnitch.mbaconz.workers.dev/docs/report/), [the call graph](https://jarsnitch.mbaconz.workers.dev/docs/call-graph/), the [command line](https://jarsnitch.mbaconz.workers.dev/docs/cli/) and [JSON format](https://jarsnitch.mbaconz.workers.dev/docs/json/), [privacy](https://jarsnitch.mbaconz.workers.dev/docs/privacy/) and an [FAQ](https://jarsnitch.mbaconz.workers.dev/docs/faq/). Its sources are in [docs/guide](https://github.com/mattbaconz/jarsnitch/blob/main/docs/guide). In this repository:
 
 - [Rules](https://github.com/mattbaconz/jarsnitch/blob/main/docs/rules.md): every rule, what triggers it, typical legitimate uses ([on the website](https://jarsnitch.mbaconz.workers.dev/docs/rules/))
 - [Architecture](https://github.com/mattbaconz/jarsnitch/blob/main/docs/architecture.md): crates, report format, diff, limits, web app ([on the website](https://jarsnitch.mbaconz.workers.dev/docs/how-it-works/))

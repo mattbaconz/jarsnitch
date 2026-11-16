@@ -1,0 +1,57 @@
+---
+source: crates/core/tests/fixtures.rs
+expression: report
+---
+{
+  "schema_version": 1,
+  "tool_version": "[version]",
+  "file": {
+    "name": "inject-v1.jar",
+    "size": 739,
+    "sha256": "effd9ab09ea719091069ca94989eb70e383838e8d401b4ce0b1a302a4f3e2784"
+  },
+  "partial": false,
+  "plugins": [
+    {
+      "platform": "bukkit",
+      "descriptor": "plugin.yml",
+      "name": "Fixture-inject",
+      "version": "2.0.0",
+      "main": "fixture.Main",
+      "bootstrapper": null,
+      "loader": null,
+      "authors": [],
+      "website": null,
+      "commands": [],
+      "permissions": [],
+      "dependencies": [],
+      "optional_dependencies": [],
+      "folia_supported": false,
+      "maven_libraries": []
+    }
+  ],
+  "libraries": [],
+  "nested": [],
+  "obfuscation": {
+    "score": 0,
+    "short_names": 0.0,
+    "default_package": 0.0,
+    "encoded_strings": 0.0
+  },
+  "reachability": {
+    "entry_points": [
+      "fixture/Main"
+    ],
+    "methods": 3,
+    "reached_methods": 2,
+    "dynamic": false
+  },
+  "findings": [],
+  "warnings": [],
+  "stats": {
+    "entries": 2,
+    "classes": 1,
+    "uncompressed_bytes": 557
+  },
+  "disclaimer": "This shows what the code can do, not proof of what it will do. A clean report isn't a guarantee."
+}

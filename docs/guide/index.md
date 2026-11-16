@@ -10,6 +10,7 @@ These pages cover the website at <https://jarsnitch.mbaconz.workers.dev> and the
 
 - **I have a jar.** Drop it on the website or run `jarsnitch scan MyPlugin.jar`. Start with [Scan a plugin](scan.md), then [Read a report](report.md).
 - **I'm about to update a plugin.** Compare the version you run with the new one and read what the update adds. Start with [Compare two versions](compare.md).
+- **I want to know whether my copy is the official file.** Check it against Modrinth and Hangar, and see what the latest release adds. Start with [Check against official releases](check.md).
 - **I check plugins in CI or an update script.** Exit code 2 means a High finding, or an update that adds one. Start with [Command line](cli.md).
 
 ## Severities
@@ -24,11 +25,12 @@ Most capabilities have everyday uses, and every rule lists the common ones. Paid
 
 ## Reading a comparison
 
-A comparison of two versions of one plugin leads with what the new version adds. It has four parts:
+A comparison of two versions of one plugin leads with what the new version adds. It has five parts:
 
 - **Adds:** findings, classes with notable or High evidence, commands, permissions, dependencies and libraries that only the new version has. Start here.
 - **Removes:** the same kinds, gone from the new version.
-- **Changes:** library versions, nested jar hashes, and the plugin's name, version, main class, authors and website. A different author or website can mean the plugin has a new owner.
+- **Changes:** library versions, nested jar hashes, and the plugin's name, version, main class, bootstrapper, loader, authors and website. A different author or website can mean the plugin has a new owner.
+- **Code:** every class whose code changed, method by method, with the calls it now makes. Code added to a class that already existed shows here.
 - **Unchanged:** findings both versions have. They're matched by rule and value, so code that moved, or a capability that now appears in more places, stays here.
 
 More in [Compare two versions](compare.md).
