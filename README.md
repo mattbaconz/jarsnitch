@@ -233,7 +233,7 @@ jarsnitch --help
 ```
 
 - `scan` on a folder scans every `.jar` directly inside it (not subfolders).
-- `check` compares each jar with its official release on Modrinth and Hangar and looks for updates there. `--mc` only counts updates for that Minecraft version, on both sites; `--no-updates` skips them.
+- `check` compares each jar with its official release on Modrinth and Hangar and looks for updates there. `--mc` only counts updates for that Minecraft version (on Hangar, for plugins with a Paper build); `--no-updates` skips them.
 - `--json` prints the full report. `scan` prints a JSON array with one report per jar, `diff` one object, `check` an array with one result per jar. See [the JSON format](https://jarsnitch.mbaconz.workers.dev/docs/json/).
 
 Exit codes:
